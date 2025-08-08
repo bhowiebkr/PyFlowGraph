@@ -100,3 +100,6 @@ Desktop.ini
 
 # Wheel build directory
 *.bdist_wheel/
+
+# Generated files
+generated_readme.md
