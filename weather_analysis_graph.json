@@ -1,0 +1,159 @@
+{
+  "nodes": [
+    {
+      "uuid": "src-city_name",
+      "title": "City Name",
+      "pos": [
+        0,
+        0
+      ],
+      "code": "@node_entry\ndef get_city_name() -> str:\n    return 'Toronto'"
+    },
+    {
+      "uuid": "src-days",
+      "title": "Days to Simulate",
+      "pos": [
+        0,
+        150
+      ],
+      "code": "@node_entry\ndef get_days() -> int:\n    return 7"
+    },
+    {
+      "uuid": "src-base_temp",
+      "title": "Base Temperature (C)",
+      "pos": [
+        0,
+        300
+      ],
+      "code": "@node_entry\ndef get_base_temp() -> float:\n    return 15.0"
+    },
+    {
+      "uuid": "src-base_humidity",
+      "title": "Base Humidity (%)",
+      "pos": [
+        0,
+        450
+      ],
+      "code": "@node_entry\ndef get_base_humidity() -> float:\n    return 60.0"
+    },
+    {
+      "uuid": "sim-weather",
+      "title": "Simulate Weather Data",
+      "pos": [
+        300,
+        150
+      ],
+      "code": "from typing import List, Tuple\nimport random\n\n@node_entry\ndef simulate_weather(days: int, base_temp: float, base_humidity: float) -> Tuple[List[float], List[float]]:\n    temps = [round(base_temp + random.uniform(-5, 5), 2) for _ in range(days)]\n    humidities = [round(base_humidity + random.uniform(-10, 10), 2) for _ in range(days)]\n    return temps, humidities"
+    },
+    {
+      "uuid": "agg-averages",
+      "title": "Calculate Averages",
+      "pos": [
+        600,
+        150
+      ],
+      "code": "from typing import List, Tuple\n\n@node_entry\ndef calc_averages(temps: List[float], humidities: List[float]) -> Tuple[float, float]:\n    avg_temp = round(sum(temps) / len(temps), 2)\n    avg_humidity = round(sum(humidities) / len(humidities), 2)\n    return avg_temp, avg_humidity"
+    },
+    {
+      "uuid": "analyze-weather",
+      "title": "Weather Category",
+      "pos": [
+        900,
+        150
+      ],
+      "code": "@node_entry\ndef weather_category(avg_temp: float, avg_humidity: float) -> str:\n    if avg_temp > 25 and avg_humidity > 70:\n        return 'Hot and Humid'\n    elif avg_temp < 10:\n        return 'Cold'\n    elif avg_humidity < 40:\n        return 'Dry'\n    else:\n        return 'Moderate'"
+    },
+    {
+      "uuid": "format-report",
+      "title": "Format Weather Report",
+      "pos": [
+        1200,
+        150
+      ],
+      "code": "@node_entry\ndef format_report(city_name: str, avg_temp: float, avg_humidity: float, category: str) -> str:\n    return f'Weather Summary for {city_name}:\\nTemp: {avg_temp}\u00b0C\\nHumidity: {avg_humidity}%\\nConditions: {category}'"
+    },
+    {
+      "uuid": "print-report",
+      "title": "Print Report",
+      "pos": [
+        1500,
+        150
+      ],
+      "code": "@node_entry\ndef print_report(report: str):\n    print(report)"
+    }
+  ],
+  "connections": [
+    {
+      "start_node_uuid": "src-days",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "sim-weather",
+      "end_pin_name": "days"
+    },
+    {
+      "start_node_uuid": "src-base_temp",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "sim-weather",
+      "end_pin_name": "base_temp"
+    },
+    {
+      "start_node_uuid": "src-base_humidity",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "sim-weather",
+      "end_pin_name": "base_humidity"
+    },
+    {
+      "start_node_uuid": "sim-weather",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "agg-averages",
+      "end_pin_name": "temps"
+    },
+    {
+      "start_node_uuid": "sim-weather",
+      "start_pin_name": "output_2",
+      "end_node_uuid": "agg-averages",
+      "end_pin_name": "humidities"
+    },
+    {
+      "start_node_uuid": "agg-averages",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "analyze-weather",
+      "end_pin_name": "avg_temp"
+    },
+    {
+      "start_node_uuid": "agg-averages",
+      "start_pin_name": "output_2",
+      "end_node_uuid": "analyze-weather",
+      "end_pin_name": "avg_humidity"
+    },
+    {
+      "start_node_uuid": "src-city_name",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "format-report",
+      "end_pin_name": "city_name"
+    },
+    {
+      "start_node_uuid": "agg-averages",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "format-report",
+      "end_pin_name": "avg_temp"
+    },
+    {
+      "start_node_uuid": "agg-averages",
+      "start_pin_name": "output_2",
+      "end_node_uuid": "format-report",
+      "end_pin_name": "avg_humidity"
+    },
+    {
+      "start_node_uuid": "analyze-weather",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "format-report",
+      "end_pin_name": "category"
+    },
+    {
+      "start_node_uuid": "format-report",
+      "start_pin_name": "output_1",
+      "end_node_uuid": "print-report",
+      "end_pin_name": "report"
+    }
+  ]
+}
