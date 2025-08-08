@@ -1,6 +1,6 @@
 # connection.py
 # Represents the visual (Bezier curve) and logical link between two pins.
-# Now dynamically updates its color from the source pin.
+# Now correctly serializes connections involving reroute nodes.
 
 from PySide6.QtWidgets import QGraphicsPathItem, QStyle, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
@@ -42,7 +42,6 @@ class Connection(QGraphicsPathItem):
         path = QPainterPath()
         if not self.start_pin: return
         
-        # FEATURE: Dynamically update color from the source pin
         self.color = self.start_pin.color
         self._pen.setColor(self.color)
         self._pen_selected.setColor(self.color.lighter(150))
@@ -67,9 +66,11 @@ class Connection(QGraphicsPathItem):
         if self.end_pin: self.end_pin.remove_connection(self)
 
     def serialize(self):
+        """Serializes the connection, now handling any node type with a UUID."""
         if not self.start_pin or not self.end_pin: return None
-        from node import Node
-        if not isinstance(self.start_pin.node, Node) or not isinstance(self.end_pin.node, Node):
+        
+        # Check if both connected nodes have a UUID attribute. Both Node and RerouteNode do.
+        if not hasattr(self.start_pin.node, 'uuid') or not hasattr(self.end_pin.node, 'uuid'):
             return None
 
         return {

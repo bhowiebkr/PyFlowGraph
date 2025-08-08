@@ -1,6 +1,6 @@
 # reroute_node.py
 # A simple, draggable node for organizing connections.
-# Now with a fix for the crash during initialization.
+# Now with a serialize method for saving and loading.
 
 import uuid
 from PySide6.QtWidgets import QGraphicsItem, QStyle
@@ -32,7 +32,15 @@ class RerouteNode(QGraphicsItem):
         self.input_pin.setPos(0, 0)
         self.output_pin.setPos(0, 0)
         
-        self.update_color() # Set initial color
+        self.update_color()
+
+    def get_pin_by_name(self, name):
+        """Finds a pin on this node by its name ('input' or 'output')."""
+        if name == 'input':
+            return self.input_pin
+        elif name == 'output':
+            return self.output_pin
+        return None
 
     def update_color(self):
         """Updates the node's color based on its input connection."""
@@ -50,16 +58,11 @@ class RerouteNode(QGraphicsItem):
         self.pen_default = QPen(self.color_shadow, 1.5)
         self.pen_selected = QPen(new_color.lighter(150), 2.5)
 
-        # Propagate the type and color to the output pin
         self.output_pin.pin_type = new_type
         self.output_pin.color = new_color
         
-        # BUG FIX: Only update connections and the item's graphics if it has been added to a scene.
-        # This prevents a crash during initialization.
         if self.scene():
-            # Update any outgoing connections to reflect the new color
             self.output_pin.update_connections()
-            # Schedule a repaint for the reroute node itself
             self.update()
 
     def add_pin(self, name, direction, pin_type_enum):
@@ -101,3 +104,11 @@ class RerouteNode(QGraphicsItem):
 
         painter.setBrush(gradient)
         painter.drawEllipse(draw_rect)
+
+    def serialize(self):
+        """Converts the reroute node's state to a serializable dictionary."""
+        return {
+            "uuid": self.uuid,
+            "pos": (self.pos().x(), self.pos().y()),
+            "is_reroute": True
+        }
