@@ -2,7 +2,7 @@
 
 > **Note: This is a 100% AI-Generated Coding Experiment**
 >
-> This codebase is a "vibe coding" project, generated entirely with the assistance of Google's Gemini large language model (2.5 Pro). It is not intended for production use. The primary goal is to test and learn the capabilities of AI/ML-fully assisted code generation and guidance. While I have made an effort to cover edge cases, there are likely many bugs that I am not aware of. Even this README file may contain errors or inconsistencies.
+> This codebase is a [Vibe coding](https://en.wikipedia.org/wiki/Vibe_coding) experiment, generated entirely with the assistance of Google's Gemini large language model (2.5 Pro). It is not intended for production use. The primary goal is to test and learn the capabilities of AI/ML-fully assisted code generation and guidance. While I have made an effort to cover edge cases, there are likely many bugs that I am not aware of. Even this README file may contain errors or inconsistencies.
 
 
 ![Node Editor Showcase](images/gui.png)
