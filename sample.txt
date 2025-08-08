@@ -1,0 +1,6 @@
+This is a sample text file for the PySide6 Node Editor.
+
+The graph will read this content and perform a basic analysis.
+It counts lines, words, and total characters.
+
+This demonstrates how the node graph can interact with the local file system to process data.

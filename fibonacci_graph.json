@@ -1,0 +1,54 @@
+{
+    "nodes": [
+        {
+            "uuid": "fib-node-1",
+            "title": "Fibonacci Input",
+            "pos": [ 50, 200 ],
+            "code": "@node_entry\ndef set_fib_target() -> int:\n    # Calculate the 12th Fibonacci number\n    return 12"
+        },
+        {
+            "uuid": "fib-node-2",
+            "title": "Fibonacci Loop",
+            "pos": [ 350, 200 ],
+            "code": "from typing import Tuple\n\n@node_entry\ndef fibonacci_sequence(n: int) -> Tuple[int, int]:\n    a, b = 0, 1\n    for _ in range(n - 1):\n        a, b = b, a + b\n    # Returns the final number and the count\n    return b, n"
+        },
+        {
+            "uuid": "fib-node-3",
+            "title": "Format Result",
+            "pos": [ 650, 200 ],
+            "code": "@node_entry\ndef format_fib_result(fib_number: int, count: int) -> str:\n    return f'The {count}th Fibonacci number is: {fib_number}'"
+        },
+        {
+            "uuid": "fib-node-4",
+            "title": "Print Result",
+            "pos": [ 950, 200 ],
+            "code": "@node_entry\ndef print_result(message: str):\n    print('--- Fibonacci Calculation ---')\n    print(message)"
+        }
+    ],
+    "connections": [
+        {
+            "start_node_uuid": "fib-node-1",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "fib-node-2",
+            "end_pin_name": "n"
+        },
+        {
+            "start_node_uuid": "fib-node-2",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "fib-node-3",
+            "end_pin_name": "fib_number"
+        },
+        {
+            "start_node_uuid": "fib-node-2",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "fib-node-3",
+            "end_pin_name": "count"
+        },
+        {
+            "start_node_uuid": "fib-node-3",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "fib-node-4",
+            "end_pin_name": "message"
+        }
+    ]
+}
