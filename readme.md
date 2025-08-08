@@ -75,8 +75,8 @@ The project is organized into modular, single-responsibility Python files:
 
 1.  **Clone the Repository**:
     ```bash
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone https://github.com/bhowiebkr/PyFlowCanvas.git
+    cd PyFlowCanvas
     ```
 
 2.  **Create a Virtual Environment**:
