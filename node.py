@@ -1,6 +1,6 @@
 # node.py
 # Represents a single processing unit (node) in the graph.
-# Now with non-destructive pin reconciliation to preserve connections.
+# Now with corrected type name mapping to fix color bugs.
 
 import uuid
 import ast
@@ -34,7 +34,6 @@ class Node(QGraphicsItem):
         self.code = ""
         self.function_name = None
 
-        # --- Visual Properties ---
         self.color_body = QColor(20, 20, 20, 220)
         self.color_title_bar_start = QColor("#383838")
         self.color_title_bar_end = QColor("#2A2A2A")
@@ -84,77 +83,55 @@ class Node(QGraphicsItem):
         return "any"
 
     def update_pins_from_code(self):
-        """
-        BUG FIX: This method now reconciles pins instead of destroying and
-        recreating them. This preserves existing connections.
-        """
-        new_inputs = {}
-        new_outputs = {}
+        new_inputs, new_outputs = {}, {}
         self.function_name = None
-
         try:
             tree = ast.parse(self.code)
             func_def = next((node for node in tree.body if isinstance(node, ast.FunctionDef)), None)
-            
             if not func_def:
-                # If no function is defined, remove all pins
                 for pin in list(self.pins): self.remove_pin(pin)
                 self._update_layout()
                 return
-
             self.function_name = func_def.name
-            
-            # Get new inputs from function parameters
             for arg in func_def.args.args:
                 new_inputs[arg.arg] = self._parse_type_hint(arg.annotation).lower()
-
-            # Get new outputs from function return annotation
             if func_def.returns:
                 return_annotation = func_def.returns
                 if (isinstance(return_annotation, ast.Subscript) and
                     isinstance(return_annotation.value, ast.Name) and
                     return_annotation.value.id.lower() in ('tuple', 'list')):
-                    
                     output_types = [self._parse_type_hint(elt).lower() for elt in return_annotation.slice.elts]
                     for i, type_name in enumerate(output_types):
                         new_outputs[f"output_{i+1}"] = type_name
                 else:
-                    type_name = self._parse_type_hint(return_annotation).lower()
-                    new_outputs["output_1"] = type_name
-
-        except (SyntaxError, AttributeError) as e:
-            # Don't change pins if code is invalid to avoid breaking the graph while typing
-            return
+                    new_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
+        except (SyntaxError, AttributeError): return
         
-        # --- Reconcile Pins ---
         current_inputs = {pin.name: pin for pin in self.input_pins}
         current_outputs = {pin.name: pin for pin in self.output_pins}
 
-        # Remove input pins that are no longer in the code
         for name, pin in list(current_inputs.items()):
-            if name not in new_inputs:
-                self.remove_pin(pin)
-
-        # Add new input pins
+            if name not in new_inputs: self.remove_pin(pin)
         for name, type_name in new_inputs.items():
-            if name not in current_inputs:
-                self.add_pin(name, "input", type_name)
+            if name not in current_inputs: self.add_pin(name, "input", type_name)
         
-        # Remove output pins that are no longer in the code
         for name, pin in list(current_outputs.items()):
-            if name not in new_outputs:
-                self.remove_pin(pin)
-
-        # Add new output pins
+            if name not in new_outputs: self.remove_pin(pin)
         for name, type_name in new_outputs.items():
-            if name not in current_outputs:
-                self.add_pin(name, "output", type_name)
+            if name not in current_outputs: self.add_pin(name, "output", type_name)
 
         self._update_layout()
 
     def add_pin(self, name, direction, pin_type_str):
-        pin_type_str = pin_type_str.upper().split('[')[0]
-        pin_type = SocketType[pin_type_str] if pin_type_str in SocketType.__members__ else SocketType.ANY
+        # BUG FIX: Map Python's lowercase built-in type names to our uppercase enum names.
+        type_map = {
+            "STR": "STRING",
+            "BOOL": "BOOLEAN"
+        }
+        processed_type_str = pin_type_str.upper().split('[')[0]
+        final_type_str = type_map.get(processed_type_str, processed_type_str)
+        
+        pin_type = SocketType[final_type_str] if final_type_str in SocketType.__members__ else SocketType.ANY
         pin = Pin(self, name, direction, pin_type)
         self.pins.append(pin)
         if direction == "input": self.input_pins.append(pin)

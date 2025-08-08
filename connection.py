@@ -1,6 +1,6 @@
 # connection.py
 # Represents the visual (Bezier curve) and logical link between two pins.
-# Now with consistent serialization using pin names.
+# Now dynamically updates its color from the source pin.
 
 from PySide6.QtWidgets import QGraphicsPathItem, QStyle, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
@@ -18,10 +18,11 @@ class Connection(QGraphicsPathItem):
         self.start_pin = start_pin
         self.end_pin = end_pin
         
-        self.color = start_pin.color if start_pin else QColor("lightgray")
+        self.color = QColor("lightgray")
         self._pen = QPen(self.color)
         self._pen.setWidth(3)
-        self._pen_selected = QPen(QColor(0, 174, 239), 4)
+        self._pen_selected = QPen(self.color)
+        self._pen_selected.setWidth(4)
         
         self.setPen(self._pen)
 
@@ -40,6 +41,12 @@ class Connection(QGraphicsPathItem):
     def update_path(self, end_pos=None):
         path = QPainterPath()
         if not self.start_pin: return
+        
+        # FEATURE: Dynamically update color from the source pin
+        self.color = self.start_pin.color
+        self._pen.setColor(self.color)
+        self._pen_selected.setColor(self.color.lighter(150))
+
         p1 = self.start_pin.get_scene_pos()
         p2 = end_pos if (self.end_pin is None and end_pos) else self.end_pin.get_scene_pos()
         path.moveTo(p1)

@@ -1,6 +1,6 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now with connection replacement logic.
+# Now triggers color updates on reroute nodes.
 
 from PySide6.QtWidgets import QGraphicsScene
 from PySide6.QtCore import Qt, QPointF
@@ -37,22 +37,55 @@ class NodeGraph(QGraphicsScene):
         else:
             super().keyPressEvent(event)
 
+    def create_connection(self, start_pin, end_pin):
+        if start_pin.can_connect_to(end_pin):
+            conn = Connection(start_pin, end_pin)
+            self.addItem(conn)
+            self.connections.append(conn)
+            # If connecting to a reroute node, update its color
+            if isinstance(end_pin.node, RerouteNode):
+                end_pin.node.update_color()
+            return conn
+        return None
+
+    def remove_connection(self, connection):
+        end_pin = connection.end_pin
+        connection.remove()
+        if connection in self.connections:
+            self.connections.remove(connection)
+        self.removeItem(connection)
+        # If a connection was removed from a reroute node, update its color
+        if end_pin and isinstance(end_pin.node, RerouteNode):
+            end_pin.node.update_color()
+
+    def end_drag_connection(self, end_pos):
+        if self._drag_connection is None or self._drag_start_pin is None: return
+        target_item = self.itemAt(end_pos, self.views()[0].transform())
+        self.removeItem(self._drag_connection)
+        self._drag_connection = None
+        if isinstance(target_item, Pin):
+            end_pin = target_item
+            if end_pin.direction == 'input' and end_pin.connections:
+                self.remove_connection(end_pin.connections[0])
+            self.create_connection(self._drag_start_pin, end_pin)
+        self._drag_start_pin = None
+
+    # --- Other methods (copy, paste, create_node, etc.) remain the same ---
     def copy_selected(self, copy_pos: QPointF):
         selected_nodes = [item for item in self.selectedItems() if isinstance(item, Node)]
         if not selected_nodes:
             self._clipboard = None
             return
-
         self._copy_mouse_pos = copy_pos
         nodes_data = [node.serialize() for node in selected_nodes]
         connections_data = []
         selected_node_uuids = {node.uuid for node in selected_nodes}
         for conn in self.connections:
-            if (conn.start_pin.node.uuid in selected_node_uuids and
+            if (hasattr(conn.start_pin.node, 'uuid') and hasattr(conn.end_pin.node, 'uuid') and
+                conn.start_pin.node.uuid in selected_node_uuids and
                 conn.end_pin.node.uuid in selected_node_uuids):
                 connections_data.append(conn.serialize())
         self._clipboard = {"nodes": nodes_data, "connections": connections_data}
-        print(f"Copied {len(nodes_data)} nodes and {len(connections_data)} connections to clipboard.")
 
     def paste(self, paste_pos: QPointF):
         if not self._clipboard: return
@@ -76,19 +109,6 @@ class NodeGraph(QGraphicsScene):
         if node in self.nodes: self.nodes.remove(node)
         self.removeItem(node)
 
-    def create_connection(self, start_pin, end_pin):
-        if start_pin.can_connect_to(end_pin):
-            conn = Connection(start_pin, end_pin)
-            self.addItem(conn)
-            self.connections.append(conn)
-            return conn
-        return None
-
-    def remove_connection(self, connection):
-        connection.remove()
-        if connection in self.connections: self.connections.remove(connection)
-        self.removeItem(connection)
-
     def create_reroute_node_on_connection(self, connection, position):
         start_pin, end_pin = connection.start_pin, connection.end_pin
         self.remove_connection(connection)
@@ -105,24 +125,6 @@ class NodeGraph(QGraphicsScene):
         if self._drag_connection:
             self._drag_connection.set_end_pos(end_pos)
             self.update()
-
-    def end_drag_connection(self, end_pos):
-        if self._drag_connection is None or self._drag_start_pin is None: return
-        
-        target_item = self.itemAt(end_pos, self.views()[0].transform())
-        
-        self.removeItem(self._drag_connection)
-        self._drag_connection = None
-        
-        if isinstance(target_item, Pin):
-            end_pin = target_item
-            # FEATURE: If the target input pin is already connected, remove the old connection.
-            if end_pin.direction == 'input' and end_pin.connections:
-                self.remove_connection(end_pin.connections[0])
-            
-            self.create_connection(self._drag_start_pin, end_pin)
-        
-        self._drag_start_pin = None
 
     def mouseMoveEvent(self, event):
         if self._drag_connection: self.update_drag_connection(event.scenePos())
