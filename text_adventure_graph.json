@@ -131,6 +131,21 @@
             "title": "Print Final Report",
             "pos": [ 2750, 350 ],
             "code": "@node_entry\ndef print_final_report(report: str):\n    print(report)"
+        },
+        {
+            "uuid": "reroute-name-1",
+            "pos": [ 650, 100 ],
+            "is_reroute": true
+        },
+        {
+            "uuid": "reroute-luck-1",
+            "pos": [ 950, 700 ],
+            "is_reroute": true
+        },
+        {
+            "uuid": "reroute-health-1",
+            "pos": [ 950, 300 ],
+            "is_reroute": true
         }
     ],
     "connections": [
@@ -146,11 +161,7 @@
         { "start_node_uuid": "path1b-go-around", "start_pin_name": "output_1", "end_node_uuid": "path1-merger", "end_pin_name": "health_b" },
         { "start_node_uuid": "path1b-go-around", "start_pin_name": "output_2", "end_node_uuid": "path1-merger", "end_pin_name": "story_b" },
         { "start_node_uuid": "path1-merger", "start_pin_name": "output_2", "end_node_uuid": "story-update1-printer", "end_pin_name": "message" },
-        { "start_node_uuid": "char-start-name", "start_pin_name": "output_1", "end_node_uuid": "river-text", "end_pin_name": "name" },
         { "start_node_uuid": "river-text", "start_pin_name": "output_1", "end_node_uuid": "river-printer", "end_pin_name": "message" },
-        { "start_node_uuid": "path1-merger", "start_pin_name": "output_1", "end_node_uuid": "path2a-swim-river", "end_pin_name": "current_health" },
-        { "start_node_uuid": "char-start-luck", "start_pin_name": "output_1", "end_node_uuid": "path2a-swim-river", "end_pin_name": "luck" },
-        { "start_node_uuid": "path1-merger", "start_pin_name": "output_1", "end_node_uuid": "path2b-build-raft", "end_pin_name": "current_health" },
         { "start_node_uuid": "choice2-bool", "start_pin_name": "output_1", "end_node_uuid": "path2-merger", "end_pin_name": "choice" },
         { "start_node_uuid": "path2a-swim-river", "start_pin_name": "output_1", "end_node_uuid": "path2-merger", "end_pin_name": "health_a" },
         { "start_node_uuid": "path2a-swim-river", "start_pin_name": "output_2", "end_node_uuid": "path2-merger", "end_pin_name": "story_a" },
@@ -158,11 +169,18 @@
         { "start_node_uuid": "path2b-build-raft", "start_pin_name": "output_2", "end_node_uuid": "path2-merger", "end_pin_name": "story_b" },
         { "start_node_uuid": "path2-merger", "start_pin_name": "output_2", "end_node_uuid": "story-update2-printer", "end_pin_name": "message" },
         { "start_node_uuid": "treasure-room-text", "start_pin_name": "output_1", "end_node_uuid": "treasure-printer", "end_pin_name": "message" },
-        { "start_node_uuid": "path2-merger", "start_pin_name": "output_1", "end_node_uuid": "final-score-calculator", "end_pin_name": "final_health" },
-        { "start_node_uuid": "char-start-luck", "start_pin_name": "output_1", "end_node_uuid": "final-score-calculator", "end_pin_name": "luck" },
-        { "start_node_uuid": "char-start-name", "start_pin_name": "output_1", "end_node_uuid": "final-report-formatter", "end_pin_name": "name" },
-        { "start_node_uuid": "path2-merger", "start_pin_name": "output_1", "end_node_uuid": "final-report-formatter", "end_pin_name": "final_health" },
         { "start_node_uuid": "final-score-calculator", "start_pin_name": "output_1", "end_node_uuid": "final-report-formatter", "end_pin_name": "score" },
-        { "start_node_uuid": "final-report-formatter", "start_pin_name": "output_1", "end_node_uuid": "final-report-printer", "end_pin_name": "report" }
+        { "start_node_uuid": "final-report-formatter", "start_pin_name": "output_1", "end_node_uuid": "final-report-printer", "end_pin_name": "report" },
+        { "start_node_uuid": "char-start-name", "start_pin_name": "output_1", "end_node_uuid": "reroute-name-1", "end_pin_name": "input" },
+        { "start_node_uuid": "reroute-name-1", "start_pin_name": "output", "end_node_uuid": "river-text", "end_pin_name": "name" },
+        { "start_node_uuid": "reroute-name-1", "start_pin_name": "output", "end_node_uuid": "final-report-formatter", "end_pin_name": "name" },
+        { "start_node_uuid": "char-start-luck", "start_pin_name": "output_1", "end_node_uuid": "reroute-luck-1", "end_pin_name": "input" },
+        { "start_node_uuid": "reroute-luck-1", "start_pin_name": "output", "end_node_uuid": "path2a-swim-river", "end_pin_name": "luck" },
+        { "start_node_uuid": "reroute-luck-1", "start_pin_name": "output", "end_node_uuid": "final-score-calculator", "end_pin_name": "luck" },
+        { "start_node_uuid": "path1-merger", "start_pin_name": "output_1", "end_node_uuid": "reroute-health-1", "end_pin_name": "input" },
+        { "start_node_uuid": "reroute-health-1", "start_pin_name": "output", "end_node_uuid": "path2a-swim-river", "end_pin_name": "current_health" },
+        { "start_node_uuid": "reroute-health-1", "start_pin_name": "output", "end_node_uuid": "path2b-build-raft", "end_pin_name": "current_health" },
+        { "start_node_uuid": "path2-merger", "start_pin_name": "output_1", "end_node_uuid": "final-score-calculator", "end_pin_name": "final_health" },
+        { "start_node_uuid": "path2-merger", "start_pin_name": "output_1", "end_node_uuid": "final-report-formatter", "end_pin_name": "final_health" }
     ]
 }
