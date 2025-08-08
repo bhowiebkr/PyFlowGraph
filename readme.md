@@ -1,5 +1,10 @@
 # PySide6 Advanced Node Editor
 
+> **Note: This is a 100% AI-Generated Coding Experiment**
+>
+> This codebase is a "vibe coding" project, generated entirely with the assistance of Google's Gemini large language model. It is not intended for production use. The primary goal is to test and learn the capabilities of AI/ML-fully assisted code generation and guidance. While I have made an effort to cover edge cases, there are likely many bugs that I am not aware of.
+
+
 ![Node Editor Showcase](images/gui.png)
 
 A highly interactive, visually polished node-based editor built with Python and PySide6. This application provides a powerful and intuitive interface for creating, connecting, and executing custom logic nodes, inspired by professional tools like Unreal Engine's Blueprint system.
