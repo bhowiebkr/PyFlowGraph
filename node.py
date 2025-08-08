@@ -1,6 +1,6 @@
 # node.py
 # Represents a single processing unit (node) in the graph.
-# Now with a method to find pins by name for serialization.
+# Now with non-destructive pin reconciliation to preserve connections.
 
 import uuid
 import ast
@@ -15,8 +15,8 @@ from code_editor_dialog import CodeEditorDialog
 
 class Node(QGraphicsItem):
     """
-    A draggable block with a visually polished, Blueprint-style appearance,
-    a modal code editor, and dynamically generated pins.
+    A draggable block whose inputs and outputs are defined by the signature
+    of a 'node_function' in its code.
     """
     def __init__(self, title, parent=None):
         super().__init__(parent)
@@ -32,7 +32,9 @@ class Node(QGraphicsItem):
         self.input_pins = []
         self.output_pins = []
         self.code = ""
+        self.function_name = None
 
+        # --- Visual Properties ---
         self.color_body = QColor(20, 20, 20, 220)
         self.color_title_bar_start = QColor("#383838")
         self.color_title_bar_end = QColor("#2A2A2A")
@@ -52,10 +54,8 @@ class Node(QGraphicsItem):
         self._update_layout()
 
     def get_pin_by_name(self, name):
-        """Finds a pin on this node by its variable name (e.g., 'input_x')."""
         for pin in self.pins:
-            if pin.name == name:
-                return pin
+            if pin.name == name: return pin
         return None
 
     def _create_content_widget(self):
@@ -73,6 +73,127 @@ class Node(QGraphicsItem):
         dialog = CodeEditorDialog(self.code, self.scene().views()[0])
         if dialog.exec():
             self.set_code(dialog.get_code())
+
+    def _parse_type_hint(self, hint_node):
+        if hint_node is None: return "any"
+        if isinstance(hint_node, ast.Name): return hint_node.id
+        if isinstance(hint_node, ast.Subscript):
+            base_type = self._parse_type_hint(hint_node.value)
+            slice_type = self._parse_type_hint(hint_node.slice)
+            return f"{base_type}[{slice_type}]"
+        return "any"
+
+    def update_pins_from_code(self):
+        """
+        BUG FIX: This method now reconciles pins instead of destroying and
+        recreating them. This preserves existing connections.
+        """
+        new_inputs = {}
+        new_outputs = {}
+        self.function_name = None
+
+        try:
+            tree = ast.parse(self.code)
+            func_def = next((node for node in tree.body if isinstance(node, ast.FunctionDef)), None)
+            
+            if not func_def:
+                # If no function is defined, remove all pins
+                for pin in list(self.pins): self.remove_pin(pin)
+                self._update_layout()
+                return
+
+            self.function_name = func_def.name
+            
+            # Get new inputs from function parameters
+            for arg in func_def.args.args:
+                new_inputs[arg.arg] = self._parse_type_hint(arg.annotation).lower()
+
+            # Get new outputs from function return annotation
+            if func_def.returns:
+                return_annotation = func_def.returns
+                if (isinstance(return_annotation, ast.Subscript) and
+                    isinstance(return_annotation.value, ast.Name) and
+                    return_annotation.value.id.lower() in ('tuple', 'list')):
+                    
+                    output_types = [self._parse_type_hint(elt).lower() for elt in return_annotation.slice.elts]
+                    for i, type_name in enumerate(output_types):
+                        new_outputs[f"output_{i+1}"] = type_name
+                else:
+                    type_name = self._parse_type_hint(return_annotation).lower()
+                    new_outputs["output_1"] = type_name
+
+        except (SyntaxError, AttributeError) as e:
+            # Don't change pins if code is invalid to avoid breaking the graph while typing
+            return
+        
+        # --- Reconcile Pins ---
+        current_inputs = {pin.name: pin for pin in self.input_pins}
+        current_outputs = {pin.name: pin for pin in self.output_pins}
+
+        # Remove input pins that are no longer in the code
+        for name, pin in list(current_inputs.items()):
+            if name not in new_inputs:
+                self.remove_pin(pin)
+
+        # Add new input pins
+        for name, type_name in new_inputs.items():
+            if name not in current_inputs:
+                self.add_pin(name, "input", type_name)
+        
+        # Remove output pins that are no longer in the code
+        for name, pin in list(current_outputs.items()):
+            if name not in new_outputs:
+                self.remove_pin(pin)
+
+        # Add new output pins
+        for name, type_name in new_outputs.items():
+            if name not in current_outputs:
+                self.add_pin(name, "output", type_name)
+
+        self._update_layout()
+
+    def add_pin(self, name, direction, pin_type_str):
+        pin_type_str = pin_type_str.upper().split('[')[0]
+        pin_type = SocketType[pin_type_str] if pin_type_str in SocketType.__members__ else SocketType.ANY
+        pin = Pin(self, name, direction, pin_type)
+        self.pins.append(pin)
+        if direction == "input": self.input_pins.append(pin)
+        else: self.output_pins.append(pin)
+        return pin
+    
+    def remove_pin(self, pin_to_remove):
+        if pin_to_remove.connections:
+            for conn in list(pin_to_remove.connections): self.scene().remove_connection(conn)
+        pin_to_remove.destroy()
+        if pin_to_remove in self.pins: self.pins.remove(pin_to_remove)
+        if pin_to_remove in self.input_pins: self.input_pins.remove(pin_to_remove)
+        if pin_to_remove in self.output_pins: self.output_pins.remove(pin_to_remove)
+
+    def _update_layout(self):
+        title_height, button_height, pin_spacing, pin_margin_top = 32, 50, 25, 15
+        num_pins = max(len(self.input_pins), len(self.output_pins))
+        pin_area_height = (num_pins * pin_spacing) if num_pins > 0 else 0
+        self.height = title_height + pin_area_height + pin_margin_top + button_height
+        pin_start_y = title_height + pin_margin_top + (pin_spacing / 2)
+        for i, pin in enumerate(self.input_pins):
+            pin.setPos(0, pin_start_y + i * pin_spacing)
+            pin.update_label_pos()
+        for i, pin in enumerate(self.output_pins):
+            pin.setPos(self.width, pin_start_y + i * pin_spacing)
+            pin.update_label_pos()
+        button_y = title_height + pin_area_height + pin_margin_top
+        if self.proxy_widget:
+            self.proxy_widget.setPos(0, button_y)
+            self.proxy_widget.setMinimumWidth(self.width)
+            self.proxy_widget.setMaximumWidth(self.width)
+        self.prepareGeometryChange()
+
+    def set_code(self, code_text):
+        self.code = code_text
+        self.update_pins_from_code()
+
+    def serialize(self):
+        return {"uuid": self.uuid, "title": self.title, "pos": (self.pos().x(), self.pos().y()), "code": self.code}
 
     def boundingRect(self):
         return QRectF(0, 0, self.width, self.height).adjusted(-5, -5, 5, 5)
@@ -109,85 +230,3 @@ class Node(QGraphicsItem):
         if change == QGraphicsItem.ItemPositionHasChanged:
             for pin in self.pins: pin.update_connections()
         return super().itemChange(change, value)
-
-    def _parse_type_hint(self, hint_node):
-        if isinstance(hint_node, ast.Name): return hint_node.id
-        if isinstance(hint_node, ast.Subscript): return f"{self._parse_type_hint(hint_node.value)}[{self._parse_type_hint(hint_node.slice)}]"
-        return "any"
-
-    def update_pins_from_code(self):
-        new_inputs, new_outputs = {}, {}
-        try:
-            tree = ast.parse(self.code)
-            for node in ast.walk(tree):
-                if isinstance(node, ast.AnnAssign):
-                    target_name, type_name = node.target.id, self._parse_type_hint(node.annotation).lower()
-                    if target_name.startswith("input_"): new_inputs[target_name] = type_name
-                    elif target_name.startswith("output_"): new_outputs[target_name] = type_name
-                elif isinstance(node, ast.Assign):
-                    for target in node.targets:
-                        if isinstance(target, ast.Name) and target.id.startswith("output_") and target.id not in new_outputs:
-                            new_outputs[target.id] = 'any'
-        except (SyntaxError, AttributeError): return
-        
-        current_inputs = {pin.name: pin for pin in self.input_pins}
-        current_outputs = {pin.name: pin for pin in self.output_pins}
-
-        for name, pin in list(current_inputs.items()):
-            if name not in new_inputs: self.remove_pin(pin)
-        for name, type_name in new_inputs.items():
-            if name not in current_inputs: self.add_pin(name, "input", type_name)
-
-        for name, pin in list(current_outputs.items()):
-            if name not in new_outputs: self.remove_pin(pin)
-        for name, type_name in new_outputs.items():
-            if name not in current_outputs: self.add_pin(name, "output", type_name)
-        self._update_layout()
-
-    def add_pin(self, name, direction, pin_type_str):
-        pin_type_str = pin_type_str.upper()
-        pin_type = SocketType[pin_type_str] if pin_type_str in SocketType.__members__ else SocketType.ANY
-        pin = Pin(self, name, direction, pin_type)
-        self.pins.append(pin)
-        if direction == "input": self.input_pins.append(pin)
-        else: self.output_pins.append(pin)
-        return pin
-    
-    def remove_pin(self, pin_to_remove):
-        if pin_to_remove.connections:
-            for conn in list(pin_to_remove.connections): self.scene().remove_connection(conn)
-        pin_to_remove.destroy()
-        if pin_to_remove in self.pins: self.pins.remove(pin_to_remove)
-        if pin_to_remove in self.input_pins: self.input_pins.remove(pin_to_remove)
-        if pin_to_remove in self.output_pins: self.output_pins.remove(pin_to_remove)
-
-    def _update_layout(self):
-        title_height = 32
-        button_height = 50
-        pin_spacing = 25
-        pin_margin_top = 15
-        num_pins = max(len(self.input_pins), len(self.output_pins))
-        pin_area_height = (num_pins * pin_spacing) if num_pins > 0 else 0
-        self.height = title_height + pin_area_height + pin_margin_top + button_height
-        pin_start_y = title_height + pin_margin_top + (pin_spacing / 2)
-        for i, pin in enumerate(self.input_pins):
-            y_pos = pin_start_y + i * pin_spacing
-            pin.setPos(0, y_pos)
-            pin.update_label_pos()
-        for i, pin in enumerate(self.output_pins):
-            y_pos = pin_start_y + i * pin_spacing
-            pin.setPos(self.width, y_pos)
-            pin.update_label_pos()
-        button_y = title_height + pin_area_height + pin_margin_top
-        if self.proxy_widget:
-            self.proxy_widget.setPos(0, button_y)
-            self.proxy_widget.setMinimumWidth(self.width)
-            self.proxy_widget.setMaximumWidth(self.width)
-        self.prepareGeometryChange()
-
-    def set_code(self, code_text):
-        self.code = code_text
-        self.update_pins_from_code()
-
-    def serialize(self):
-        return {"uuid": self.uuid, "title": self.title, "pos": (self.pos().x(), self.pos().y()), "code": self.code}

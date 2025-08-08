@@ -13,23 +13,23 @@ class CodeEditorDialog(QDialog):
         self.setWindowTitle("Node Code Editor")
         self.setMinimumSize(600, 400)
 
-        # --- Layout ---
         layout = QVBoxLayout(self)
 
-        # --- Code Editor Widget ---
         self.code_edit = QTextEdit()
+        # Set placeholder text if the initial code is empty
+        if not code:
+            code = ("from typing import Tuple\n\n"
+                    "def process_data(input_1: str) -> Tuple[str, int]:\n"
+                    "    # Your code here\n"
+                    "    # Use parameters for inputs and return for outputs.\n"
+                    "    # Type hints define the pins.\n"
+                    "    return 'processed', len(input_1)")
+        
         self.code_edit.setPlainText(code)
         self.code_edit.setFont(QFont("Monospace", 11))
-        self.code_edit.setStyleSheet("""
-            QTextEdit {
-                background-color: #2E2E2E;
-                color: #F0F0F0;
-                border: 1px solid #555;
-            }
-        """)
+        
         layout.addWidget(self.code_edit)
 
-        # --- OK and Cancel Buttons ---
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
