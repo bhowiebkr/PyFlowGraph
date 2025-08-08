@@ -1,0 +1,97 @@
+# .github/workflows/windows-build.yml
+# GitHub Actions workflow to build a standalone Windows executable and create a release.
+
+name: Build and Release Windows App
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on version tags like v1.0.0
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write      # To create the release
+      pull-requests: read  # To read PRs for the changelog
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # We need to fetch all history for the changelog generator to work correctly
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache Pip and Nuitka
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\.cache\pip
+            ~\AppData\Local\Nuitka\Nuitka\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build app with Nuitka
+        run: |
+          python -m nuitka `
+            --standalone `
+            --enable-plugin=pyside6 `
+            --include-qt-plugins=platforms `
+            --output-dir=NodeEditor_Build `
+            --nofollow-import-to=tkinter,unittest,setuptools,pip,wheel `
+            --windows-disable-console `
+            --remove-output `
+            --lto=yes `
+            --include-data-dir=examples=examples `
+            --include-data-file=dark_theme.qss=dark_theme.qss `
+            --assume-yes-for-downloads `
+            main.py
+
+      - name: Prepare artifact for release
+        id: package # Give the step an ID
+        run: |
+          $version = "${{ github.ref_name }}"
+          $build_dir = "NodeEditor_Build"
+          $dist_dir = Join-Path $build_dir "main.dist"
+          
+          # Define new versioned names
+          $new_dir_name = "NodeEditor $version"
+          $zip_file_name = "NodeEditor_Windows_$version.zip"
+          
+          # Rename the folder
+          Rename-Item -Path $dist_dir -NewName $new_dir_name
+          
+          # Compress the renamed folder
+          $archive_source = Join-Path $build_dir $new_dir_name
+          Compress-Archive -Path "$archive_source\*" -DestinationPath $zip_file_name
+          
+          # Output the zip file name for the next step
+          echo "zip_name=$zip_file_name" >> $env:GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body: |
+            ## What's Changed
+            ---
+
+            ${{ steps.changelog.outputs.changelog }}
+          files: ${{ steps.package.outputs.zip_name }} # Use the output from the previous step
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
