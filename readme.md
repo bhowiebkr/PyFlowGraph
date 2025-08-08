@@ -35,9 +35,11 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
 
 ## Screenshots
 
-| Feature                 | Screenshot                                                              |
-| ----------------------- | ----------------------------------------------------------------------- |
-| **Mini-IDE Code Editor**| ![Python Code Editor](images/python_editor.png)
+### Main Interface
+![Node Editor Showcase](images/gui.png)
+
+### Mini-IDE Code Editor
+![Python Code Editor](images/python_editor.png)
 
 ---
 
