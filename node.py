@@ -1,21 +1,22 @@
 # node.py
 # Represents a single processing unit (node) in the graph.
-# Now with a modal code editor and corrected layout.
+# Now with a visually upgraded, Blueprint-style paint method.
 
 import uuid
 import ast
 from PySide6.QtWidgets import (QGraphicsItem, QGraphicsTextItem, QGraphicsProxyWidget, 
                                QPushButton, QVBoxLayout, QWidget)
-from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont
+from PySide6.QtCore import QRectF, Qt, QPointF
+from PySide6.QtGui import (QPainter, QColor, QBrush, QPen, QFont, QLinearGradient, 
+                           QPainterPath)
 from pin import Pin
 from socket_type import SocketType
 from code_editor_dialog import CodeEditorDialog
 
 class Node(QGraphicsItem):
     """
-    A draggable block with a modal code editor and dynamically generated pins.
-    Layout is now: Title -> Pins -> 'Edit Code' Button.
+    A draggable block with a visually polished, Blueprint-style appearance,
+    a modal code editor, and dynamically generated pins.
     """
     def __init__(self, title, parent=None):
         super().__init__(parent)
@@ -26,52 +27,42 @@ class Node(QGraphicsItem):
         self.uuid = str(uuid.uuid4())
         self.title = title
         self.width = 250
-        self.height = 100 # Initial height, will be recalculated
+        self.height = 100 
         self.pins = []
         self.input_pins = []
         self.output_pins = []
         self.code = ""
 
         # --- Visual Properties ---
-        self.color_background = QColor("#FF3A3A3A")
-        self.color_title_background = QColor("#FF282828")
-        self.color_title_text = QColor("#FFEEEEEE")
-        self.color_border = QColor("#FF111111")
+        self.color_body = QColor(20, 20, 20, 220) # Semi-transparent dark body
+        self.color_title_bar_start = QColor("#383838")
+        self.color_title_bar_end = QColor("#2A2A2A")
+        self.color_title_text = QColor("#E0E0E0")
+        self.color_border = QColor(40, 40, 40)
+        self.color_selection_glow = QColor(0, 174, 239, 150) # Blueprint blue glow
         
-        self.pen_default = QPen(self.color_border)
-        self.pen_selected = QPen(QColor("#FFFFA500"))
-        self.pen_selected.setWidth(2)
+        self.pen_default = QPen(self.color_border, 1.5)
+        self.pen_selected = QPen(self.color_selection_glow, 3)
         
         self._title_item = QGraphicsTextItem(self.title, self)
         self._title_item.setDefaultTextColor(self.color_title_text)
-        self._title_item.setFont(QFont("Arial", 12, QFont.Bold))
+        self._title_item.setFont(QFont("Arial", 11, QFont.Bold))
         self._title_item.setPos(10, 5)
 
-        # --- Content Widget ('Edit Code' Button) ---
         self.proxy_widget = None
         self._create_content_widget()
 
         self._update_layout()
 
     def _create_content_widget(self):
-        """Create the QWidget that hosts the 'Edit Code' button."""
         widget = QWidget()
+        # This is important to prevent the white background artifact
+        widget.setAttribute(Qt.WA_TranslucentBackground)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(10, 5, 10, 5)
         
         self.edit_button = QPushButton("Edit Code")
-        self.edit_button.setStyleSheet("""
-            QPushButton {
-                background-color: #505050;
-                color: #F0F0F0;
-                border: 1px solid #606060;
-                padding: 5px;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #606060;
-            }
-        """)
+        # No longer need inline stylesheet, it's handled by dark_theme.qss
         self.edit_button.clicked.connect(self.open_code_editor)
         layout.addWidget(self.edit_button)
         
@@ -79,19 +70,59 @@ class Node(QGraphicsItem):
         self.proxy_widget.setWidget(widget)
 
     def open_code_editor(self):
-        """Opens the modal dialog to edit the node's code."""
         dialog = CodeEditorDialog(self.code, self.scene().views()[0])
         if dialog.exec():
-            new_code = dialog.get_code()
-            self.set_code(new_code)
+            self.set_code(dialog.get_code())
 
     def boundingRect(self):
-        return QRectF(0, 0, self.width, self.height).normalized()
+        # Add a margin for the selection glow
+        return QRectF(0, 0, self.width, self.height).adjusted(-5, -5, 5, 5)
+
+    def shape(self):
+        """Define the precise shape for collision detection."""
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, self.width, self.height, 8, 8)
+        return path
+
+    def paint(self, painter: QPainter, option, widget=None):
+        """Paint the node with a professional, Blueprint-style look."""
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # --- Selection Glow ---
+        if self.isSelected():
+            painter.setPen(self.pen_selected)
+            painter.setBrush(self.color_selection_glow)
+            # Draw a slightly larger rectangle for the glow effect
+            painter.drawRoundedRect(QRectF(0, 0, self.width, self.height).adjusted(-2, -2, 2, 2), 10, 10)
+
+        # --- Node Body ---
+        body_path = QPainterPath()
+        body_path.addRoundedRect(0, 0, self.width, self.height, 8, 8)
+        painter.setPen(self.pen_default)
+        painter.setBrush(self.color_body)
+        painter.drawPath(body_path)
+
+        # --- Title Bar with Gradient ---
+        title_rect = QRectF(0, 0, self.width, 32)
+        title_gradient = QLinearGradient(title_rect.topLeft(), title_rect.bottomLeft())
+        title_gradient.setColorAt(0, self.color_title_bar_start)
+        title_gradient.setColorAt(1, self.color_title_bar_end)
+        
+        # Clip the drawing to the top rounded corners
+        painter.save()
+        painter.setClipPath(body_path)
+        painter.fillRect(title_rect, title_gradient)
+        painter.setClipping(False)
+        
+        # Draw a line under the title bar
+        painter.setPen(QPen(self.color_border, 0.8))
+        painter.drawLine(0, 32, self.width, 32)
+        painter.restore()
+
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
-            for pin in self.pins:
-                pin.update_connections()
+            for pin in self.pins: pin.update_connections()
         return super().itemChange(change, value)
 
     def _parse_type_hint(self, hint_node):
@@ -100,7 +131,6 @@ class Node(QGraphicsItem):
         return "any"
 
     def update_pins_from_code(self):
-        """Parse the code and create/update pins accordingly."""
         new_inputs, new_outputs = {}, {}
         try:
             tree = ast.parse(self.code)
@@ -148,18 +178,15 @@ class Node(QGraphicsItem):
         if pin_to_remove in self.output_pins: self.output_pins.remove(pin_to_remove)
 
     def _update_layout(self):
-        """Recalculate node height and the positions of all child items."""
-        title_height = 30
+        title_height = 32
         button_height = 50
         pin_spacing = 25
         pin_margin_top = 15
         
-        # --- Calculate required height ---
         num_pins = max(len(self.input_pins), len(self.output_pins))
         pin_area_height = (num_pins * pin_spacing) if num_pins > 0 else 0
         self.height = title_height + pin_area_height + pin_margin_top + button_height
 
-        # --- Position Pins and Labels ---
         pin_start_y = title_height + pin_margin_top + (pin_spacing / 2)
 
         for i, pin in enumerate(self.input_pins):
@@ -172,7 +199,6 @@ class Node(QGraphicsItem):
             pin.setPos(self.width, y_pos)
             pin.update_label_pos()
         
-        # --- Position 'Edit Code' Button ---
         button_y = title_height + pin_area_height + pin_margin_top
         if self.proxy_widget:
             self.proxy_widget.setPos(0, button_y)
@@ -180,18 +206,6 @@ class Node(QGraphicsItem):
             self.proxy_widget.setMaximumWidth(self.width)
 
         self.prepareGeometryChange()
-
-    def paint(self, painter: QPainter, option, widget=None):
-        path_body = QRectF(0, 0, self.width, self.height)
-        painter.setBrush(self.color_background)
-        painter.setPen(self.pen_selected if self.isSelected() else self.pen_default)
-        painter.drawRoundedRect(path_body, 10, 10)
-
-        path_title = QRectF(0, 0, self.width, 30)
-        painter.setBrush(self.color_title_background)
-        painter.setPen(Qt.NoPen)
-        painter.drawRoundedRect(path_title, 10, 10)
-        painter.drawRect(0, 10, self.width, 20)
 
     def set_code(self, code_text):
         self.code = code_text

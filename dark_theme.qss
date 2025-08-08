@@ -1,0 +1,125 @@
+/* dark_theme.qss */
+/* A professional dark theme for the PySide6 Node Editor */
+
+QWidget {
+    background-color: #2E2E2E;
+    color: #E0E0E0;
+    font-family: Arial, sans-serif;
+}
+
+/* --- Main Window & Docking --- */
+QMainWindow, QDockWidget {
+    background-color: #2E2E2E;
+    color: #F0F0F0;
+}
+
+QDockWidget::title {
+    background-color: #424242;
+    padding: 4px;
+    border: 1px solid #222222;
+    border-radius: 4px;
+}
+
+/* --- Menu Bar --- */
+QMenuBar {
+    background-color: #3C3C3C;
+    color: #E0E0E0;
+    border-bottom: 1px solid #2A2A2A;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 4px 10px;
+}
+
+QMenuBar::item:selected {
+    background-color: #5A5A5A;
+}
+
+/* --- Menus --- */
+QMenu {
+    background-color: #3C3C3C;
+    color: #E0E0E0;
+    border: 1px solid #5A5A5A;
+}
+
+QMenu::item {
+    padding: 4px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #0078D7; /* A nice highlight color */
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #5A5A5A;
+    margin: 4px 0px;
+}
+
+/* --- Buttons --- */
+QPushButton {
+    background-color: #4A4A4A;
+    color: #E0E0E0;
+    border: 1px solid #5A5A5A;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #5A5A5A;
+}
+
+QPushButton:pressed {
+    background-color: #6A6A6A;
+}
+
+/* --- Text Edit & Input Fields --- */
+QTextEdit, QLineEdit {
+    background-color: #252525;
+    color: #E0E0E0;
+    border: 1px solid #4A4A4A;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+/* --- Scroll Bars --- */
+QScrollBar:vertical {
+    border: 1px solid #2A2A2A;
+    background: #3C3C3C;
+    width: 15px;
+    margin: 15px 0 15px 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #5A5A5A;
+    min-height: 20px;
+    border-radius: 7px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    border: 1px solid #2A2A2A;
+    background: #3C3C3C;
+    height: 15px;
+    margin: 0 15px 0 15px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #5A5A5A;
+    min-width: 20px;
+    border-radius: 7px;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* --- Dialogs --- */
+QDialog {
+    background-color: #3C3C3C;
+}
