@@ -1,10 +1,12 @@
 # reroute_node.py
 # A simple, draggable node for organizing connections.
+# Now with an expanded hitbox for easier interaction.
 
 import uuid
-from PySide6.QtWidgets import QGraphicsItem
-from PySide6.QtCore import QRectF
-from PySide6.QtGui import QPainter, QColor, QBrush, QPen
+from PySide6.QtWidgets import QGraphicsItem, QStyle
+from PySide6.QtCore import QRectF, QPointF
+from PySide6.QtGui import (QPainter, QColor, QBrush, QPen, QRadialGradient, 
+                           QKeyEvent, QPainterPath)
 from pin import Pin
 from socket_type import SocketType
 
@@ -25,45 +27,65 @@ class RerouteNode(QGraphicsItem):
         self.pins = []
         
         # --- Visuals ---
-        self.color_background = QColor("#A0A0A0")
-        self.pen_default = QPen(QColor("#202020"))
-        self.pen_selected = QPen(QColor("#FFFFA500"), 2)
+        self.color_base = QColor("#606060")
+        self.color_highlight = QColor("#8A8A8A")
+        self.color_shadow = QColor("#2D2D2D")
+        self.pen_default = QPen(self.color_shadow, 1.5)
+        self.pen_selected = QPen(QColor("#00AEEF"), 2.5)
 
-        # A reroute node has one input and one output of a generic type
         self.input_pin = self.add_pin("input", "input", SocketType.ANY)
         self.output_pin = self.add_pin("output", "output", SocketType.ANY)
         
-        # Manually set pin positions to the center
         self.input_pin.setPos(0, 0)
         self.output_pin.setPos(0, 0)
 
     def add_pin(self, name, direction, pin_type_enum):
-        """Adds a pin to the reroute node."""
         pin = Pin(self, name, direction, pin_type_enum)
-        # Hide the pin's visuals since the node itself acts as the pin
         pin.hide()
         self.pins.append(pin)
         return pin
 
     def boundingRect(self):
-        return QRectF(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius).normalized()
+        # The bounding rect should be slightly larger than the hitbox to prevent clipping
+        hitbox_margin = 5
+        return QRectF(-self.radius - hitbox_margin, -self.radius - hitbox_margin, 
+                      (self.radius + hitbox_margin) * 2, (self.radius + hitbox_margin) * 2)
+
+    def shape(self):
+        """Define a larger, invisible shape for easier interaction (hitbox)."""
+        path = QPainterPath()
+        # Make the hitbox a bit bigger than the visual radius
+        hitbox_radius = self.radius + 4 
+        path.addEllipse(QPointF(0, 0), hitbox_radius, hitbox_radius)
+        return path
 
     def itemChange(self, change, value):
         """Update connections when the node moves."""
-        if change == QGraphicsItem.ItemPositionHasChanged:
+        if change == QGraphicsItem.ItemPositionHasChanged and self.scene():
             for pin in self.pins:
                 pin.update_connections()
         return super().itemChange(change, value)
 
     def paint(self, painter: QPainter, option, widget=None):
-        """Paint the reroute node as a simple circle."""
-        painter.setBrush(self.color_background)
-        painter.setPen(self.pen_selected if self.isSelected() else self.pen_default)
-        painter.drawEllipse(self.boundingRect())
+        """Paint the reroute node, using the visual radius, not the hitbox."""
+        
+        # Suppress the default dotted-line selection box
+        if option.state & QStyle.State_Selected:
+            option.state &= ~QStyle.State_LMBDown
+        
+        # The rect to draw in
+        draw_rect = QRectF(-self.radius, -self.radius, self.radius * 2, self.radius * 2)
 
-    def keyPressEvent(self, event):
-        """Handle key presses, e.g., delete the node."""
-        if event.key() == Qt.Key_Delete:
-            self.scene().remove_node(self) # Assuming a generic remove_node method exists
+        gradient = QRadialGradient(QPointF(0, 0), self.radius)
+        if self.isSelected():
+            gradient.setColorAt(0, QColor("#00AEEF"))
+            gradient.setColorAt(0.7, QColor("#008ECC"))
+            gradient.setColorAt(1, QColor("#006EAC"))
+            painter.setPen(self.pen_selected)
         else:
-            super().keyPressEvent(event)
+            gradient.setColorAt(0, self.color_highlight)
+            gradient.setColorAt(1, self.color_base)
+            painter.setPen(self.pen_default)
+
+        painter.setBrush(gradient)
+        painter.drawEllipse(draw_rect)
