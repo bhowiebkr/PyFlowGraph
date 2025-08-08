@@ -1,5 +1,6 @@
 # node_editor_window.py
 # Contains the main application window (QMainWindow).
+# Now connects the default nodes on startup.
 
 import json
 from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog
@@ -25,8 +26,6 @@ class NodeEditorWindow(QMainWindow):
 
         self.output_log = QTextEdit()
         self.output_log.setReadOnly(True)
-        # Styling for this widget is now handled by the global QSS file
-
         dock = QDockWidget("Output Log")
         dock.setWidget(self.output_log)
         self.addDockWidget(Qt.BottomDockWidgetArea, dock)
@@ -38,7 +37,6 @@ class NodeEditorWindow(QMainWindow):
         self.create_default_nodes()
 
     def _create_actions(self):
-        """Create the actions for the menu bar."""
         self.action_save = QAction("&Save Graph...", self)
         self.action_save.triggered.connect(self.on_save)
         self.action_load = QAction("&Load Graph...", self)
@@ -52,22 +50,20 @@ class NodeEditorWindow(QMainWindow):
         self.action_exit.triggered.connect(self.close)
 
     def _create_menus(self):
-        """Create the main menu bar."""
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("&File")
         file_menu.addAction(self.action_save)
         file_menu.addAction(self.action_load)
         file_menu.addSeparator()
         file_menu.addAction(self.action_exit)
-
         edit_menu = menu_bar.addMenu("&Edit")
         edit_menu.addAction(self.action_add_node)
-
         run_menu = menu_bar.addMenu("&Run")
         run_menu.addAction(self.action_execute)
 
     def create_default_nodes(self):
-        """Create a few example nodes to demonstrate functionality."""
+        """Create and connect a few example nodes to demonstrate functionality."""
+        # --- Create Nodes ---
         node1 = self.graph.create_node("Number Generator", pos=(100, 300))
         node1.set_code("output_value: float = 42.5")
 
@@ -81,22 +77,32 @@ class NodeEditorWindow(QMainWindow):
         node3 = self.graph.create_node("Printer", pos=(800, 300))
         node3.set_code("input_message: str\nprint(input_message)")
         
+        # --- Connect Nodes ---
+        # Find the pins by their variable names
+        start_pin1 = node1.get_pin_by_name("output_value")
+        end_pin1 = node2.get_pin_by_name("input_number")
+        
+        start_pin2 = node2.get_pin_by_name("output_text")
+        end_pin2 = node3.get_pin_by_name("input_message")
+
+        # Create the connections
+        if start_pin1 and end_pin1:
+            self.graph.create_connection(start_pin1, end_pin1)
+        
+        if start_pin2 and end_pin2:
+            self.graph.create_connection(start_pin2, end_pin2)
+
         self.graph.update()
 
     def on_add_node(self, scene_pos=None):
-        """Show a dialog to add a new node."""
         title, ok = QInputDialog.getText(self, "Add Node", "Enter Node Title:")
         if ok and title:
-            # If called from context menu, scene_pos will be a QPointF
             if not isinstance(scene_pos, QPointF):
                 scene_pos = self.view.mapToScene(self.view.viewport().rect().center())
-            
             node = self.graph.create_node(title, pos=(scene_pos.x(), scene_pos.y()))
             node.set_code("# Add your Python code here\n# e.g., input_x: int\n# output_y: int = input_x * 2")
 
-
     def on_save(self):
-        """Handle the 'Save' action."""
         file_path, _ = QFileDialog.getSaveFileName(self, "Save Graph", "", "JSON Files (*.json)")
         if file_path:
             data = self.graph.serialize()
@@ -105,7 +111,6 @@ class NodeEditorWindow(QMainWindow):
             self.output_log.append(f"Graph saved to {file_path}")
 
     def on_load(self):
-        """Handle the 'Load' action."""
         file_path, _ = QFileDialog.getOpenFileName(self, "Load Graph", "", "JSON Files (*.json)")
         if file_path:
             with open(file_path, 'r') as f:
@@ -114,7 +119,6 @@ class NodeEditorWindow(QMainWindow):
             self.output_log.append(f"Graph loaded from {file_path}")
     
     def on_execute(self):
-        """Handle the 'Execute' action."""
         self.output_log.clear()
         self.output_log.append("--- Execution Started ---")
         self.executor.execute()
