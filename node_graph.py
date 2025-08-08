@@ -1,9 +1,9 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now with centralized deletion logic.
+# Now with copy/paste functionality.
 
 from PySide6.QtWidgets import QGraphicsScene
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QKeyEvent
 from node import Node
 from reroute_node import RerouteNode
@@ -12,7 +12,7 @@ from pin import Pin
 
 class NodeGraph(QGraphicsScene):
     """
-    The main scene for the node editor. Manages nodes, connections, and user interactions.
+    The main scene for the node editor. Manages nodes, connections, and clipboard operations.
     """
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -24,10 +24,12 @@ class NodeGraph(QGraphicsScene):
         self._drag_connection = None
         self._drag_start_pin = None
 
+        # --- Clipboard Data ---
+        self._clipboard = None
+        self._copy_mouse_pos = QPointF()
+
     def keyPressEvent(self, event: QKeyEvent):
-        """Handle delete key press for all selected items."""
         if event.key() == Qt.Key_Delete:
-            # Iterate over a copy of the list, as we are modifying it
             for item in list(self.selectedItems()):
                 if isinstance(item, Node) or isinstance(item, RerouteNode):
                     self.remove_node(item)
@@ -36,12 +38,38 @@ class NodeGraph(QGraphicsScene):
         else:
             super().keyPressEvent(event)
 
-    def create_node(self, title, pos=(0, 0), is_reroute=False):
-        if is_reroute:
-            node = RerouteNode()
-        else:
-            node = Node(title)
+    def copy_selected(self, copy_pos: QPointF):
+        """Serializes selected nodes and their internal connections to the clipboard."""
+        selected_nodes = [item for item in self.selectedItems() if isinstance(item, Node)]
+        if not selected_nodes:
+            self._clipboard = None
+            return
+
+        self._copy_mouse_pos = copy_pos
         
+        nodes_data = [node.serialize() for node in selected_nodes]
+        connections_data = []
+        
+        selected_node_uuids = {node.uuid for node in selected_nodes}
+        for conn in self.connections:
+            if (conn.start_pin.node.uuid in selected_node_uuids and
+                conn.end_pin.node.uuid in selected_node_uuids):
+                connections_data.append(conn.serialize())
+
+        self._clipboard = {"nodes": nodes_data, "connections": connections_data}
+        print(f"Copied {len(nodes_data)} nodes and {len(connections_data)} connections to clipboard.")
+
+    def paste(self, paste_pos: QPointF):
+        """Pastes nodes and connections from the clipboard to the scene."""
+        if not self._clipboard:
+            return
+
+        offset = paste_pos - self._copy_mouse_pos
+        self.deserialize(self._clipboard, offset)
+
+    def create_node(self, title, pos=(0, 0), is_reroute=False):
+        if is_reroute: node = RerouteNode()
+        else: node = Node(title)
         node.setPos(pos[0], pos[1])
         self.addItem(node)
         self.nodes.append(node)
@@ -50,15 +78,10 @@ class NodeGraph(QGraphicsScene):
     def remove_node(self, node):
         if hasattr(node, 'pins'):
             for pin in list(node.pins):
-                if hasattr(node, 'remove_pin'):
-                    node.remove_pin(pin)
+                if hasattr(node, 'remove_pin'): node.remove_pin(pin)
                 else:
-                    for conn in list(pin.connections):
-                        self.remove_connection(conn)
-
-        if node in self.nodes:
-            self.nodes.remove(node)
-        
+                    for conn in list(pin.connections): self.remove_connection(conn)
+        if node in self.nodes: self.nodes.remove(node)
         self.removeItem(node)
 
     def create_connection(self, start_pin, end_pin):
@@ -71,13 +94,11 @@ class NodeGraph(QGraphicsScene):
 
     def remove_connection(self, connection):
         connection.remove()
-        if connection in self.connections:
-            self.connections.remove(connection)
+        if connection in self.connections: self.connections.remove(connection)
         self.removeItem(connection)
 
     def create_reroute_node_on_connection(self, connection, position):
-        start_pin = connection.start_pin
-        end_pin = connection.end_pin
+        start_pin, end_pin = connection.start_pin, connection.end_pin
         self.remove_connection(connection)
         reroute_node = self.create_node("", pos=(position.x(), position.y()), is_reroute=True)
         self.create_connection(start_pin, reroute_node.input_pin)
@@ -103,13 +124,11 @@ class NodeGraph(QGraphicsScene):
         self._drag_start_pin = None
 
     def mouseMoveEvent(self, event):
-        if self._drag_connection:
-            self.update_drag_connection(event.scenePos())
+        if self._drag_connection: self.update_drag_connection(event.scenePos())
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if self._drag_connection:
-            self.end_drag_connection(event.scenePos())
+        if self._drag_connection: self.end_drag_connection(event.scenePos())
         super().mouseReleaseEvent(event)
 
     def serialize(self):
@@ -117,21 +136,32 @@ class NodeGraph(QGraphicsScene):
         connections_data = [conn.serialize() for conn in self.connections if conn.serialize() is not None]
         return {"nodes": nodes_data, "connections": connections_data}
 
-    def deserialize(self, data):
-        for node in list(self.nodes):
-            self.remove_node(node)
-        node_map = {}
+    def deserialize(self, data, offset=QPointF(0,0)):
+        """Deserializes graph data from a dictionary, applying an optional offset."""
+        if not data: return
+        
+        # On file load, clear the scene first
+        if offset == QPointF(0,0):
+             for node in list(self.nodes): self.remove_node(node)
+
+        old_uuid_to_new_node_map = {}
         for node_data in data.get("nodes", []):
-            node = self.create_node(node_data['title'], node_data['pos'])
-            node.uuid = node_data['uuid']
+            original_pos = QPointF(node_data['pos'][0], node_data['pos'][1])
+            new_pos = original_pos + offset
+            
+            node = self.create_node(node_data['title'], pos=(new_pos.x(), new_pos.y()))
             node.set_code(node_data.get('code', ''))
-            node_map[node.uuid] = node
+            
+            old_uuid_to_new_node_map[node_data['uuid']] = node
+
         for conn_data in data.get("connections", []):
-            start_node = node_map.get(conn_data['start_node_uuid'])
-            end_node = node_map.get(conn_data['end_node_uuid'])
+            start_node = old_uuid_to_new_node_map.get(conn_data['start_node_uuid'])
+            end_node = old_uuid_to_new_node_map.get(conn_data['end_node_uuid'])
+            
             if start_node and end_node:
-                start_pin = next((p for p in start_node.pins if p.name == conn_data['start_pin_uuid']), None)
-                end_pin = next((p for p in end_pin.pins if p.name == conn_data['end_pin_uuid']), None)
+                start_pin = start_node.get_pin_by_name(conn_data['start_pin_name'])
+                end_pin = end_node.get_pin_by_name(conn_data['end_pin_name'])
                 if start_pin and end_pin:
                     self.create_connection(start_pin, end_pin)
+        
         self.update()

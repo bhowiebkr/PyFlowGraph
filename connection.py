@@ -1,6 +1,6 @@
 # connection.py
 # Represents the visual (Bezier curve) and logical link between two pins.
-# Now with improved selection visuals.
+# Now with consistent serialization using pin names.
 
 from PySide6.QtWidgets import QGraphicsPathItem, QStyle, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
@@ -21,7 +21,7 @@ class Connection(QGraphicsPathItem):
         self.color = start_pin.color if start_pin else QColor("lightgray")
         self._pen = QPen(self.color)
         self._pen.setWidth(3)
-        self._pen_selected = QPen(QColor(0, 174, 239), 4) # Blueprint blue highlight
+        self._pen_selected = QPen(QColor(0, 174, 239), 4)
         
         self.setPen(self._pen)
 
@@ -40,10 +40,8 @@ class Connection(QGraphicsPathItem):
     def update_path(self, end_pos=None):
         path = QPainterPath()
         if not self.start_pin: return
-        
         p1 = self.start_pin.get_scene_pos()
         p2 = end_pos if (self.end_pin is None and end_pos) else self.end_pin.get_scene_pos()
-        
         path.moveTo(p1)
         dx = p2.x() - p1.x()
         ctrl1 = p1 + QPointF(dx * 0.5, 0)
@@ -52,15 +50,9 @@ class Connection(QGraphicsPathItem):
         self.setPath(path)
 
     def paint(self, painter, option, widget=None):
-        """Paint the connection, overriding selection visuals."""
         self.setPen(self._pen_selected if self.isSelected() else self._pen)
-        
-        # UI FIX: To prevent the dotted selection box, we clear the selection 
-        # state before calling the base class paint method. The pen color 
-        # change is enough to indicate selection.
         if option.state & QStyle.State_Selected:
             option.state &= ~QStyle.State_Selected
-        
         super().paint(painter, option, widget)
 
     def remove(self):
@@ -70,14 +62,12 @@ class Connection(QGraphicsPathItem):
     def serialize(self):
         if not self.start_pin or not self.end_pin: return None
         from node import Node
-        # A more robust system would be needed to serialize reroute nodes.
-        # For now, we only save direct node-to-node connections.
         if not isinstance(self.start_pin.node, Node) or not isinstance(self.end_pin.node, Node):
             return None
 
         return {
             "start_node_uuid": self.start_pin.node.uuid,
-            "start_pin_uuid": self.start_pin.name,
+            "start_pin_name": self.start_pin.name,
             "end_node_uuid": self.end_pin.node.uuid,
-            "end_pin_uuid": self.end_pin.name,
+            "end_pin_name": self.end_pin.name,
         }
