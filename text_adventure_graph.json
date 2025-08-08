@@ -1,0 +1,168 @@
+{
+    "nodes": [
+        {
+            "uuid": "char-start-name",
+            "title": "Player Name",
+            "pos": [ -250, 200 ],
+            "code": "@node_entry\ndef get_player_name() -> str:\n    return 'Eldrin'"
+        },
+        {
+            "uuid": "char-start-health",
+            "title": "Player Health",
+            "pos": [ -250, 350 ],
+            "code": "@node_entry\ndef get_player_health() -> int:\n    return 100"
+        },
+        {
+            "uuid": "char-start-luck",
+            "title": "Player Luck",
+            "pos": [ -250, 500 ],
+            "code": "@node_entry\ndef get_player_luck() -> float:\n    return 0.75"
+        },
+        {
+            "uuid": "intro-text",
+            "title": "Story Intro",
+            "pos": [ 50, 200 ],
+            "code": "@node_entry\ndef generate_intro(name: str, health: int, luck: float) -> str:\n    return f'Welcome, {name}. You begin your quest with {health} health and a luck score of {luck:.2f}. Before you lies a dark cave.'"
+        },
+        {
+            "uuid": "intro-printer",
+            "title": "Print Intro",
+            "pos": [ 350, 200 ],
+            "code": "@node_entry\ndef print_intro(message: str):\n    print(message)"
+        },
+        {
+            "uuid": "choice1-bool",
+            "title": "Choice: Enter Cave?",
+            "pos": [ 50, 425 ],
+            "code": "@node_entry\ndef make_choice_one() -> bool:\n    # True to enter, False to go around\n    return True"
+        },
+        {
+            "uuid": "path1a-enter-cave",
+            "title": "Path: Enter Cave",
+            "pos": [ 350, 350 ],
+            "code": "from typing import Tuple\n\n@node_entry\ndef enter_cave(current_health: int) -> Tuple[int, str]:\n    damage = 25\n    new_health = current_health - damage\n    story = f'You enter the cave and are attacked by a giant bat! You lose {damage} health.'\n    return new_health, story"
+        },
+        {
+            "uuid": "path1b-go-around",
+            "title": "Path: Go Around",
+            "pos": [ 350, 500 ],
+            "code": "from typing import Tuple\n\n@node_entry\ndef go_around(current_health: int) -> Tuple[int, str]:\n    healing = 15\n    new_health = current_health + healing\n    if new_health > 100:\n        new_health = 100\n    story = f'You go around the cave and find a healing herb. You gain {healing} health.'\n    return new_health, story"
+        },
+        {
+            "uuid": "path1-merger",
+            "title": "Merge Path 1",
+            "pos": [ 650, 425 ],
+            "code": "from typing import Tuple\n\n@node_entry\ndef merge_path_one(choice: bool, health_a: int, story_a: str, health_b: int, story_b: str) -> Tuple[int, str]:\n    if choice:\n        return health_a, story_a\n    else:\n        return health_b, story_b"
+        },
+        {
+            "uuid": "story-update1-printer",
+            "title": "Print Story Update 1",
+            "pos": [ 950, 425 ],
+            "code": "@node_entry\ndef print_story_update(message: str):\n    print(message)"
+        },
+        {
+            "uuid": "river-text",
+            "title": "Story: The River",
+            "pos": [ 950, 200 ],
+            "code": "@node_entry\ndef river_story(name: str) -> str:\n    return f'{name}, you arrive at a wide river. You can try to swim across or build a raft.'"
+        },
+        {
+            "uuid": "river-printer",
+            "title": "Print River Story",
+            "pos": [ 1250, 200 ],
+            "code": "@node_entry\ndef print_river(message: str):\n    print(message)"
+        },
+        {
+            "uuid": "choice2-bool",
+            "title": "Choice: Swim River?",
+            "pos": [ 950, 575 ],
+            "code": "@node_entry\ndef make_choice_two() -> bool:\n    # True to swim, False to build raft\n    return False"
+        },
+        {
+            "uuid": "path2a-swim-river",
+            "title": "Path: Swim River",
+            "pos": [ 1250, 500 ],
+            "code": "from typing import Tuple\n\n@node_entry\ndef swim_river(current_health: int, luck: float) -> Tuple[int, str]:\n    if luck > 0.5:\n        story = 'Your strong swimming and good luck see you safely across the river.'\n        return current_health, story\n    else:\n        damage = 40\n        new_health = current_health - damage\n        story = f'The current is too strong! You are battered against rocks and lose {damage} health.'\n        return new_health, story"
+        },
+        {
+            "uuid": "path2b-build-raft",
+            "title": "Path: Build Raft",
+            "pos": [ 1250, 650 ],
+            "code": "from typing import Tuple\n\n@node_entry\ndef build_raft(current_health: int) -> Tuple[int, str]:\n    story = 'You spend time building a sturdy raft and cross the river without incident.'\n    return current_health, story"
+        },
+        {
+            "uuid": "path2-merger",
+            "title": "Merge Path 2",
+            "pos": [ 1550, 575 ],
+            "code": "from typing import Tuple\n\n@node_entry\ndef merge_path_two(choice: bool, health_a: int, story_a: str, health_b: int, story_b: str) -> Tuple[int, str]:\n    return (health_a, story_a) if choice else (health_b, story_b)"
+        },
+        {
+            "uuid": "story-update2-printer",
+            "title": "Print Story Update 2",
+            "pos": [ 1850, 575 ],
+            "code": "@node_entry\ndef print_story_update_2(message: str):\n    print(message)"
+        },
+        {
+            "uuid": "treasure-room-text",
+            "title": "Story: Treasure Room",
+            "pos": [ 1850, 200 ],
+            "code": "@node_entry\ndef treasure_story() -> str:\n    return 'You have found the treasure room!'"
+        },
+        {
+            "uuid": "treasure-printer",
+            "title": "Print Treasure Story",
+            "pos": [ 2150, 200 ],
+            "code": "@node_entry\ndef print_treasure(message: str):\n    print(message)"
+        },
+        {
+            "uuid": "final-score-calculator",
+            "title": "Calculate Final Score",
+            "pos": [ 2150, 425 ],
+            "code": "@node_entry\ndef calculate_score(final_health: int, luck: float) -> int:\n    base_score = 1000\n    health_bonus = final_health * 10\n    luck_bonus = int(luck * 500)\n    return base_score + health_bonus + luck_bonus"
+        },
+        {
+            "uuid": "final-report-formatter",
+            "title": "Format Final Report",
+            "pos": [ 2450, 350 ],
+            "code": "@node_entry\ndef format_report(name: str, final_health: int, score: int) -> str:\n    ending = 'Congratulations!' if final_health > 0 else 'You have perished.'\n    return f'--- QUEST COMPLETE ---\\nPlayer: {name}\\nFinal Health: {final_health}\\nFinal Score: {score}\\n{ending}'"
+        },
+        {
+            "uuid": "final-report-printer",
+            "title": "Print Final Report",
+            "pos": [ 2750, 350 ],
+            "code": "@node_entry\ndef print_final_report(report: str):\n    print(report)"
+        }
+    ],
+    "connections": [
+        { "start_node_uuid": "char-start-name", "start_pin_name": "output_1", "end_node_uuid": "intro-text", "end_pin_name": "name" },
+        { "start_node_uuid": "char-start-health", "start_pin_name": "output_1", "end_node_uuid": "intro-text", "end_pin_name": "health" },
+        { "start_node_uuid": "char-start-luck", "start_pin_name": "output_1", "end_node_uuid": "intro-text", "end_pin_name": "luck" },
+        { "start_node_uuid": "intro-text", "start_pin_name": "output_1", "end_node_uuid": "intro-printer", "end_pin_name": "message" },
+        { "start_node_uuid": "char-start-health", "start_pin_name": "output_1", "end_node_uuid": "path1a-enter-cave", "end_pin_name": "current_health" },
+        { "start_node_uuid": "char-start-health", "start_pin_name": "output_1", "end_node_uuid": "path1b-go-around", "end_pin_name": "current_health" },
+        { "start_node_uuid": "choice1-bool", "start_pin_name": "output_1", "end_node_uuid": "path1-merger", "end_pin_name": "choice" },
+        { "start_node_uuid": "path1a-enter-cave", "start_pin_name": "output_1", "end_node_uuid": "path1-merger", "end_pin_name": "health_a" },
+        { "start_node_uuid": "path1a-enter-cave", "start_pin_name": "output_2", "end_node_uuid": "path1-merger", "end_pin_name": "story_a" },
+        { "start_node_uuid": "path1b-go-around", "start_pin_name": "output_1", "end_node_uuid": "path1-merger", "end_pin_name": "health_b" },
+        { "start_node_uuid": "path1b-go-around", "start_pin_name": "output_2", "end_node_uuid": "path1-merger", "end_pin_name": "story_b" },
+        { "start_node_uuid": "path1-merger", "start_pin_name": "output_2", "end_node_uuid": "story-update1-printer", "end_pin_name": "message" },
+        { "start_node_uuid": "char-start-name", "start_pin_name": "output_1", "end_node_uuid": "river-text", "end_pin_name": "name" },
+        { "start_node_uuid": "river-text", "start_pin_name": "output_1", "end_node_uuid": "river-printer", "end_pin_name": "message" },
+        { "start_node_uuid": "path1-merger", "start_pin_name": "output_1", "end_node_uuid": "path2a-swim-river", "end_pin_name": "current_health" },
+        { "start_node_uuid": "char-start-luck", "start_pin_name": "output_1", "end_node_uuid": "path2a-swim-river", "end_pin_name": "luck" },
+        { "start_node_uuid": "path1-merger", "start_pin_name": "output_1", "end_node_uuid": "path2b-build-raft", "end_pin_name": "current_health" },
+        { "start_node_uuid": "choice2-bool", "start_pin_name": "output_1", "end_node_uuid": "path2-merger", "end_pin_name": "choice" },
+        { "start_node_uuid": "path2a-swim-river", "start_pin_name": "output_1", "end_node_uuid": "path2-merger", "end_pin_name": "health_a" },
+        { "start_node_uuid": "path2a-swim-river", "start_pin_name": "output_2", "end_node_uuid": "path2-merger", "end_pin_name": "story_a" },
+        { "start_node_uuid": "path2b-build-raft", "start_pin_name": "output_1", "end_node_uuid": "path2-merger", "end_pin_name": "health_b" },
+        { "start_node_uuid": "path2b-build-raft", "start_pin_name": "output_2", "end_node_uuid": "path2-merger", "end_pin_name": "story_b" },
+        { "start_node_uuid": "path2-merger", "start_pin_name": "output_2", "end_node_uuid": "story-update2-printer", "end_pin_name": "message" },
+        { "start_node_uuid": "treasure-room-text", "start_pin_name": "output_1", "end_node_uuid": "treasure-printer", "end_pin_name": "message" },
+        { "start_node_uuid": "path2-merger", "start_pin_name": "output_1", "end_node_uuid": "final-score-calculator", "end_pin_name": "final_health" },
+        { "start_node_uuid": "char-start-luck", "start_pin_name": "output_1", "end_node_uuid": "final-score-calculator", "end_pin_name": "luck" },
+        { "start_node_uuid": "char-start-name", "start_pin_name": "output_1", "end_node_uuid": "final-report-formatter", "end_pin_name": "name" },
+        { "start_node_uuid": "path2-merger", "start_pin_name": "output_1", "end_node_uuid": "final-report-formatter", "end_pin_name": "final_health" },
+        { "start_node_uuid": "final-score-calculator", "start_pin_name": "output_1", "end_node_uuid": "final-report-formatter", "end_pin_name": "score" },
+        { "start_node_uuid": "final-report-formatter", "start_pin_name": "output_1", "end_node_uuid": "final-report-printer", "end_pin_name": "report" }
+    ]
+}
