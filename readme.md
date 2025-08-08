@@ -1,4 +1,4 @@
-# PySide6 Advanced Node Editor
+# PyFlowCanvas (PySide6 Advanced Node Editor)
 
 > **Note: This is a 100% AI-Generated Coding Experiment**
 >
@@ -41,7 +41,7 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
 ## Screenshots
 
 ### Main Interface
-![Node Editor Showcase](images/gui.png)
+![Node Editor Showcase](images/text_adventure_graph.png)
 
 ### Mini-IDE Code Editor
 ![Python Code Editor](images/python_editor.png)
