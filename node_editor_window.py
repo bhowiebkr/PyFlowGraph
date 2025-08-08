@@ -4,7 +4,7 @@
 import json
 from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog
 from PySide6.QtGui import QAction, QFont
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPointF
 from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
 from graph_executor import GraphExecutor
@@ -25,8 +25,8 @@ class NodeEditorWindow(QMainWindow):
 
         self.output_log = QTextEdit()
         self.output_log.setReadOnly(True)
-        self.output_log.setFont(QFont("Monospace", 10))
-        self.output_log.setStyleSheet("background-color: #2E2E2E; color: #F0F0F0;")
+        # Styling for this widget is now handled by the global QSS file
+
         dock = QDockWidget("Output Log")
         dock.setWidget(self.output_log)
         self.addDockWidget(Qt.BottomDockWidgetArea, dock)

@@ -1,9 +1,9 @@
 # node_editor_view.py
 # The QGraphicsView responsible for rendering the scene and handling user interactions.
-# Now with Blueprint-style panning (RMB and MMB).
+# Now with a fix for the C++ object deletion runtime error.
 
 from PySide6.QtWidgets import QGraphicsView, QMenu
-from PySide6.QtCore import Qt, QPoint, QPointF
+from PySide6.QtCore import Qt, QPoint, QTimer
 from PySide6.QtGui import QPainter, QPen, QColor, QMouseEvent, QContextMenuEvent
 
 class NodeEditorView(QGraphicsView):
@@ -13,15 +13,15 @@ class NodeEditorView(QGraphicsView):
     def __init__(self, scene, parent=None):
         super().__init__(scene, parent)
         self.setRenderHint(QPainter.Antialiasing)
-        self.setDragMode(QGraphicsView.NoDrag) # We handle all drag logic
+        self.setDragMode(QGraphicsView.RubberBandDrag)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
         self._is_panning = False
         self._pan_start_pos = QPoint()
 
-    def contextMenuEvent(self, event: QContextMenuEvent):
-        """Handle context menu events to add new nodes."""
+    def show_context_menu(self, event: QContextMenuEvent):
+        """Creates and shows the context menu at the event's position."""
         menu = QMenu(self)
         add_node_action = menu.addAction("Add Node")
         
@@ -41,9 +41,9 @@ class NodeEditorView(QGraphicsView):
             self._is_panning = True
             self._pan_start_pos = event.pos()
             self.setCursor(Qt.ClosedHandCursor)
+            self.setDragMode(QGraphicsView.NoDrag)
             event.accept()
         else:
-            # Let the base class handle LMB for selection/movement
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -60,15 +60,24 @@ class NodeEditorView(QGraphicsView):
     def mouseReleaseEvent(self, event: QMouseEvent):
         """Handle mouse release events to stop panning."""
         is_pan_button = event.button() in (Qt.RightButton, Qt.MiddleButton)
-
+        
         if self._is_panning and is_pan_button:
             self._is_panning = False
             self.setCursor(Qt.ArrowCursor)
+            self.setDragMode(QGraphicsView.RubberBandDrag)
             
-            # If it was a right-click without much dragging, show the context menu
             if event.button() == Qt.RightButton and (event.pos() - self._pan_start_pos).manhattanLength() < 3:
-                self.contextMenuEvent(QContextMenuEvent(QContextMenuEvent.Mouse, event.pos(), event.globalPos(), event.modifiers()))
-            
+                # CRASH FIX: The QMouseEvent object ('event') is deleted after this handler
+                # completes. We must capture its values in local variables before passing
+                # them to the timer's lambda function.
+                pos = event.pos()
+                global_pos = event.globalPos()
+                modifiers = event.modifiers()
+                
+                QTimer.singleShot(0, lambda: self.show_context_menu(QContextMenuEvent(
+                    QContextMenuEvent.Mouse, pos, global_pos, modifiers
+                )))
+
             event.accept()
         else:
             super().mouseReleaseEvent(event)
