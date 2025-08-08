@@ -71,11 +71,23 @@ The project is organized into modular, single-responsibility Python files:
 
 ---
 
+## Running the Pre-compiled Version (Windows)
+
+This is the easiest way to run the application without needing to install Python or any dependencies.
+
+1. **Go to the [Releases Page](https://github.com/bhowiebkr/PyFlowCanvas/releases)** on GitHub.
+2. Find the latest release and download the `.zip` file (e.g., `NodeEditor_Windows_v1.0.0.zip`).
+3. **Unzip** the downloaded file to a location of your choice. This will create a new folder.
+4. Open the new folder and run the `main.exe` executable.
+5. To test the application, go to `File > Load Graph...` and open one of the `.json` files from the `examples` folder.
+
+---
+
 ## Setup and Installation
 
 1.  **Clone the Repository**:
     ```bash
-    git clone https://github.com/bhowiebkr/PyFlowCanvas.git
+    git clone [https://github.com/bhowiebkr/PyFlowCanvas.git](https://github.com/bhowiebkr/PyFlowCanvas.git)
     cd PyFlowCanvas
     ```
 
