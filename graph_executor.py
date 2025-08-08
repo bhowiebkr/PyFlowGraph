@@ -1,6 +1,6 @@
 # graph_executor.py
 # New data-driven engine that executes a defined function within each node.
-# Now supports top-level imports and helper functions in node code.
+# Now defines the @node_entry decorator at runtime to prevent errors.
 
 import traceback
 import io
@@ -29,7 +29,7 @@ class GraphExecutor:
                 execution_queue.append(node)
 
         if not execution_queue:
-            self.log.append("Execution Error: No start node found (a node with no inputs).")
+            self.log.append("Execution Error: No start node found (a node with no connected inputs).")
             return
 
         execution_count = 0
@@ -54,10 +54,15 @@ class GraphExecutor:
                 self.log.append(f"SKIP: Node '{current_node.title}' has no valid function defined.")
                 continue
 
-            # Use a single dictionary for both globals and locals.
-            # This allows top-level imports and helper functions to be
-            # available to the main node function.
-            execution_scope = {}
+            # BUG FIX: Define a pass-through decorator to make the @node_entry syntax
+            # valid Python code when the node's script is executed.
+            def node_entry(func):
+                return func
+
+            # This scope will contain the executed code's definitions.
+            execution_scope = {
+                'node_entry': node_entry
+            }
             f = io.StringIO()
             try:
                 # Execute the entire code block, defining everything in the same scope.

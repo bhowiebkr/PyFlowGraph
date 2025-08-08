@@ -1,6 +1,6 @@
 # node.py
 # Represents a single processing unit (node) in the graph.
-# Now with corrected type name mapping to fix color bugs.
+# Now identifies the main function using an @node_entry decorator.
 
 import uuid
 import ast
@@ -15,8 +15,8 @@ from code_editor_dialog import CodeEditorDialog
 
 class Node(QGraphicsItem):
     """
-    A draggable block whose inputs and outputs are defined by the signature
-    of a 'node_function' in its code.
+    A draggable block whose interface is defined by a function
+    marked with the @node_entry decorator in its code.
     """
     def __init__(self, title, parent=None):
         super().__init__(parent)
@@ -34,6 +34,7 @@ class Node(QGraphicsItem):
         self.code = ""
         self.function_name = None
 
+        # --- Visual Properties ---
         self.color_body = QColor(20, 20, 20, 220)
         self.color_title_bar_start = QColor("#383838")
         self.color_title_bar_end = QColor("#2A2A2A")
@@ -83,20 +84,41 @@ class Node(QGraphicsItem):
         return "any"
 
     def update_pins_from_code(self):
+        """
+        Parses the node's code to find a function decorated with @node_entry
+        and generates pins based on its signature.
+        """
         new_inputs, new_outputs = {}, {}
         self.function_name = None
+        main_func_def = None
+
         try:
             tree = ast.parse(self.code)
-            func_def = next((node for node in tree.body if isinstance(node, ast.FunctionDef)), None)
-            if not func_def:
+            # Find the function decorated with @node_entry
+            for node in tree.body:
+                if isinstance(node, ast.FunctionDef):
+                    for decorator in node.decorator_list:
+                        if isinstance(decorator, ast.Name) and decorator.id == 'node_entry':
+                            main_func_def = node
+                            break
+                    if main_func_def:
+                        break
+            
+            if not main_func_def:
+                # If no decorated function is found, remove all pins
                 for pin in list(self.pins): self.remove_pin(pin)
                 self._update_layout()
                 return
-            self.function_name = func_def.name
-            for arg in func_def.args.args:
+
+            self.function_name = main_func_def.name
+            
+            # Get new inputs from function parameters
+            for arg in main_func_def.args.args:
                 new_inputs[arg.arg] = self._parse_type_hint(arg.annotation).lower()
-            if func_def.returns:
-                return_annotation = func_def.returns
+
+            # Get new outputs from function return annotation
+            if main_func_def.returns:
+                return_annotation = main_func_def.returns
                 if (isinstance(return_annotation, ast.Subscript) and
                     isinstance(return_annotation.value, ast.Name) and
                     return_annotation.value.id.lower() in ('tuple', 'list')):
@@ -105,8 +127,11 @@ class Node(QGraphicsItem):
                         new_outputs[f"output_{i+1}"] = type_name
                 else:
                     new_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
-        except (SyntaxError, AttributeError): return
+
+        except (SyntaxError, AttributeError):
+            return
         
+        # --- Reconcile Pins ---
         current_inputs = {pin.name: pin for pin in self.input_pins}
         current_outputs = {pin.name: pin for pin in self.output_pins}
 
@@ -123,14 +148,9 @@ class Node(QGraphicsItem):
         self._update_layout()
 
     def add_pin(self, name, direction, pin_type_str):
-        # BUG FIX: Map Python's lowercase built-in type names to our uppercase enum names.
-        type_map = {
-            "STR": "STRING",
-            "BOOL": "BOOLEAN"
-        }
+        type_map = {"STR": "STRING", "BOOL": "BOOLEAN"}
         processed_type_str = pin_type_str.upper().split('[')[0]
         final_type_str = type_map.get(processed_type_str, processed_type_str)
-        
         pin_type = SocketType[final_type_str] if final_type_str in SocketType.__members__ else SocketType.ANY
         pin = Pin(self, name, direction, pin_type)
         self.pins.append(pin)
