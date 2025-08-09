@@ -1,5 +1,6 @@
 # environment_manager.py
 # A comprehensive system for managing a dedicated virtual environment for graph execution.
+# Now handles venv creation from a Nuitka-compiled executable.
 
 import os
 import sys
@@ -7,6 +8,11 @@ import subprocess
 import venv
 from PySide6.QtCore import QObject, Signal, QThread
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QDialogButtonBox, QLineEdit, QFileDialog, QListWidget, QListWidgetItem
+
+
+def is_frozen():
+    """Checks if the application is running as a frozen (e.g., Nuitka) executable."""
+    return getattr(sys, "frozen", False)
 
 
 class EnvironmentWorker(QObject):
@@ -21,7 +27,7 @@ class EnvironmentWorker(QObject):
         super().__init__()
         self.venv_path = venv_path
         self.requirements = requirements
-        self.task = task  # 'setup' or 'verify'
+        self.task = task
 
     def get_pip_executable(self):
         if sys.platform == "win32":
@@ -42,7 +48,24 @@ class EnvironmentWorker(QObject):
         """Creates the venv and installs packages."""
         if not os.path.exists(self.venv_path):
             self.progress.emit(f"Creating virtual environment at: {self.venv_path}")
-            venv.create(self.venv_path, with_pip=True)
+
+            if is_frozen():
+                # For compiled apps, find the bundled Python runtime and use it to create the venv.
+                # Assumes the runtime is in a 'python_runtime' folder next to the main executable.
+                base_path = os.path.dirname(sys.executable)
+                python_exe = os.path.join(base_path, "python_runtime", "python.exe")
+                if not os.path.exists(python_exe):
+                    self.finished.emit(False, "Bundled Python runtime not found!")
+                    return
+
+                cmd = [python_exe, "-m", "venv", self.venv_path]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode != 0:
+                    self.finished.emit(False, f"Failed to create venv: {result.stderr}")
+                    return
+            else:
+                # For development, use the standard venv creation.
+                venv.create(self.venv_path, with_pip=True)
 
         pip_exe = self.get_pip_executable()
         if not self.requirements:
@@ -82,11 +105,7 @@ class EnvironmentWorker(QObject):
             return
 
         installed_packages = {line.split("==")[0].lower() for line in result.stdout.splitlines()}
-        missing_packages = []
-        for req in self.requirements:
-            req_name = req.split("==")[0].lower()
-            if req_name not in installed_packages:
-                missing_packages.append(req)
+        missing_packages = [req for req in self.requirements if req.split("==")[0].lower() not in installed_packages]
 
         if not missing_packages:
             self.finished.emit(True, f"Verification Succeeded: All {len(self.requirements)} packages are installed.")
@@ -144,8 +163,11 @@ class EnvironmentManagerDialog(QDialog):
         action_layout.addWidget(self.verify_button)
         layout.addLayout(action_layout)
 
-        self.status_label = QLabel("Status: Ready")
-        layout.addWidget(self.status_label)
+        # UI FIX: Use a read-only QLineEdit for the status to make it copyable.
+        self.status_display = QLineEdit("Status: Ready")
+        self.status_display.setReadOnly(True)
+        layout.addWidget(self.status_display)
+
         self.output_log = QTextEdit()
         self.output_log.setReadOnly(True)
         layout.addWidget(self.output_log)
@@ -155,19 +177,19 @@ class EnvironmentManagerDialog(QDialog):
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 
-        self.update_status_color(None)  # Set initial neutral color
+        self.update_status_color(None)
 
     def update_status_color(self, status):
-        """Updates the status label's background color."""
+        """Updates the status display's background color."""
         style = "color: white; padding: 4px; border-radius: 4px;"
-        if status is None:  # Neutral/Ready
-            self.status_label.setStyleSheet(f"background-color: #5A5A5A; {style}")
+        if status is None:
+            self.status_display.setStyleSheet(f"background-color: #5A5A5A; {style}")
         elif status == "running":
-            self.status_label.setStyleSheet(f"background-color: #3A5A8A; {style}")
-        elif status is True:  # Success
-            self.status_label.setStyleSheet(f"background-color: #3A6A3A; {style}")
-        elif status is False:  # Failure
-            self.status_label.setStyleSheet(f"background-color: #8A3A3A; {style}")
+            self.status_display.setStyleSheet(f"background-color: #3A5A8A; {style}")
+        elif status is True:
+            self.status_display.setStyleSheet(f"background-color: #3A6A3A; {style}")
+        elif status is False:
+            self.status_display.setStyleSheet(f"background-color: #8A3A3A; {style}")
 
     def browse_path(self):
         directory = QFileDialog.getExistingDirectory(self, "Select Environment Parent Directory")
@@ -199,7 +221,7 @@ class EnvironmentManagerDialog(QDialog):
         self.setup_button.setEnabled(False)
         self.verify_button.setEnabled(False)
         self.output_log.clear()
-        self.status_label.setText(f"Status: Running {task_name}...")
+        self.status_display.setText(f"Status: Running {task_name}...")
         self.update_status_color("running")
 
         self.worker = EnvironmentWorker(self.path_edit.text(), self.requirements, task_name)
@@ -211,7 +233,7 @@ class EnvironmentManagerDialog(QDialog):
         self.thread.start()
 
     def on_finished(self, success, message):
-        self.status_label.setText(f"Status: {message}")
+        self.status_display.setText(f"Status: {message}")
         self.update_status_color(success)
         self.setup_button.setEnabled(True)
         self.verify_button.setEnabled(True)
