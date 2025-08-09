@@ -33,8 +33,9 @@ jobs:
         run: |
           # 1. Download a pre-built, standalone Python distribution.
           # This is the correct way to get a fully functional portable environment.
-          $pythonVersion = "3.11.5"
-          $releaseTag = "20230826"
+          # BUG FIX: Updated to a newer, valid release tag and version.
+          $pythonVersion = "3.11.9"
+          $releaseTag = "20240526"
           $url = "https://github.com/indygreg/python-build-standalone/releases/download/$releaseTag/cpython-$pythonVersion+$releaseTag-x86_64-pc-windows-msvc-shared-install_only.tar.zst"
           
           Write-Host "Downloading Python runtime from $url"
