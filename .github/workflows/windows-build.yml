@@ -72,8 +72,11 @@ jobs:
             --include-data-dir=examples=examples `
             --include-data-file=dark_theme.qss=dark_theme.qss `
             --include-data-dir=python_runtime=python_runtime `
+            --include-data-file=python_runtime\\python.exe=python_runtime\\python.exe `
+            --include-data-file=python_runtime\\*.dll=python_runtime\\ `
             --assume-yes-for-downloads `
             main.py
+
 
       - name: Prepare artifact for release
         id: package
