@@ -33,10 +33,10 @@ jobs:
         run: |
           # 1. Download a pre-built, standalone Python distribution.
           # This is the correct way to get a fully functional portable environment.
-          # BUG FIX: Updated to a newer, valid release tag and version.
+          # FIX: Updated to the new repository owner (astral-sh) and a valid release tag.
           $pythonVersion = "3.11.9"
-          $releaseTag = "20240526"
-          $url = "https://github.com/indygreg/python-build-standalone/releases/download/$releaseTag/cpython-$pythonVersion+$releaseTag-x86_64-pc-windows-msvc-shared-install_only.tar.zst"
+          $releaseTag = "20250808"
+          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/cpython-$pythonVersion+$releaseTag-x86_64-pc-windows-msvc-shared-install_only.tar.zst"
           
           Write-Host "Downloading Python runtime from $url"
           Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
