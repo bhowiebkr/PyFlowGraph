@@ -1,6 +1,6 @@
 # environment_manager.py
 # A comprehensive system for managing a dedicated virtual environment for graph execution.
-# This version contains the definitive fix for venv creation in a compiled application.
+# This version includes extensive debugging output to diagnose venv creation issues.
 
 import os
 import sys
@@ -65,44 +65,65 @@ class EnvironmentWorker(QObject):
 
     def run_setup(self):
         """Creates the venv and installs packages."""
+        self.progress.emit("--- STARTING SETUP PROCESS ---")
         if not os.path.exists(self.venv_path):
-            self.progress.emit(f"Creating virtual environment at: {self.venv_path}")
+            self.progress.emit(f"Target venv path does not exist: {self.venv_path}")
+            self.progress.emit("Attempting to create new virtual environment...")
 
-            if is_frozen():
-                # --- Definitive Fix for Frozen Apps ---
-                # Determine the base path correctly depending on whether the app is frozen or not.
-                if is_frozen():
-                    # When frozen, the base path is the directory of the executable.
-                    base_path = os.path.dirname(sys.executable)
-                else:
-                    # When running from source, the base path is the directory of this script.
-                    base_path = os.path.dirname(os.path.abspath(__file__))
+            # --- DEBUGGING LOGIC ---
+            frozen_status = is_frozen()
+            self.progress.emit(f"DEBUG: is_frozen() returned: {frozen_status}")
+            self.progress.emit(f"DEBUG: sys.executable is: {sys.executable}")
+            # --- END DEBUGGING ---
+
+            if frozen_status:
+                self.progress.emit("INFO: Running in FROZEN mode (compiled executable).")
+
+                # --- DEBUGGING LOGIC ---
+                base_path = os.path.dirname(sys.executable)
+                self.progress.emit(f"DEBUG: Determined base_path from sys.executable: {base_path}")
 
                 runtime_python_home = os.path.join(base_path, "python_runtime")
-                runtime_python_exe = os.path.join(runtime_python_home, "python.exe")
+                self.progress.emit(f"DEBUG: Constructed python_runtime path: {runtime_python_home}")
 
+                runtime_python_exe = os.path.join(runtime_python_home, "python.exe")
+                self.progress.emit(f"DEBUG: Constructed runtime_python_exe path: {runtime_python_exe}")
+
+                self.progress.emit(f"DEBUG: Checking if runtime_python_exe exists...")
                 if not os.path.exists(runtime_python_exe):
+                    self.progress.emit(f"CRITICAL FAILURE: Bundled Python not found at '{runtime_python_exe}'.")
                     self.finished.emit(False, f"Bundled Python runtime not found at '{runtime_python_exe}'.")
                     return
+                self.progress.emit("DEBUG: runtime_python_exe found.")
+                # --- END DEBUGGING ---
 
-                # Use the bundled python.exe to create the venv from the command line.
+                # This command is the equivalent of: 'C:\path\to\runtime\python.exe -m venv C:\path\to\.venv_graph'
                 cmd = [runtime_python_exe, "-m", "venv", self.venv_path]
+                self.progress.emit(f"DEBUG: Subprocess command to run: {cmd}")
+                self.progress.emit(f"DEBUG: Subprocess working directory (cwd): {runtime_python_home}")
+
                 result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", cwd=runtime_python_home)
 
                 if result.returncode != 0:
-                    self.finished.emit(False, f"Failed to create venv: {result.stderr}")
+                    self.progress.emit(f"ERROR: Subprocess failed with return code {result.returncode}.")
+                    self.progress.emit(f"ERROR STDOUT: {result.stdout}")
+                    self.progress.emit(f"ERROR STDERR: {result.stderr}")
+                    self.finished.emit(False, f"Failed to create venv. See log for details.")
                     return
+                self.progress.emit("INFO: Subprocess to create venv completed successfully.")
             else:
-                # For development, the standard venv creation works fine.
+                self.progress.emit("INFO: Running in SCRIPT mode (development).")
                 venv.create(self.venv_path, with_pip=True)
 
         venv_python_exe = self.get_venv_python_executable()
+        self.progress.emit(f"DEBUG: Using venv python executable for pip: {venv_python_exe}")
         if not self.requirements:
             self.finished.emit(True, "Environment exists. No packages to install.")
             return
 
         self.progress.emit(f"Installing {len(self.requirements)} dependencies...")
         cmd = [venv_python_exe, "-m", "pip", "install"] + self.requirements
+        self.progress.emit(f"DEBUG: Pip install command: {cmd}")
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8")
         for line in iter(process.stdout.readline, ""):
             self.progress.emit(line.strip())
