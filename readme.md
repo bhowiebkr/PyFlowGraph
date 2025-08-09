@@ -4,10 +4,9 @@
 >
 > This codebase is a [Vibe coding](https://en.wikipedia.org/wiki/Vibe_coding) experiment, generated entirely with the assistance of Google's Gemini large language model (2.5 Pro). It is not intended for production use. The primary goal is to test and learn the capabilities of AI/ML-fully assisted code generation and guidance. While I have made an effort to cover edge cases, there are likely many bugs that I am not aware of. Even this README file may contain errors or inconsistencies.
 
-
 ![Node Editor Showcase](images/gui.png)
 
-A highly interactive, visually polished node-based editor built with Python and PySide6. This application provides a powerful and intuitive interface for creating, connecting, and executing custom logic nodes, inspired by professional tools like Unreal Engine's Blueprint system.
+This project is a universal implementation of a node-based Python environment. It provides a highly interactive and visually polished interface for creating, connecting, and executing custom logic nodes. The application is designed to handle any Python code, including scripts with embedded pip dependencies. The compiled application is fully self-contained and includes a portable Python runtime, so users do not need to have Python installed on their system.
 
 The core philosophy of this editor is **"Code as Nodes."** Instead of manually adding inputs and outputs, the editor intelligently parses the Python code within each node to dynamically generate the appropriate connection pins, making graph creation fast, flexible, and intuitive.
 
@@ -17,22 +16,22 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
 
 * **Dynamic Node Generation**: Pins are created automatically by parsing Python function signatures within each node. Type hints (`int`, `str`, `float`, `bool`, `Tuple`) define the data type and color of each pin.
 * **Blueprint-Style Navigation**:
-    * **Pan**: Right-click + Drag or Middle-click + Drag.
-    * **Zoom**: Mouse Wheel Scroll.
-    * **Select/Move**: Left-click to select and drag nodes.
+  * **Pan**: Right-click + Drag or Middle-click + Drag.
+  * **Zoom**: Mouse Wheel Scroll.
+  * **Select/Move**: Left-click to select and drag nodes.
 * **Data-Driven Execution Engine**: The graph executes based on data dependencies, flowing from nodes with available outputs to those that require them as inputs. No manual execution pins are needed.
 * **Mini-IDE Code Editor**:
-    * A modal dialog provides a spacious and professional coding environment.
-    * **Syntax Highlighting** for Python.
-    * **Line Numbering**.
-    * **Smart Auto-Indentation** and Tab support.
+  * A modal dialog provides a spacious and professional coding environment.
+  * **Syntax Highlighting** for Python.
+  * **Line Numbering**.
+  * **Smart Auto-Indentation** and Tab support.
 * **Advanced Connection Management**:
-    * **Reroute Nodes**: Double-click a connection to create a reroute node for better graph organization.
-    * **Connection Replacement**: Dragging a new wire to an already connected input pin automatically replaces the old connection.
+  * **Reroute Nodes**: Double-click a connection to create a reroute node for better graph organization.
+  * **Connection Replacement**: Dragging a new wire to an already connected input pin automatically replaces the old connection.
 * **Clipboard Support**:
-    * Copy (`Ctrl+C`) and paste (`Ctrl+V`) multiple nodes.
-    * Internal connections between copied nodes are preserved.
-    * Pasted nodes are intelligently offset based on cursor position.
+  * Copy (`Ctrl+C`) and paste (`Ctrl+V`) multiple nodes.
+  * Internal connections between copied nodes are preserved.
+  * Pasted nodes are intelligently offset based on cursor position.
 * **Professional Dark Theme**: The entire application is styled with a custom QSS stylesheet for a consistent, modern, and visually appealing dark theme.
 * **Save & Load**: Graphs can be serialized to and deserialized from a clean JSON format.
 
@@ -41,9 +40,11 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
 ## Screenshots
 
 ### Main Interface
+
 ![Node Editor Showcase](images/text_adventure_graph.png)
 
 ### Mini-IDE Code Editor
+
 ![Python Code Editor](images/python_editor.png)
 
 ---
@@ -85,28 +86,32 @@ This is the easiest way to run the application without needing to install Python
 
 ## Setup and Installation
 
-1.  **Clone the Repository**:
+1. **Clone the Repository**:
+
     ```bash
     git clone [https://github.com/bhowiebkr/PyFlowCanvas.git](https://github.com/bhowiebkr/PyFlowCanvas.git)
     cd PyFlowCanvas
     ```
 
-2.  **Create a Virtual Environment**:
+2. **Create a Virtual Environment**:
+
     ```bash
     python3 -m venv venv
     ```
 
-3.  **Activate the Environment**:
+3. **Activate the Environment**:
     * On Linux/macOS: `source venv/bin/activate`
     * On Windows: `venv\Scripts\activate`
 
-4.  **Install Dependencies**:
+4. **Install Dependencies**:
+
     ```bash
     pip install PySide6
     ```
 
-5.  **Run the Application**:
+5. **Run the Application**:
     Use the provided shell script, which will automatically activate the environment and run the main script.
+
     ```bash
     ./run.sh
     ```
@@ -128,6 +133,7 @@ This is the easiest way to run the application without needing to install Python
 The power of this editor comes from its function-based node definition. The editor parses the first function it finds in a node's code to determine its I/O pins.
 
 ### Defining Inputs
+
 Inputs are defined as parameters to your function. The parameter's **name** and **type hint** are used to create the input pin.
 
 ```python
@@ -137,9 +143,11 @@ def my_function(input_number: float):
 ```
 
 ### Defining Outputs
+
 Outputs are defined by the function's **return type hint**.
 
 **Single Output:**
+
 ```python
 # This creates a single output pin named "Output 1" of type String.
 def my_function(input_value: int) -> str:
@@ -160,6 +168,7 @@ def my_function(input_value: str) -> Tuple[str, int]:
 ```
 
 ### Helper Functions & Imports
+
 You can define helper functions and import modules at the top level of your code. They will be available to your main node function during execution.
 
 ```python
