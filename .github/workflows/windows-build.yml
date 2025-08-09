@@ -60,7 +60,9 @@ jobs:
       - name: Decompress Python runtime
         shell: pwsh
         run: |
-          .\zstd\zstd.exe -d python-standalone.tar.zst -o python-standalone.tar
+          # BUG FIX: The zstd executable is in a nested directory after extraction.
+          # Use the correct path to the executable.
+          .\zstd\zstd-v1.5.5-win64\zstd.exe -d python-standalone.tar.zst -o python-standalone.tar
           tar -xf python-standalone.tar
 
       - name: Move to python_runtime folder
