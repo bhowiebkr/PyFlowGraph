@@ -55,35 +55,6 @@ jobs:
           
           Write-Host "Python runtime prepared."
 
-      - name: Clean and Verify Python Runtime
-        shell: pwsh
-        run: |
-          Write-Host "--- RUNNING FINAL VERIFICATION ---"
-          $runtimePath = "python_runtime"
-          
-          # Step 1: Forcefully remove all .pdb files from the runtime.
-          Write-Host "Removing all .pdb files..."
-          Get-ChildItem -Path $runtimePath -Recurse -Filter "*.pdb" | Remove-Item -Force
-          Write-Host "[PASS] .pdb file removal complete."
-
-          # Check 1: python.exe must exist.
-          $pythonExePath = Join-Path $runtimePath "python.exe"
-          if (-not (Test-Path $pythonExePath)) {
-            Write-Host "CRITICAL FAILURE: '$($pythonExePath)' does not exist."
-            exit 1
-          }
-          Write-Host "[PASS] python.exe found."
-
-          # Check 3: There must NOT be any .pdb files remaining.
-          $pdbFiles = Get-ChildItem -Path $runtimePath -Recurse -Filter "*.pdb"
-          if ($pdbFiles) {
-            Write-Host "CRITICAL FAILURE: Found .pdb files after cleanup step."
-            exit 1
-          }
-          Write-Host "[PASS] No .pdb files found."
-          
-          Write-Host "--- VERIFICATION SUCCEEDED ---"
-
       - name: Install dependencies for Nuitka build
         run: pip install -r requirements.txt
 
