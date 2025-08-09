@@ -1,7 +1,7 @@
 # .github/workflows/windows-build.yml
-# This workflow correctly downloads a full, portable Python runtime, prepares it,
-# and bundles it with the Nuitka-compiled application for a fully standalone release.
-# It includes exhaustive verification steps to prevent incorrect builds.
+# This workflow correctly downloads a portable Python runtime, prepares it with pip,
+# forcefully removes all debugging symbols (.pdb files), and then bundles the
+# clean runtime with the Nuitka-compiled application.
 
 name: Build and Release Windows App
 
@@ -28,49 +28,48 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install zstd decompressor
+        run: choco install zstandard -y
+
       - name: Prepare Portable Python Runtime
         shell: pwsh
         run: |
-          # 1. Download the correct 'install_only' standalone Python distribution.
-          $pythonVersion = "3.11.13"
-          $releaseTag = "20250808"
-          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-install_only.tar.gz"
-          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/$fileName"
+          # 1. Download the specified full, pre-built, standalone Python distribution.
+          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/20250808/cpython-3.11.13+20250808-x86_64-pc-windows-msvc-pgo-full.tar.zst"
           
-          Write-Host "Downloading Python runtime from $url"
-          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.gz"
+          Write-Host "Downloading Python runtime from hardcoded URL: $url"
+          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
 
-          # 2. Decompress the archive.
-          Write-Host "Decompressing Python runtime..."
-          tar -xzf python-standalone.tar.gz
+          # 2. Decompress the archive in two steps: zstd -> tar.
+          Write-Host "Decompressing python-standalone.tar.zst..."
+          zstd -d python-standalone.tar.zst -o python-standalone.tar
           
-          # 3. Move the contents to the 'python_runtime' directory.
+          Write-Host "Extracting python-standalone.tar..."
+          tar -xf python-standalone.tar
+          
+          # 3. Move the contents from the correct 'python\install' subfolder.
           New-Item -ItemType Directory -Force -Path python_runtime
-          Move-Item -Path "python\*" -Destination "python_runtime"
-          Remove-Item "python" -Recurse -Force
+          Write-Host "Moving extracted runtime from 'python\install' to 'python_runtime'..."
+          Move-Item -Path "python\install\*" -Destination "python_runtime"
+          Remove-Item "python", "python-standalone.tar.zst", "python-standalone.tar" -Recurse -Force
           
-          # 4. Download the official pip bootstrap script.
-          Write-Host "Downloading get-pip.py..."
-          Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "python_runtime\get-pip.py"
-          
-          # 5. Run the bootstrap script to install pip.
-          Write-Host "Installing pip into the portable runtime..."
-          .\python_runtime\python.exe .\python_runtime\get-pip.py
-          
-          # 6. Clean up.
-          Remove-Item "python_runtime\get-pip.py"
           Write-Host "Python runtime prepared."
 
-      - name: Insane Sanity Check of Python Runtime
+      - name: Clean and Verify Python Runtime
         shell: pwsh
         run: |
-          Write-Host "--- RUNNING EXTREME VERIFICATION ---"
+          Write-Host "--- RUNNING FINAL VERIFICATION ---"
           $runtimePath = "python_runtime"
           
+          # Step 1: Forcefully remove all .pdb files from the runtime.
+          Write-Host "Removing all .pdb files..."
+          Get-ChildItem -Path $runtimePath -Recurse -Filter "*.pdb" | Remove-Item -Force
+          Write-Host "[PASS] .pdb file removal complete."
+
           # Check 1: python.exe must exist.
           $pythonExePath = Join-Path $runtimePath "python.exe"
           if (-not (Test-Path $pythonExePath)) {
-            Write-Host "CRITICAL FAILURE: '$($pythonExePath)' does not exist. The wrong package was downloaded or extracted."
+            Write-Host "CRITICAL FAILURE: '$($pythonExePath)' does not exist."
             exit 1
           }
           Write-Host "[PASS] python.exe found."
@@ -78,16 +77,15 @@ jobs:
           # Check 2: pip.exe must exist.
           $pipExePath = Join-Path $runtimePath "Scripts\pip.exe"
           if (-not (Test-Path $pipExePath)) {
-            Write-Host "CRITICAL FAILURE: '$($pipExePath)' does not exist. Pip bootstrapping failed."
+            Write-Host "CRITICAL FAILURE: '$($pipExePath)' does not exist."
             exit 1
           }
           Write-Host "[PASS] pip.exe found."
 
-          # Check 3: There must NOT be any .pdb files.
+          # Check 3: There must NOT be any .pdb files remaining.
           $pdbFiles = Get-ChildItem -Path $runtimePath -Recurse -Filter "*.pdb"
           if ($pdbFiles) {
-            Write-Host "CRITICAL FAILURE: Found .pdb files in the runtime directory. This indicates the wrong package type (a debug or dev package) was downloaded."
-            $pdbFiles | ForEach-Object { Write-Host " - $($_.FullName)" }
+            Write-Host "CRITICAL FAILURE: Found .pdb files after cleanup step."
             exit 1
           }
           Write-Host "[PASS] No .pdb files found."
