@@ -12,8 +12,12 @@ from PySide6.QtGui import QAction, QGuiApplication
 
 
 def is_frozen():
-    """Checks if the application is running as a frozen (e.g., Nuitka) executable."""
-    return getattr(sys, "frozen", False)
+    """
+    Checks if the application is running as a frozen (e.g., Nuitka) executable.
+    This is the corrected and robust implementation.
+    """
+    # Nuitka sets both 'frozen' and '_MEIPASS' attributes.
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
 class ClickableLabel(QLineEdit):
@@ -64,53 +68,48 @@ class EnvironmentWorker(QObject):
             self.finished.emit(False, f"An unexpected error occurred: {e}")
 
     def run_setup(self):
-        """Creates the venv and installs packages."""
         self.progress.emit("--- STARTING SETUP PROCESS ---")
         if not os.path.exists(self.venv_path):
             self.progress.emit(f"Target venv path does not exist: {self.venv_path}")
             self.progress.emit("Attempting to create new virtual environment...")
 
-            # --- DEBUGGING LOGIC ---
             frozen_status = is_frozen()
             self.progress.emit(f"DEBUG: is_frozen() returned: {frozen_status}")
             self.progress.emit(f"DEBUG: sys.executable is: {sys.executable}")
-            # --- END DEBUGGING ---
+            self.progress.emit(f"DEBUG: os.path.abspath(__file__) is: {os.path.abspath(__file__)}")
 
             if frozen_status:
                 self.progress.emit("INFO: Running in FROZEN mode (compiled executable).")
 
-                # --- DEBUGGING LOGIC ---
                 base_path = os.path.dirname(sys.executable)
-                self.progress.emit(f"DEBUG: Determined base_path from sys.executable: {base_path}")
+                self.progress.emit(f"DEBUG (FROZEN): Determined base_path from sys.executable: {base_path}")
 
                 runtime_python_home = os.path.join(base_path, "python_runtime")
-                self.progress.emit(f"DEBUG: Constructed python_runtime path: {runtime_python_home}")
+                self.progress.emit(f"DEBUG (FROZEN): Constructed python_runtime path: {runtime_python_home}")
 
                 runtime_python_exe = os.path.join(runtime_python_home, "python.exe")
-                self.progress.emit(f"DEBUG: Constructed runtime_python_exe path: {runtime_python_exe}")
+                self.progress.emit(f"DEBUG (FROZEN): Constructed runtime_python_exe path: {runtime_python_exe}")
 
-                self.progress.emit(f"DEBUG: Checking if runtime_python_exe exists...")
+                self.progress.emit(f"DEBUG (FROZEN): Checking if runtime_python_exe exists...")
                 if not os.path.exists(runtime_python_exe):
                     self.progress.emit(f"CRITICAL FAILURE: Bundled Python not found at '{runtime_python_exe}'.")
                     self.finished.emit(False, f"Bundled Python runtime not found at '{runtime_python_exe}'.")
                     return
-                self.progress.emit("DEBUG: runtime_python_exe found.")
-                # --- END DEBUGGING ---
+                self.progress.emit("DEBUG (FROZEN): runtime_python_exe found.")
 
-                # This command is the equivalent of: 'C:\path\to\runtime\python.exe -m venv C:\path\to\.venv_graph'
                 cmd = [runtime_python_exe, "-m", "venv", self.venv_path]
-                self.progress.emit(f"DEBUG: Subprocess command to run: {cmd}")
-                self.progress.emit(f"DEBUG: Subprocess working directory (cwd): {runtime_python_home}")
+                self.progress.emit(f"DEBUG (FROZEN): Subprocess command to run: {cmd}")
+                self.progress.emit(f"DEBUG (FROZEN): Subprocess working directory (cwd): {runtime_python_home}")
 
                 result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", cwd=runtime_python_home)
 
                 if result.returncode != 0:
-                    self.progress.emit(f"ERROR: Subprocess failed with return code {result.returncode}.")
+                    self.progress.emit(f"ERROR (FROZEN): Subprocess failed with return code {result.returncode}.")
                     self.progress.emit(f"ERROR STDOUT: {result.stdout}")
                     self.progress.emit(f"ERROR STDERR: {result.stderr}")
                     self.finished.emit(False, f"Failed to create venv. See log for details.")
                     return
-                self.progress.emit("INFO: Subprocess to create venv completed successfully.")
+                self.progress.emit("INFO (FROZEN): Subprocess to create venv completed successfully.")
             else:
                 self.progress.emit("INFO: Running in SCRIPT mode (development).")
                 venv.create(self.venv_path, with_pip=True)
