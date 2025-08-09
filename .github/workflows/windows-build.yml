@@ -31,19 +31,18 @@ jobs:
       - name: Prepare Portable Python Runtime
         shell: pwsh
         run: |
-          # 1. Download a pre-built, standalone Python distribution.
-          # This URL is constructed from the verified list of available downloads.
+          # 1. Download the correct full, pre-built, standalone Python distribution.
           $pythonVersion = "3.11.13"
           $releaseTag = "20250808"
-          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-install_only.tar.gz"
+          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-pgo-full.tar.zst"
           $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/$fileName"
           
           Write-Host "Downloading Python runtime from $url"
-          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.gz"
+          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
 
           # 2. Decompress the archive.
           Write-Host "Decompressing Python runtime..."
-          tar -xzf python-standalone.tar.gz
+          tar -I zstd -xf python-standalone.tar.zst
           
           # 3. Move the contents to the 'python_runtime' directory
           Move-Item -Path "python\*" -Destination "python_runtime"
@@ -54,6 +53,10 @@ jobs:
           Get-ChildItem -Path "python_runtime"
           if (-not (Test-Path "python_runtime\python.exe")) {
             Write-Host "CRITICAL ERROR: python.exe not found after extraction. Build cannot continue."
+            exit 1
+          }
+          if (-not (Test-Path "python_runtime\Scripts\pip.exe")) {
+            Write-Host "CRITICAL ERROR: pip.exe not found after extraction. Build cannot continue."
             exit 1
           }
           Write-Host "Python runtime prepared successfully."
