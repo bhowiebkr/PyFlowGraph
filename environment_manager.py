@@ -70,35 +70,22 @@ class EnvironmentWorker(QObject):
 
             if is_frozen():
                 # --- Definitive Fix for Frozen Apps ---
-                # The standard 'venv' module fails when run from a compiled exe.
-                # We must create the venv structure manually.
+                # Instead of running venv from within the frozen app, we use a subprocess
+                # to call the bundled python.exe and tell IT to create the venv.
+                # This completely isolates the process and ensures the correct executable is used.
                 base_path = os.path.dirname(sys.executable)
-                runtime_python_home = os.path.join(base_path, "python_runtime")
+                runtime_python_exe = os.path.join(base_path, "python_runtime", "python.exe")
 
-                if not os.path.exists(os.path.join(runtime_python_home, "python.exe")):
-                    self.finished.emit(False, f"Bundled Python runtime not found at '{runtime_python_home}'.")
+                if not os.path.exists(runtime_python_exe):
+                    self.finished.emit(False, f"Bundled Python runtime not found at '{runtime_python_exe}'.")
                     return
 
-                # 1. Create the builder without pip to avoid the failing 'ensurepip' call.
-                builder = venv.EnvBuilder(with_pip=False)
-                builder.create(self.venv_path)
+                # This command is the equivalent of running 'python -m venv .venv_graph' from the command line.
+                cmd = [runtime_python_exe, "-m", "venv", self.venv_path]
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
 
-                # 2. Overwrite the incorrect pyvenv.cfg file.
-                # This is the most critical step. It tells the new venv where to find
-                # the full Python installation (our bundled runtime).
-                cfg_path = os.path.join(self.venv_path, "pyvenv.cfg")
-                with open(cfg_path, "w") as f:
-                    f.write(f"home = {runtime_python_home}\n")
-                    f.write("include-system-site-packages = false\n")
-                    f.write(f"version = {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n")
-
-                # 3. Manually install pip into the newly created environment.
-                venv_python_exe = self.get_venv_python_executable()
-                self.progress.emit("Bootstrapping pip...")
-                pip_bootstrap_cmd = [venv_python_exe, "-m", "ensurepip"]
-                result = subprocess.run(pip_bootstrap_cmd, capture_output=True, text=True, encoding="utf-8")
                 if result.returncode != 0:
-                    self.finished.emit(False, f"Failed to bootstrap pip: {result.stderr}")
+                    self.finished.emit(False, f"Failed to create venv: {result.stderr}")
                     return
             else:
                 # For development, the standard venv creation works fine.
