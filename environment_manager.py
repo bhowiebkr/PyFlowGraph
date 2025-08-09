@@ -105,11 +105,10 @@ class EnvironmentManagerDialog(QDialog):
         self.setMinimumSize(650, 500)
 
         self.initial_venv_path = venv_path
-        self.requirements = requirements.copy()  # Work with a copy
+        self.requirements = requirements.copy()
 
         layout = QVBoxLayout(self)
 
-        # --- Venv Path Selection ---
         path_layout = QHBoxLayout()
         path_layout.addWidget(QLabel("Environment Path:"))
         self.path_edit = QLineEdit(self.initial_venv_path)
@@ -119,7 +118,6 @@ class EnvironmentManagerDialog(QDialog):
         path_layout.addWidget(browse_button)
         layout.addLayout(path_layout)
 
-        # --- Requirements Management ---
         layout.addWidget(QLabel("Graph Python Dependencies:"))
         self.reqs_list = QListWidget()
         self.reqs_list.addItems(self.requirements)
@@ -137,7 +135,6 @@ class EnvironmentManagerDialog(QDialog):
         req_edit_layout.addWidget(remove_button)
         layout.addLayout(req_edit_layout)
 
-        # --- Action Buttons ---
         action_layout = QHBoxLayout()
         self.setup_button = QPushButton("Create / Update Environment")
         self.setup_button.clicked.connect(self.run_task_setup)
@@ -157,6 +154,20 @@ class EnvironmentManagerDialog(QDialog):
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
+
+        self.update_status_color(None)  # Set initial neutral color
+
+    def update_status_color(self, status):
+        """Updates the status label's background color."""
+        style = "color: white; padding: 4px; border-radius: 4px;"
+        if status is None:  # Neutral/Ready
+            self.status_label.setStyleSheet(f"background-color: #5A5A5A; {style}")
+        elif status == "running":
+            self.status_label.setStyleSheet(f"background-color: #3A5A8A; {style}")
+        elif status is True:  # Success
+            self.status_label.setStyleSheet(f"background-color: #3A6A3A; {style}")
+        elif status is False:  # Failure
+            self.status_label.setStyleSheet(f"background-color: #8A3A3A; {style}")
 
     def browse_path(self):
         directory = QFileDialog.getExistingDirectory(self, "Select Environment Parent Directory")
@@ -189,6 +200,7 @@ class EnvironmentManagerDialog(QDialog):
         self.verify_button.setEnabled(False)
         self.output_log.clear()
         self.status_label.setText(f"Status: Running {task_name}...")
+        self.update_status_color("running")
 
         self.worker = EnvironmentWorker(self.path_edit.text(), self.requirements, task_name)
         self.thread = QThread()
@@ -200,6 +212,7 @@ class EnvironmentManagerDialog(QDialog):
 
     def on_finished(self, success, message):
         self.status_label.setText(f"Status: {message}")
+        self.update_status_color(success)
         self.setup_button.setEnabled(True)
         self.verify_button.setEnabled(True)
         self.thread.quit()
