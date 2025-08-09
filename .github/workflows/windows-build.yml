@@ -32,18 +32,18 @@ jobs:
         shell: pwsh
         run: |
           # 1. Download a pre-built, standalone Python distribution.
-          # This is the correct way to get a fully functional portable environment.
-          # FIX: Updated to the new repository owner (astral-sh) and a valid release tag.
-          $pythonVersion = "3.11.9"
+          # This URL is constructed from the verified list of available downloads.
+          $pythonVersion = "3.11.13"
           $releaseTag = "20250808"
-          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/cpython-$pythonVersion+$releaseTag-x86_64-pc-windows-msvc-shared-install_only.tar.zst"
+          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-install_only.tar.gz"
+          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/$fileName"
           
           Write-Host "Downloading Python runtime from $url"
-          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
+          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.gz"
 
-          # 2. Decompress the archive. GitHub runners have zstd and tar pre-installed.
+          # 2. Decompress the archive.
           Write-Host "Decompressing Python runtime..."
-          tar -I zstd -xf python-standalone.tar.zst
+          tar -xzf python-standalone.tar.gz
           
           # 3. Move the contents to the 'python_runtime' directory
           Move-Item -Path "python\*" -Destination "python_runtime"
