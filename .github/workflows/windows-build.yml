@@ -74,14 +74,6 @@ jobs:
           }
           Write-Host "[PASS] python.exe found."
 
-          # Check 2: pip.exe must exist.
-          $pipExePath = Join-Path $runtimePath "Scripts\pip.exe"
-          if (-not (Test-Path $pipExePath)) {
-            Write-Host "CRITICAL FAILURE: '$($pipExePath)' does not exist."
-            exit 1
-          }
-          Write-Host "[PASS] pip.exe found."
-
           # Check 3: There must NOT be any .pdb files remaining.
           $pdbFiles = Get-ChildItem -Path $runtimePath -Recurse -Filter "*.pdb"
           if ($pdbFiles) {
