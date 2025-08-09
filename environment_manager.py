@@ -1,6 +1,6 @@
 # environment_manager.py
 # A comprehensive system for managing a dedicated virtual environment for graph execution.
-# This version includes extensive debugging output to diagnose venv creation issues.
+# This version contains the definitive fix for venv creation in a compiled application.
 
 import os
 import sys
@@ -9,15 +9,6 @@ import venv
 from PySide6.QtCore import QObject, Signal, QThread, Qt
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QDialogButtonBox, QLineEdit, QFileDialog, QListWidget, QListWidgetItem, QMenu
 from PySide6.QtGui import QAction, QGuiApplication
-
-
-def is_frozen():
-    """
-    Checks if the application is running as a frozen (e.g., Nuitka) executable.
-    This is the corrected and robust implementation.
-    """
-    # Nuitka sets both 'frozen' and '_MEIPASS' attributes.
-    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
 class ClickableLabel(QLineEdit):
@@ -73,45 +64,43 @@ class EnvironmentWorker(QObject):
             self.progress.emit(f"Target venv path does not exist: {self.venv_path}")
             self.progress.emit("Attempting to create new virtual environment...")
 
-            frozen_status = is_frozen()
-            self.progress.emit(f"DEBUG: is_frozen() returned: {frozen_status}")
+            # --- Definitive Fix ---
+            # Instead of relying on a potentially faulty is_frozen() check, we will
+            # determine the execution mode by looking for the bundled python_runtime.
+            base_path = os.path.dirname(sys.executable)
+            runtime_python_home = os.path.join(base_path, "python_runtime")
+            runtime_python_exe = os.path.join(runtime_python_home, "python.exe")
+
             self.progress.emit(f"DEBUG: sys.executable is: {sys.executable}")
-            self.progress.emit(f"DEBUG: os.path.abspath(__file__) is: {os.path.abspath(__file__)}")
+            self.progress.emit(f"DEBUG: Base path determined as: {base_path}")
+            self.progress.emit(f"DEBUG: Checking for runtime at: {runtime_python_home}")
 
-            if frozen_status:
-                self.progress.emit("INFO: Running in FROZEN mode (compiled executable).")
+            if os.path.exists(runtime_python_home):
+                # If the runtime folder exists, we are in a compiled environment.
+                self.progress.emit("INFO: 'python_runtime' folder found. Running in COMPILED mode.")
 
-                base_path = os.path.dirname(sys.executable)
-                self.progress.emit(f"DEBUG (FROZEN): Determined base_path from sys.executable: {base_path}")
-
-                runtime_python_home = os.path.join(base_path, "python_runtime")
-                self.progress.emit(f"DEBUG (FROZEN): Constructed python_runtime path: {runtime_python_home}")
-
-                runtime_python_exe = os.path.join(runtime_python_home, "python.exe")
-                self.progress.emit(f"DEBUG (FROZEN): Constructed runtime_python_exe path: {runtime_python_exe}")
-
-                self.progress.emit(f"DEBUG (FROZEN): Checking if runtime_python_exe exists...")
                 if not os.path.exists(runtime_python_exe):
                     self.progress.emit(f"CRITICAL FAILURE: Bundled Python not found at '{runtime_python_exe}'.")
                     self.finished.emit(False, f"Bundled Python runtime not found at '{runtime_python_exe}'.")
                     return
-                self.progress.emit("DEBUG (FROZEN): runtime_python_exe found.")
+                self.progress.emit("DEBUG: Bundled python.exe found.")
 
                 cmd = [runtime_python_exe, "-m", "venv", self.venv_path]
-                self.progress.emit(f"DEBUG (FROZEN): Subprocess command to run: {cmd}")
-                self.progress.emit(f"DEBUG (FROZEN): Subprocess working directory (cwd): {runtime_python_home}")
+                self.progress.emit(f"DEBUG: Subprocess command to run: {cmd}")
 
-                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", cwd=runtime_python_home)
+                # No need to set cwd, as we use an absolute path to the executable.
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
 
                 if result.returncode != 0:
-                    self.progress.emit(f"ERROR (FROZEN): Subprocess failed with return code {result.returncode}.")
+                    self.progress.emit(f"ERROR: Subprocess failed with return code {result.returncode}.")
                     self.progress.emit(f"ERROR STDOUT: {result.stdout}")
                     self.progress.emit(f"ERROR STDERR: {result.stderr}")
                     self.finished.emit(False, f"Failed to create venv. See log for details.")
                     return
-                self.progress.emit("INFO (FROZEN): Subprocess to create venv completed successfully.")
+                self.progress.emit("INFO: Subprocess to create venv completed successfully.")
             else:
-                self.progress.emit("INFO: Running in SCRIPT mode (development).")
+                # If the runtime folder does not exist, we are in a development environment.
+                self.progress.emit("INFO: 'python_runtime' folder not found. Running in SCRIPT mode.")
                 venv.create(self.venv_path, with_pip=True)
 
         venv_python_exe = self.get_venv_python_executable()
