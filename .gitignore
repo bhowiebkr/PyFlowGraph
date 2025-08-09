@@ -106,3 +106,6 @@ generated_readme.md
 
 # Other venv's 
 *venv*
+
+# python runtime if it exists. when debugging the compiled code with the runtime it was necessary to hack things to run that runtime within the python version of the code
+python_runtime
