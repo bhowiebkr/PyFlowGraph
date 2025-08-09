@@ -1,6 +1,6 @@
 # environment_manager.py
 # A comprehensive system for managing a dedicated virtual environment for graph execution.
-# Now handles venv creation from a Nuitka-compiled executable.
+# Now correctly handles venv creation from a Nuitka-compiled executable.
 
 import os
 import sys
@@ -29,11 +29,12 @@ class EnvironmentWorker(QObject):
         self.requirements = requirements
         self.task = task
 
-    def get_pip_executable(self):
+    def get_venv_python_executable(self):
+        """Gets the path to the python executable inside the created venv."""
         if sys.platform == "win32":
-            return os.path.join(self.venv_path, "Scripts", "pip.exe")
+            return os.path.join(self.venv_path, "Scripts", "python.exe")
         else:
-            return os.path.join(self.venv_path, "bin", "pip")
+            return os.path.join(self.venv_path, "bin", "python")
 
     def run(self):
         try:
@@ -51,15 +52,16 @@ class EnvironmentWorker(QObject):
 
             if is_frozen():
                 # For compiled apps, find the bundled Python runtime and use it to create the venv.
-                # Assumes the runtime is in a 'python_runtime' folder next to the main executable.
                 base_path = os.path.dirname(sys.executable)
-                python_exe = os.path.join(base_path, "python_runtime", "python.exe")
-                if not os.path.exists(python_exe):
-                    self.finished.emit(False, "Bundled Python runtime not found!")
+                runtime_python_exe = os.path.join(base_path, "python_runtime", "python.exe")
+
+                if not os.path.exists(runtime_python_exe):
+                    error_msg = f"Bundled Python runtime not found at '{runtime_python_exe}'. " "The application build is incomplete."
+                    self.finished.emit(False, error_msg)
                     return
 
-                cmd = [python_exe, "-m", "venv", self.venv_path]
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                cmd = [runtime_python_exe, "-m", "venv", self.venv_path]
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
                 if result.returncode != 0:
                     self.finished.emit(False, f"Failed to create venv: {result.stderr}")
                     return
@@ -67,13 +69,14 @@ class EnvironmentWorker(QObject):
                 # For development, use the standard venv creation.
                 venv.create(self.venv_path, with_pip=True)
 
-        pip_exe = self.get_pip_executable()
+        venv_python_exe = self.get_venv_python_executable()
         if not self.requirements:
             self.finished.emit(True, "Environment exists. No packages to install.")
             return
 
         self.progress.emit(f"Installing {len(self.requirements)} dependencies...")
-        cmd = [pip_exe, "install"] + self.requirements
+        # Use python -m pip to be robust
+        cmd = [venv_python_exe, "-m", "pip", "install"] + self.requirements
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8")
         for line in iter(process.stdout.readline, ""):
             self.progress.emit(line.strip())
@@ -87,8 +90,8 @@ class EnvironmentWorker(QObject):
     def run_verify(self):
         """Verifies the venv and checks for installed packages."""
         self.progress.emit("Starting verification...")
-        pip_exe = self.get_pip_executable()
-        if not os.path.exists(pip_exe):
+        venv_python_exe = self.get_venv_python_executable()
+        if not os.path.exists(venv_python_exe):
             self.finished.emit(False, "Verification Failed: Virtual environment not found.")
             return
 
@@ -98,7 +101,7 @@ class EnvironmentWorker(QObject):
             return
 
         self.progress.emit("Checking installed packages...")
-        cmd = [pip_exe, "freeze"]
+        cmd = [venv_python_exe, "-m", "pip", "freeze"]
         result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
         if result.returncode != 0:
             self.finished.emit(False, "Verification Failed: Could not list installed packages.")
@@ -163,7 +166,6 @@ class EnvironmentManagerDialog(QDialog):
         action_layout.addWidget(self.verify_button)
         layout.addLayout(action_layout)
 
-        # UI FIX: Use a read-only QLineEdit for the status to make it copyable.
         self.status_display = QLineEdit("Status: Ready")
         self.status_display.setReadOnly(True)
         layout.addWidget(self.status_display)
