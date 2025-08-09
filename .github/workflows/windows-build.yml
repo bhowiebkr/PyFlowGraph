@@ -1,7 +1,7 @@
 # .github/workflows/windows-build.yml
 # GitHub Actions workflow to build a standalone Windows executable and create a release.
-# This version uses a pre-built, standalone Python distribution to ensure a fully
-# functional portable runtime is bundled with the application.
+# This version correctly downloads the official Python embeddable package and prepares
+# it to be a fully functional, portable runtime for creating virtual environments.
 
 name: Build and Release Windows App
 
@@ -31,34 +31,47 @@ jobs:
       - name: Prepare Portable Python Runtime
         shell: pwsh
         run: |
-          # 1. Download the correct full, pre-built, standalone Python distribution.
-          $pythonVersion = "3.11.13"
-          $releaseTag = "20250808"
-          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-pgo-full.tar.zst"
-          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/$fileName"
+          # 1. Download the official Python embeddable package.
+          $pythonVersion = "3.11.9"
+          $url = "https://www.python.org/ftp/python/$($pythonVersion)/python-$($pythonVersion)-embed-amd64.zip"
           
           Write-Host "Downloading Python runtime from $url"
-          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
+          Invoke-WebRequest -Uri $url -OutFile "python-embed.zip"
 
-          # 2. Decompress the archive.
+          # 2. Decompress the archive into the 'python_runtime' directory.
           Write-Host "Decompressing Python runtime..."
-          tar -I zstd -xf python-standalone.tar.zst
+          Expand-Archive -Path "python-embed.zip" -DestinationPath "python_runtime"
           
-          # 3. Move the contents to the 'python_runtime' directory
-          Move-Item -Path "python\*" -Destination "python_runtime"
-          Remove-Item "python" -Recurse
-          
-          # --- Verification Step ---
-          Write-Host "Verifying contents of python_runtime directory:"
-          Get-ChildItem -Path "python_runtime"
+          # --- Verification Step 1 ---
+          Write-Host "Verifying python.exe exists..."
           if (-not (Test-Path "python_runtime\python.exe")) {
             Write-Host "CRITICAL ERROR: python.exe not found after extraction. Build cannot continue."
             exit 1
           }
+          
+          # 3. Enable site-packages, which is required for pip and venv to work.
+          # This finds the python3xx._pth file and uncomments the 'import site' line.
+          $pth_file = Get-ChildItem -Path "python_runtime" -Filter "*.pth" | Select-Object -First 1
+          Write-Host "Enabling site-packages in $($pth_file.Name)..."
+          (Get-Content $pth_file.FullName) -replace '#import site', 'import site' | Set-Content $pth_file.FullName
+          
+          # 4. Download the official pip bootstrap script.
+          Write-Host "Downloading get-pip.py..."
+          Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "python_runtime\get-pip.py"
+          
+          # 5. Run the bootstrap script to install pip into the portable runtime.
+          Write-Host "Installing pip into the portable runtime..."
+          .\python_runtime\python.exe .\python_runtime\get-pip.py
+          
+          # --- Verification Step 2 ---
+          Write-Host "Verifying pip.exe exists..."
           if (-not (Test-Path "python_runtime\Scripts\pip.exe")) {
-            Write-Host "CRITICAL ERROR: pip.exe not found after extraction. Build cannot continue."
+            Write-Host "CRITICAL ERROR: pip.exe not found after installation. Build cannot continue."
             exit 1
           }
+
+          # 6. Clean up the bootstrap script.
+          Remove-Item "python_runtime\get-pip.py"
           Write-Host "Python runtime prepared successfully."
 
       - name: Cache Pip and Nuitka
