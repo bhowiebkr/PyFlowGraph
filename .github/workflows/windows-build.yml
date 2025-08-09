@@ -1,7 +1,6 @@
 # .github/workflows/windows-build.yml
 # GitHub Actions workflow to build a standalone Windows executable and create a release.
-# This version correctly downloads the full standalone Python package and extracts the
-# runnable distribution from the correct 'install' subfolder.
+# This version correctly downloads and prepares a full, portable Python runtime.
 
 name: Build and Release Windows App
 
@@ -28,40 +27,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Prepare Portable Python Runtime
-        shell: pwsh
-        run: |
-          # 1. Download the full, pre-built, standalone Python distribution.
-          $pythonVersion = "3.11.13"
-          $releaseTag = "20250808"
-          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-pgo-full.tar.zst"
-          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/$fileName"
-          
-          Write-Host "Downloading Python runtime from $url"
-          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
-
-          # 2. Decompress the archive.
-          Write-Host "Decompressing Python runtime..."
-          tar -I zstd -xf python-standalone.tar.zst
-          
-          # 3. BUG FIX: Move the contents from the correct 'python\install' subfolder.
-          Write-Host "Moving extracted runtime to 'python_runtime'..."
-          Move-Item -Path "python\install\*" -Destination "python_runtime"
-          Remove-Item "python" -Recurse
-          
-          # --- Verification Step ---
-          Write-Host "Verifying contents of python_runtime directory:"
-          Get-ChildItem -Path "python_runtime"
-          if (-not (Test-Path "python_runtime\python.exe")) {
-            Write-Host "CRITICAL ERROR: python.exe not found after extraction. Build cannot continue."
-            exit 1
-          }
-          if (-not (Test-Path "python_runtime\Scripts\pip.exe")) {
-            Write-Host "CRITICAL ERROR: pip.exe not found after extraction. Build cannot continue."
-            exit 1
-          }
-          Write-Host "Python runtime prepared successfully."
-
       - name: Cache Pip and Nuitka
         uses: actions/cache@v4
         with:
@@ -72,8 +37,49 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install Nuitka and PySide6
+      - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Download zstd.exe decompressor
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/facebook/zstd/releases/download/v1.5.5/zstd-v1.5.5-win64.zip" -OutFile "zstd.zip"
+          Expand-Archive -Path "zstd.zip" -DestinationPath "zstd"
+          $env:PATH += ";${PWD}/zstd"
+
+      - name: Download Python standalone runtime
+        shell: pwsh
+        run: |
+          $pythonVersion = "3.11.13"
+          $releaseTag = "20250808"
+          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-pgo-full.tar.zst"
+          $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/$fileName"
+
+          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
+
+      - name: Decompress Python runtime
+        shell: pwsh
+        run: |
+          .\zstd\zstd.exe -d python-standalone.tar.zst -o python-standalone.tar
+          tar -xf python-standalone.tar
+
+      - name: Move to python_runtime folder
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path python_runtime
+          Move-Item -Path "python\install\*" -Destination "python_runtime"
+          Remove-Item "python" -Recurse -Force
+
+      - name: Verify python_runtime
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "python_runtime\python.exe")) { exit 1 }
+          if (-not (Test-Path "python_runtime\Scripts\pip.exe")) { exit 1 }
+      
+      - name: Upgrade pip in portable runtime
+        shell: pwsh
+        run: |
+          .\python_runtime\python.exe -m pip install --upgrade pip
 
       - name: Build app with Nuitka
         run: |
@@ -99,8 +105,8 @@ jobs:
           $build_dir = "NodeEditor_Build"
           $dist_dir = Join-Path $build_dir "main.dist"
           
-          $new_dir_name = "NodeEditor $version"
-          $zip_file_name = "NodeEditor_Windows_$version.zip"
+          $new_dir_name = "PyFlowCanvas $version"
+          $zip_file_name = "PyFlowCanvas_Windows_$version.zip"
           
           Rename-Item -Path $dist_dir -NewName $new_dir_name
           
