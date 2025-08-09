@@ -71,12 +71,15 @@ jobs:
             --lto=yes `
             --include-data-dir=examples=examples `
             --include-data-file=dark_theme.qss=dark_theme.qss `
-            --include-data-dir=python_runtime=python_runtime `
-            --include-data-file=python_runtime\\python.exe=python_runtime\\python.exe `
-            --include-data-file=python_runtime\\*.dll=python_runtime\\ `
             --assume-yes-for-downloads `
             main.py
 
+      - name: Copy Python runtime after Nuitka build
+        shell: pwsh
+        run: |
+          $distDir = "NodeEditor_Build\main.dist"
+          Write-Host "Copying python_runtime to $distDir..."
+          Copy-Item -Path "python_runtime" -Destination $distDir -Recurse -Force
 
       - name: Prepare artifact for release
         id: package
