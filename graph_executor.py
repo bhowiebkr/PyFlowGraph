@@ -73,19 +73,34 @@ class GraphExecutor:
                 self.log.append(f"SKIP: Node '{current_node.title}' has no valid function defined.")
                 continue
 
+            # BUG FIX: This new runner script captures both the return value and any
+            # printed output, sending them back as a single JSON object. This
+            # prevents crashes on nodes that only print and don't return a value.
             runner_script = (
-                f"import json, sys\n"
+                f"import json, sys, io\n"
+                f"from contextlib import redirect_stdout\n"
                 f"def node_entry(func): return func\n"
                 f"{current_node.code}\n"
                 f"input_str = sys.stdin.read()\n"
                 f"inputs = json.loads(input_str) if input_str else {{}}\n"
-                f"result = {current_node.function_name}(**inputs)\n"
-                f"json.dump(result, sys.stdout)\n"
+                f"stdout_capture = io.StringIO()\n"
+                f"return_value = None\n"
+                f"with redirect_stdout(stdout_capture):\n"
+                f"    return_value = {current_node.function_name}(**inputs)\n"
+                f"printed_output = stdout_capture.getvalue()\n"
+                f"final_output = {{'result': return_value, 'stdout': printed_output}}\n"
+                f"json.dump(final_output, sys.stdout)\n"
             )
 
             try:
                 process = subprocess.run([python_exe, "-c", runner_script], input=json.dumps(inputs_for_function), capture_output=True, text=True, check=True)
-                result = json.loads(process.stdout)
+
+                response = json.loads(process.stdout)
+                result = response.get("result")
+                printed_output = response.get("stdout")
+
+                if printed_output:
+                    self.log.append(printed_output.strip())
                 if process.stderr:
                     self.log.append(f"STDERR: {process.stderr.strip()}")
 
