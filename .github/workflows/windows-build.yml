@@ -50,10 +50,14 @@ jobs:
           }
           
           # 3. Enable site-packages, which is required for pip and venv to work.
-          # This finds the python3xx._pth file and uncomments the 'import site' line.
-          $pth_file = Get-ChildItem -Path "python_runtime" -Filter "*.pth" | Select-Object -First 1
-          Write-Host "Enabling site-packages in $($pth_file.Name)..."
-          (Get-Content $pth_file.FullName) -replace '#import site', 'import site' | Set-Content $pth_file.FullName
+          # BUG FIX: Construct the exact ._pth filename instead of searching for it.
+          $pth_file_path = "python_runtime\python311._pth"
+          Write-Host "Enabling site-packages in $pth_file_path..."
+          if (-not (Test-Path $pth_file_path)) {
+            Write-Host "CRITICAL ERROR: $($pth_file_path) not found. Cannot enable site-packages."
+            exit 1
+          }
+          (Get-Content $pth_file_path) -replace '#import site', 'import site' | Set-Content $pth_file_path
           
           # 4. Download the official pip bootstrap script.
           Write-Host "Downloading get-pip.py..."
