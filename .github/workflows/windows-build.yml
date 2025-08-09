@@ -1,6 +1,7 @@
 # .github/workflows/windows-build.yml
-# GitHub Actions workflow to build a standalone Windows executable and create a release.
-# This version correctly downloads and prepares a full, portable Python runtime.
+# This workflow correctly downloads a full, portable Python runtime, prepares it,
+# and bundles it with the Nuitka-compiled application for a fully standalone release.
+# It includes exhaustive verification steps to prevent incorrect builds.
 
 name: Build and Release Windows App
 
@@ -27,60 +28,74 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache Pip and Nuitka
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~\.cache\pip
-            ~\AppData\Local\Nuitka\Nuitka\Cache
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Download zstd.exe decompressor
+      - name: Prepare Portable Python Runtime
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/facebook/zstd/releases/download/v1.5.5/zstd-v1.5.5-win64.zip" -OutFile "zstd.zip"
-          Expand-Archive -Path "zstd.zip" -DestinationPath "zstd"
-          $env:PATH += ";${PWD}/zstd"
-
-      - name: Download Python standalone runtime
-        shell: pwsh
-        run: |
+          # 1. Download the correct 'install_only' standalone Python distribution.
           $pythonVersion = "3.11.13"
           $releaseTag = "20250808"
-          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-pgo-full.tar.zst"
+          $fileName = "cpython-$($pythonVersion)+$($releaseTag)-x86_64-pc-windows-msvc-install_only.tar.gz"
           $url = "https://github.com/astral-sh/python-build-standalone/releases/download/$releaseTag/$fileName"
+          
+          Write-Host "Downloading Python runtime from $url"
+          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.gz"
 
-          Invoke-WebRequest -Uri $url -OutFile "python-standalone.tar.zst"
-
-      - name: Decompress Python runtime
-        shell: pwsh
-        run: |
-          # The zstd executable is in a nested directory after extraction.
-          # Use the correct path to the executable.
-          .\zstd\zstd-v1.5.5-win64\zstd.exe -d python-standalone.tar.zst -o python-standalone.tar
-          tar -xf python-standalone.tar
-
-      - name: Move to python_runtime folder
-        shell: pwsh
-        run: |
+          # 2. Decompress the archive.
+          Write-Host "Decompressing Python runtime..."
+          tar -xzf python-standalone.tar.gz
+          
+          # 3. Move the contents to the 'python_runtime' directory.
           New-Item -ItemType Directory -Force -Path python_runtime
-          Move-Item -Path "python\install\*" -Destination "python_runtime"
+          Move-Item -Path "python\*" -Destination "python_runtime"
           Remove-Item "python" -Recurse -Force
+          
+          # 4. Download the official pip bootstrap script.
+          Write-Host "Downloading get-pip.py..."
+          Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "python_runtime\get-pip.py"
+          
+          # 5. Run the bootstrap script to install pip.
+          Write-Host "Installing pip into the portable runtime..."
+          .\python_runtime\python.exe .\python_runtime\get-pip.py
+          
+          # 6. Clean up.
+          Remove-Item "python_runtime\get-pip.py"
+          Write-Host "Python runtime prepared."
 
-      - name: Verify python_runtime
+      - name: Insane Sanity Check of Python Runtime
         shell: pwsh
         run: |
-          if (-not (Test-Path "python_runtime\python.exe")) { exit 1 }
-      
-      - name: Upgrade pip in portable runtime
-        shell: pwsh
-        run: |
-          .\python_runtime\python.exe -m pip install --upgrade pip
+          Write-Host "--- RUNNING EXTREME VERIFICATION ---"
+          $runtimePath = "python_runtime"
+          
+          # Check 1: python.exe must exist.
+          $pythonExePath = Join-Path $runtimePath "python.exe"
+          if (-not (Test-Path $pythonExePath)) {
+            Write-Host "CRITICAL FAILURE: '$($pythonExePath)' does not exist. The wrong package was downloaded or extracted."
+            exit 1
+          }
+          Write-Host "[PASS] python.exe found."
+
+          # Check 2: pip.exe must exist.
+          $pipExePath = Join-Path $runtimePath "Scripts\pip.exe"
+          if (-not (Test-Path $pipExePath)) {
+            Write-Host "CRITICAL FAILURE: '$($pipExePath)' does not exist. Pip bootstrapping failed."
+            exit 1
+          }
+          Write-Host "[PASS] pip.exe found."
+
+          # Check 3: There must NOT be any .pdb files.
+          $pdbFiles = Get-ChildItem -Path $runtimePath -Recurse -Filter "*.pdb"
+          if ($pdbFiles) {
+            Write-Host "CRITICAL FAILURE: Found .pdb files in the runtime directory. This indicates the wrong package type (a debug or dev package) was downloaded."
+            $pdbFiles | ForEach-Object { Write-Host " - $($_.FullName)" }
+            exit 1
+          }
+          Write-Host "[PASS] No .pdb files found."
+          
+          Write-Host "--- VERIFICATION SUCCEEDED ---"
+
+      - name: Install dependencies for Nuitka build
+        run: pip install -r requirements.txt
 
       - name: Build app with Nuitka
         run: |
