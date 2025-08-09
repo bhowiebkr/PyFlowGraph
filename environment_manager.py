@@ -1,18 +1,36 @@
 # environment_manager.py
 # A comprehensive system for managing a dedicated virtual environment for graph execution.
-# Now correctly handles venv creation from a Nuitka-compiled executable.
+# This version contains the definitive fix for venv creation in a compiled application.
 
 import os
 import sys
 import subprocess
 import venv
-from PySide6.QtCore import QObject, Signal, QThread
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QDialogButtonBox, QLineEdit, QFileDialog, QListWidget, QListWidgetItem
+from PySide6.QtCore import QObject, Signal, QThread, Qt
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QDialogButtonBox, QLineEdit, QFileDialog, QListWidget, QListWidgetItem, QMenu
+from PySide6.QtGui import QAction, QGuiApplication
 
 
 def is_frozen():
     """Checks if the application is running as a frozen (e.g., Nuitka) executable."""
     return getattr(sys, "frozen", False)
+
+
+class ClickableLabel(QLineEdit):
+    """A read-only QLineEdit styled as a label that supports right-click to copy."""
+
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self.setReadOnly(True)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
+    def show_context_menu(self, pos):
+        menu = QMenu(self)
+        copy_action = QAction("Copy", self)
+        copy_action.triggered.connect(lambda: QGuiApplication.clipboard().setText(self.text()))
+        menu.addAction(copy_action)
+        menu.exec(self.mapToGlobal(pos))
 
 
 class EnvironmentWorker(QObject):
@@ -51,22 +69,39 @@ class EnvironmentWorker(QObject):
             self.progress.emit(f"Creating virtual environment at: {self.venv_path}")
 
             if is_frozen():
-                # For compiled apps, find the bundled Python runtime and use it to create the venv.
+                # --- Definitive Fix for Frozen Apps ---
+                # The standard 'venv' module fails when run from a compiled exe.
+                # We must create the venv structure manually.
                 base_path = os.path.dirname(sys.executable)
-                runtime_python_exe = os.path.join(base_path, "python_runtime", "python.exe")
+                runtime_python_home = os.path.join(base_path, "python_runtime")
 
-                if not os.path.exists(runtime_python_exe):
-                    error_msg = f"Bundled Python runtime not found at '{runtime_python_exe}'. " "The application build is incomplete."
-                    self.finished.emit(False, error_msg)
+                if not os.path.exists(os.path.join(runtime_python_home, "python.exe")):
+                    self.finished.emit(False, f"Bundled Python runtime not found at '{runtime_python_home}'.")
                     return
 
-                cmd = [runtime_python_exe, "-m", "venv", self.venv_path]
-                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+                # 1. Create the builder without pip to avoid the failing 'ensurepip' call.
+                builder = venv.EnvBuilder(with_pip=False)
+                builder.create(self.venv_path)
+
+                # 2. Overwrite the incorrect pyvenv.cfg file.
+                # This is the most critical step. It tells the new venv where to find
+                # the full Python installation (our bundled runtime).
+                cfg_path = os.path.join(self.venv_path, "pyvenv.cfg")
+                with open(cfg_path, "w") as f:
+                    f.write(f"home = {runtime_python_home}\n")
+                    f.write("include-system-site-packages = false\n")
+                    f.write(f"version = {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n")
+
+                # 3. Manually install pip into the newly created environment.
+                venv_python_exe = self.get_venv_python_executable()
+                self.progress.emit("Bootstrapping pip...")
+                pip_bootstrap_cmd = [venv_python_exe, "-m", "ensurepip"]
+                result = subprocess.run(pip_bootstrap_cmd, capture_output=True, text=True, encoding="utf-8")
                 if result.returncode != 0:
-                    self.finished.emit(False, f"Failed to create venv: {result.stderr}")
+                    self.finished.emit(False, f"Failed to bootstrap pip: {result.stderr}")
                     return
             else:
-                # For development, use the standard venv creation.
+                # For development, the standard venv creation works fine.
                 venv.create(self.venv_path, with_pip=True)
 
         venv_python_exe = self.get_venv_python_executable()
@@ -75,7 +110,6 @@ class EnvironmentWorker(QObject):
             return
 
         self.progress.emit(f"Installing {len(self.requirements)} dependencies...")
-        # Use python -m pip to be robust
         cmd = [venv_python_exe, "-m", "pip", "install"] + self.requirements
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8")
         for line in iter(process.stdout.readline, ""):
@@ -88,7 +122,6 @@ class EnvironmentWorker(QObject):
             self.finished.emit(False, "Failed to install one or more packages.")
 
     def run_verify(self):
-        """Verifies the venv and checks for installed packages."""
         self.progress.emit("Starting verification...")
         venv_python_exe = self.get_venv_python_executable()
         if not os.path.exists(venv_python_exe):
@@ -117,10 +150,6 @@ class EnvironmentWorker(QObject):
 
 
 class EnvironmentManagerDialog(QDialog):
-    """
-    A polished dialog for managing the Python execution environment.
-    """
-
     def __init__(self, venv_path, requirements, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Execution Environment Manager")
@@ -166,8 +195,8 @@ class EnvironmentManagerDialog(QDialog):
         action_layout.addWidget(self.verify_button)
         layout.addLayout(action_layout)
 
-        self.status_display = QLineEdit("Status: Ready")
-        self.status_display.setReadOnly(True)
+        # UI FIX: Use the custom ClickableLabel for the status display.
+        self.status_display = ClickableLabel("Status: Ready")
         layout.addWidget(self.status_display)
 
         self.output_log = QTextEdit()
@@ -183,7 +212,7 @@ class EnvironmentManagerDialog(QDialog):
 
     def update_status_color(self, status):
         """Updates the status display's background color."""
-        style = "color: white; padding: 4px; border-radius: 4px;"
+        style = "color: white; padding: 4px; border-radius: 4px; border: 1px solid #2E2E2E;"
         if status is None:
             self.status_display.setStyleSheet(f"background-color: #5A5A5A; {style}")
         elif status == "running":
