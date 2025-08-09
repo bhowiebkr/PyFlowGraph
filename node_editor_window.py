@@ -1,8 +1,9 @@
 # node_editor_window.py
-# Contains the main application window (QMainWindow).
-# Now imports the default graph from an external file.
+# The main application window.
+# Now stores and manages the venv path.
 
 import json
+import os
 from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog
 from PySide6.QtGui import QAction, QFont
 from PySide6.QtCore import Qt, QPointF
@@ -10,16 +11,18 @@ from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
 from graph_executor import GraphExecutor
 from default_graphs import create_complex_default_graph
+from environment_manager import EnvironmentManagerDialog
+
 
 class NodeEditorWindow(QMainWindow):
-    """
-    The main window of the application, hosting the node graph editor.
-    """
     def __init__(self, parent=None):
         super().__init__(parent)
-
-        self.setWindowTitle("PySide6 Node Editor")
+        self.setWindowTitle("PySide6 Advanced Node Editor")
         self.setGeometry(100, 100, 1800, 1000)
+
+        # --- Environment Configuration ---
+        self.venv_path = os.path.abspath(os.path.join(os.getcwd(), ".venv_graph"))
+        self.current_requirements = []
 
         self.graph = NodeGraph(self)
         self.view = NodeEditorView(self.graph, self)
@@ -31,19 +34,25 @@ class NodeEditorWindow(QMainWindow):
         dock.setWidget(self.output_log)
         self.addDockWidget(Qt.BottomDockWidgetArea, dock)
 
-        self.executor = GraphExecutor(self.graph, self.output_log)
+        self.executor = GraphExecutor(self.graph, self.output_log, self.get_venv_path)
 
         self._create_actions()
         self._create_menus()
-        
-        # Create the complex default graph by calling the imported function
         create_complex_default_graph(self.graph)
+        # Set default requirements from the initial graph
+        self.current_requirements = ["requests"]
+
+    def get_venv_path(self):
+        """Provides the current venv path to the executor."""
+        return self.venv_path
 
     def _create_actions(self):
         self.action_save = QAction("&Save Graph...", self)
         self.action_save.triggered.connect(self.on_save)
         self.action_load = QAction("&Load Graph...", self)
         self.action_load.triggered.connect(self.on_load)
+        self.action_manage_env = QAction("&Manage Environment...", self)
+        self.action_manage_env.triggered.connect(self.on_manage_env)
         self.action_execute = QAction("&Execute Graph", self)
         self.action_execute.setShortcut("F5")
         self.action_execute.triggered.connect(self.on_execute)
@@ -62,7 +71,41 @@ class NodeEditorWindow(QMainWindow):
         edit_menu = menu_bar.addMenu("&Edit")
         edit_menu.addAction(self.action_add_node)
         run_menu = menu_bar.addMenu("&Run")
+        run_menu.addAction(self.action_manage_env)
         run_menu.addAction(self.action_execute)
+
+    def on_manage_env(self):
+        dialog = EnvironmentManagerDialog(self.venv_path, self.current_requirements, self)
+        if dialog.exec():
+            self.venv_path, self.current_requirements = dialog.get_results()
+            self.output_log.append("Environment configuration updated.")
+
+    def on_save(self):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Graph", "", "JSON Files (*.json)")
+        if file_path:
+            data = self.graph.serialize()
+            data["requirements"] = self.current_requirements
+            data["venv_path"] = self.venv_path
+            with open(file_path, "w") as f:
+                json.dump(data, f, indent=4)
+            self.output_log.append(f"Graph saved to {file_path}")
+
+    def on_load(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Load Graph", "", "JSON Files (*.json)")
+        if file_path:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            self.graph.deserialize(data)
+            self.current_requirements = data.get("requirements", [])
+            self.venv_path = data.get("venv_path", self.venv_path)  # Load path, or keep current
+            self.output_log.append(f"Graph loaded from {file_path}")
+            self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
+
+    def on_execute(self):
+        self.output_log.clear()
+        self.output_log.append("--- Execution Started ---")
+        self.executor.execute()
+        self.output_log.append("--- Execution Finished ---")
 
     def on_add_node(self, scene_pos=None):
         title, ok = QInputDialog.getText(self, "Add Node", "Enter Node Title:")
@@ -70,27 +113,4 @@ class NodeEditorWindow(QMainWindow):
             if not isinstance(scene_pos, QPointF):
                 scene_pos = self.view.mapToScene(self.view.viewport().rect().center())
             node = self.graph.create_node(title, pos=(scene_pos.x(), scene_pos.y()))
-            node.set_code("from typing import Tuple\n\n"
-                          "def node_function(input_1: str) -> Tuple[str, int]:\n"
-                          "    # Your code here\n"
-                          "    return 'hello', len(input_1)")
-
-    def on_save(self):
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save Graph", "", "JSON Files (*.json)")
-        if file_path:
-            data = self.graph.serialize()
-            with open(file_path, 'w') as f: json.dump(data, f, indent=4)
-            self.output_log.append(f"Graph saved to {file_path}")
-
-    def on_load(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Load Graph", "", "JSON Files (*.json)")
-        if file_path:
-            with open(file_path, 'r') as f: data = json.load(f)
-            self.graph.deserialize(data)
-            self.output_log.append(f"Graph loaded from {file_path}")
-    
-    def on_execute(self):
-        self.output_log.clear()
-        self.output_log.append("--- Execution Started ---")
-        self.executor.execute()
-        self.output_log.append("--- Execution Finished ---")
+            node.set_code("from typing import Tuple\n\n" "@node_entry\n" "def node_function(input_1: str) -> Tuple[str, int]:\n" "    return 'hello', len(input_1)")
