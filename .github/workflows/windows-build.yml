@@ -1,5 +1,6 @@
 # .github/workflows/windows-build.yml
 # GitHub Actions workflow to build a standalone Windows executable and create a release.
+# Now bundles a portable Python runtime for venv creation.
 
 name: Build and Release Windows App
 
@@ -19,13 +20,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # We need to fetch all history for the changelog generator to work correctly
           fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python for build process
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Download Portable Python Runtime
+        run: |
+          # Download the embeddable Python package which will be bundled with the app
+          Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.5/python-3.11.5-embed-amd64.zip" -OutFile "python-embed.zip"
+          Expand-Archive -Path "python-embed.zip" -DestinationPath "python_runtime"
+        shell: pwsh
 
       - name: Cache Pip and Nuitka
         uses: actions/cache@v4
@@ -53,28 +60,25 @@ jobs:
             --lto=yes `
             --include-data-dir=examples=examples `
             --include-data-file=dark_theme.qss=dark_theme.qss `
+            --include-data-dir=python_runtime=python_runtime `
             --assume-yes-for-downloads `
             main.py
 
       - name: Prepare artifact for release
-        id: package # Give the step an ID
+        id: package
         run: |
           $version = "${{ github.ref_name }}"
           $build_dir = "NodeEditor_Build"
           $dist_dir = Join-Path $build_dir "main.dist"
           
-          # Define new versioned names
           $new_dir_name = "NodeEditor $version"
           $zip_file_name = "NodeEditor_Windows_$version.zip"
           
-          # Rename the folder
           Rename-Item -Path $dist_dir -NewName $new_dir_name
           
-          # Compress the renamed folder
           $archive_source = Join-Path $build_dir $new_dir_name
           Compress-Archive -Path "$archive_source\*" -DestinationPath $zip_file_name
           
-          # Output the zip file name for the next step
           echo "zip_name=$zip_file_name" >> $env:GITHUB_OUTPUT
 
       - name: Generate changelog
@@ -92,6 +96,6 @@ jobs:
             ---
 
             ${{ steps.changelog.outputs.changelog }}
-          files: ${{ steps.package.outputs.zip_name }} # Use the output from the previous step
+          files: ${{ steps.package.outputs.zip_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
