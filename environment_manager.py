@@ -70,19 +70,24 @@ class EnvironmentWorker(QObject):
 
             if is_frozen():
                 # --- Definitive Fix for Frozen Apps ---
-                # Instead of running venv from within the frozen app, we use a subprocess
-                # to call the bundled python.exe and tell IT to create the venv.
-                # This completely isolates the process and ensures the correct executable is used.
-                base_path = os.path.dirname(sys.executable)
-                runtime_python_exe = os.path.join(base_path, "python_runtime", "python.exe")
+                # Determine the base path correctly depending on whether the app is frozen or not.
+                if is_frozen():
+                    # When frozen, the base path is the directory of the executable.
+                    base_path = os.path.dirname(sys.executable)
+                else:
+                    # When running from source, the base path is the directory of this script.
+                    base_path = os.path.dirname(os.path.abspath(__file__))
+
+                runtime_python_home = os.path.join(base_path, "python_runtime")
+                runtime_python_exe = os.path.join(runtime_python_home, "python.exe")
 
                 if not os.path.exists(runtime_python_exe):
                     self.finished.emit(False, f"Bundled Python runtime not found at '{runtime_python_exe}'.")
                     return
 
-                # This command is the equivalent of running 'python -m venv .venv_graph' from the command line.
+                # Use the bundled python.exe to create the venv from the command line.
                 cmd = [runtime_python_exe, "-m", "venv", self.venv_path]
-                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", cwd=runtime_python_home)
 
                 if result.returncode != 0:
                     self.finished.emit(False, f"Failed to create venv: {result.stderr}")
@@ -182,7 +187,6 @@ class EnvironmentManagerDialog(QDialog):
         action_layout.addWidget(self.verify_button)
         layout.addLayout(action_layout)
 
-        # UI FIX: Use the custom ClickableLabel for the status display.
         self.status_display = ClickableLabel("Status: Ready")
         layout.addWidget(self.status_display)
 
