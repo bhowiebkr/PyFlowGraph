@@ -1,6 +1,6 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now handles custom node size during serialization.
+# Now correctly triggers node resizing after loading a graph.
 
 import uuid
 from PySide6.QtWidgets import QGraphicsScene
@@ -51,7 +51,6 @@ class NodeGraph(QGraphicsScene):
             else:
                 node = self.create_node(node_data['title'], pos=(new_pos.x(), new_pos.y()))
                 
-                # Set size before code to allow GUI to fit
                 if 'size' in node_data:
                     node.width, node.height = node_data['size']
                 
@@ -79,8 +78,10 @@ class NodeGraph(QGraphicsScene):
                 end_pin = end_node.get_pin_by_name(conn_data['end_pin_name'])
                 if start_pin and end_pin: self.create_connection(start_pin, end_pin)
         
+        # RESIZING FIX: After all nodes are created and populated,
+        # call the new method to force them to fit their content.
         for node in nodes_to_update:
-            node._update_layout()
+            node.fit_size_to_content()
         self.update()
 
     def copy_selected(self, copy_pos: QPointF):

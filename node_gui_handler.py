@@ -1,7 +1,6 @@
 # node_gui_handler.py
 # Handles all GUI-related aspects of a Node, including the custom
-# embedded widgets and the code editor dialog. Now with a corrected
-# initialization order to prevent crashes.
+# embedded widgets and the code editor dialog.
 
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget, QGraphicsProxyWidget
 from PySide6.QtCore import Qt, Signal
@@ -19,15 +18,15 @@ class ResizableWidgetContainer(QWidget):
 
 class NodeGuiHandler:
     """A mixin class for Node that handles all its GUI components."""
-    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _create_content_widget(self):
         """Creates the main content area with the custom GUI and a single control button."""
-        
-        # --- Definitive Fix for Initialization Order ---
-        # 1. Create all objects first.
         self.content_container = ResizableWidgetContainer()
         self.content_container.setAttribute(Qt.WA_TranslucentBackground)
-        
+        self.content_container.resized.connect(self._update_layout)
+
         main_layout = QVBoxLayout(self.content_container)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(5)
@@ -38,18 +37,14 @@ class NodeGuiHandler:
         main_layout.addWidget(self.custom_widget_host)
         
         self.proxy_widget = QGraphicsProxyWidget()
-        
         self.edit_button = QPushButton("</>")
         self.edit_button.setFixedSize(30, 22)
         self.edit_button_proxy = QGraphicsProxyWidget()
 
-        # 2. Now that all objects exist, set widgets and connect signals.
         self.proxy_widget.setWidget(self.content_container)
         self.edit_button_proxy.setWidget(self.edit_button)
         self.edit_button.clicked.connect(self.open_unified_editor)
-        self.content_container.resized.connect(self._update_layout)
 
-        # 3. Finally, build the initial GUI.
         self.rebuild_gui()
 
     def rebuild_gui(self):
@@ -70,7 +65,8 @@ class NodeGuiHandler:
                 error_label.setStyleSheet("color: red;")
                 self.custom_widget_layout.addWidget(error_label)
         
-        self._update_layout()
+        # After building the GUI, force the node to resize to fit the new content.
+        self.fit_size_to_content()
 
     def open_unified_editor(self):
         """Opens the unified, tabbed dialog to edit all of the node's code."""
