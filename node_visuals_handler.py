@@ -31,7 +31,7 @@ class NodeVisualsHandler:
         content_size = self.content_container.sizeHint()
         content_height = content_size.height()
         
-        # Calculate the required size based on content
+        # Calculate the required size
         required_width = max(self.base_width, content_size.width() + 10)
         required_height = title_height + pin_area_height + pin_margin_top + content_height
         
@@ -39,7 +39,7 @@ class NodeVisualsHandler:
         self.width = required_width
         self.height = required_height
         
-        # Update the layout to position elements within the new size
+        # Update the layout with the new size
         self._update_layout()
 
     def _calculate_minimum_height(self):
@@ -67,7 +67,10 @@ class NodeVisualsHandler:
         
         if self.proxy_widget:
             self.proxy_widget.setPos(0, content_y)
-            self.proxy_widget.widget().setFixedSize(self.width, content_height)
+            # Do NOT set a fixed size. Let the internal layout manager handle it.
+            # This allows the content to expand and contract naturally.
+            self.proxy_widget.widget().setMinimumSize(self.width, content_height)
+            self.proxy_widget.widget().setMaximumSize(self.width, content_height)
         
         self.edit_button_proxy.setPos(self.width - 35, 5)
 
