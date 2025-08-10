@@ -1,6 +1,6 @@
 # graph_executor.py
-# Executes the graph by running each node's code in an isolated subprocess
-# using a dedicated virtual environment.
+# Executes the graph by running each node's code in an isolated subprocess.
+# Now hides the subprocess console window on Windows.
 
 import subprocess
 import json
@@ -67,15 +67,18 @@ class GraphExecutor:
 
             self.log.append(f"--- Executing Node: {current_node.title} ---")
 
-            inputs_for_function = {pin.name: pin_values.get(pin.connections[0].start_pin) for pin in current_node.input_pins if pin.connections}
+            inputs_for_function = {}
+            for pin in current_node.input_pins:
+                if pin.connections:
+                    source_pin = pin.connections[0].start_pin
+                    inputs_for_function[pin.name] = pin_values.get(source_pin)
+            if hasattr(current_node, "get_gui_values"):
+                inputs_for_function.update(current_node.get_gui_values())
 
             if not current_node.function_name:
                 self.log.append(f"SKIP: Node '{current_node.title}' has no valid function defined.")
                 continue
 
-            # BUG FIX: This new runner script captures both the return value and any
-            # printed output, sending them back as a single JSON object. This
-            # prevents crashes on nodes that only print and don't return a value.
             runner_script = (
                 f"import json, sys, io\n"
                 f"from contextlib import redirect_stdout\n"
@@ -93,40 +96,38 @@ class GraphExecutor:
             )
 
             try:
-                process = subprocess.run(
-                    [python_exe, "-c", runner_script], input=json.dumps(inputs_for_function), capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW
-                )
+                # --- Hide Console Window on Windows ---
+                creation_flags = 0
+                if sys.platform == "win32":
+                    creation_flags = subprocess.CREATE_NO_WINDOW
+
+                process = subprocess.run([python_exe, "-c", runner_script], input=json.dumps(inputs_for_function), capture_output=True, text=True, check=True, creationflags=creation_flags)
 
                 response = json.loads(process.stdout)
-                result = response.get("result")
-                printed_output = response.get("stdout")
-
+                result, printed_output = response.get("result"), response.get("stdout")
                 if printed_output:
                     self.log.append(printed_output.strip())
                 if process.stderr:
                     self.log.append(f"STDERR: {process.stderr.strip()}")
-
-            except subprocess.CalledProcessError as e:
-                self.log.append(f"ERROR in node '{current_node.title}': Subprocess failed.")
-                self.log.append(e.stderr)
-                return
-            except json.JSONDecodeError as e:
-                self.log.append(f"ERROR in node '{current_node.title}': Failed to decode result from node.")
-                self.log.append(f"JSON Error: {e}")
-                self.log.append(f"Received from stdout: '{process.stdout}'")
-                self.log.append(f"Received from stderr: '{process.stderr}'")
-                return
             except Exception as e:
                 self.log.append(f"ERROR in node '{current_node.title}': {e}")
+                if hasattr(e, "stderr"):
+                    self.log.append(e.stderr)
                 return
 
             output_pins = current_node.output_pins
+            output_values = {}
             if len(output_pins) == 1:
                 pin_values[output_pins[0]] = result
+                output_values[output_pins[0].name] = result
             elif len(output_pins) > 1 and isinstance(result, (list, tuple)):
                 for i, pin in enumerate(output_pins):
                     if i < len(result):
                         pin_values[pin] = result[i]
+                        output_values[pin.name] = result[i]
+
+            if hasattr(current_node, "set_gui_values"):
+                current_node.set_gui_values(output_values)
 
             for pin in current_node.output_pins:
                 for conn in pin.connections:

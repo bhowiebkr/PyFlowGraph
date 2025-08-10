@@ -1,6 +1,6 @@
 # node_editor_window.py
 # The main application window.
-# Now stores and manages the venv path.
+# Now loads a specific JSON graph on startup.
 
 import json
 import os
@@ -10,14 +10,13 @@ from PySide6.QtCore import Qt, QPointF
 from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
 from graph_executor import GraphExecutor
-from default_graphs import create_complex_default_graph
 from environment_manager import EnvironmentManagerDialog
 
 
 class NodeEditorWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("PySide6 Advanced Node Editor")
+        self.setWindowTitle("PyFlowCanvas")
         self.setGeometry(100, 100, 1800, 1000)
 
         # --- Environment Configuration ---
@@ -38,9 +37,9 @@ class NodeEditorWindow(QMainWindow):
 
         self._create_actions()
         self._create_menus()
-        create_complex_default_graph(self.graph)
-        # Set default requirements from the initial graph
-        self.current_requirements = ["requests"]
+
+        # Load the specified graph on startup
+        self.load_initial_graph("examples/text_adventure_graph.json")
 
     def get_venv_path(self):
         """Provides the current venv path to the executor."""
@@ -74,6 +73,21 @@ class NodeEditorWindow(QMainWindow):
         run_menu.addAction(self.action_manage_env)
         run_menu.addAction(self.action_execute)
 
+    def load_initial_graph(self, file_path):
+        """Loads a specific graph from a JSON file on startup."""
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, "r") as f:
+                    data = json.load(f)
+                self.graph.deserialize(data)
+                self.current_requirements = data.get("requirements", [])
+                self.venv_path = data.get("venv_path", self.venv_path)
+                self.output_log.append(f"Loaded default graph: {file_path}")
+            except Exception as e:
+                self.output_log.append(f"Error loading default graph '{file_path}': {e}")
+        else:
+            self.output_log.append(f"Default graph file not found: '{file_path}'. Starting with an empty canvas.")
+
     def on_manage_env(self):
         dialog = EnvironmentManagerDialog(self.venv_path, self.current_requirements, self)
         if dialog.exec():
@@ -97,7 +111,7 @@ class NodeEditorWindow(QMainWindow):
                 data = json.load(f)
             self.graph.deserialize(data)
             self.current_requirements = data.get("requirements", [])
-            self.venv_path = data.get("venv_path", self.venv_path)  # Load path, or keep current
+            self.venv_path = data.get("venv_path", self.venv_path)
             self.output_log.append(f"Graph loaded from {file_path}")
             self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
 

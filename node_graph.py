@@ -1,6 +1,6 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now handles the 'requirements' key in serialization.
+# Now applies saved GUI state when loading a graph.
 
 import uuid
 from PySide6.QtWidgets import QGraphicsScene
@@ -31,13 +31,13 @@ class NodeGraph(QGraphicsScene):
             super().keyPressEvent(event)
 
     def serialize(self):
-        """Serializes all nodes and connections."""
+        """Serializes all nodes and their connections."""
         nodes_data = [node.serialize() for node in self.nodes]
         connections_data = [conn.serialize() for conn in self.connections if conn.serialize()]
         return {"nodes": nodes_data, "connections": connections_data}
 
     def deserialize(self, data, offset=QPointF(0, 0)):
-        """Deserializes graph data, creating all nodes and connections."""
+        """Deserializes graph data, creating all nodes and applying GUI state."""
         if not data:
             return
         if offset == QPointF(0, 0):
@@ -53,9 +53,15 @@ class NodeGraph(QGraphicsScene):
             else:
                 node = self.create_node(node_data["title"], pos=(new_pos.x(), new_pos.y()))
                 node.set_code(node_data.get("code", ""))
+                node.set_gui_code(node_data.get("gui_code", ""))
+                node.set_gui_get_values_code(node_data.get("gui_get_values_code", ""))
+                # Apply the saved state after the GUI has been rebuilt
+                node.apply_gui_state(node_data.get("gui_state", {}))
+
             old_uuid = node_data["uuid"]
             node.uuid = str(uuid.uuid4()) if offset != QPointF(0, 0) else old_uuid
             uuid_to_node_map[old_uuid] = node
+
         for conn_data in data.get("connections", []):
             start_node = uuid_to_node_map.get(conn_data["start_node_uuid"])
             end_node = uuid_to_node_map.get(conn_data["end_node_uuid"])
@@ -86,6 +92,7 @@ class NodeGraph(QGraphicsScene):
         offset = paste_pos - self._copy_mouse_pos
         self.deserialize(self._clipboard, offset)
 
+    # --- Other methods remain the same ---
     def create_node(self, title, pos=(0, 0), is_reroute=False):
         node = RerouteNode() if is_reroute else Node(title)
         node.setPos(pos[0], pos[1])
