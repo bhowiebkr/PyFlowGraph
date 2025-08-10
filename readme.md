@@ -1,4 +1,5 @@
-# PyFlowCanvas (PySide6 Advanced Node Editor)
+# PyFlowGraph
+A universal, node-based visual scripting editor built with Python and PySide6. Dynamically create, connect, and execute any Python code as nodes in a data-driven graph.
 
 > **Note: This is a 100% AI-Generated Coding Experiment**
 >
