@@ -1,11 +1,11 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now handles the 'requirements' key in serialization.
+# Now with the corrected deserialize method to restore the final layout update.
 
 import uuid
 from PySide6.QtWidgets import QGraphicsScene
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtGui import QKeyEvent, QColor
 from node import Node
 from reroute_node import RerouteNode
 from connection import Connection
@@ -31,19 +31,22 @@ class NodeGraph(QGraphicsScene):
             super().keyPressEvent(event)
 
     def serialize(self):
-        """Serializes all nodes and connections."""
+        """Serializes all nodes and their connections."""
         nodes_data = [node.serialize() for node in self.nodes]
         connections_data = [conn.serialize() for conn in self.connections if conn.serialize()]
         return {"nodes": nodes_data, "connections": connections_data}
 
     def deserialize(self, data, offset=QPointF(0, 0)):
-        """Deserializes graph data, creating all nodes and connections."""
+        """Deserializes graph data, creating all nodes and applying custom properties."""
         if not data:
             return
         if offset == QPointF(0, 0):
             for node in list(self.nodes):
                 self.remove_node(node)
+
         uuid_to_node_map = {}
+        nodes_to_update = []
+
         for node_data in data.get("nodes", []):
             original_pos = QPointF(node_data["pos"][0], node_data["pos"][1])
             new_pos = original_pos + offset
@@ -53,9 +56,26 @@ class NodeGraph(QGraphicsScene):
             else:
                 node = self.create_node(node_data["title"], pos=(new_pos.x(), new_pos.y()))
                 node.set_code(node_data.get("code", ""))
+                node.set_gui_code(node_data.get("gui_code", ""))
+                node.set_gui_get_values_code(node_data.get("gui_get_values_code", ""))
+
+                colors = node_data.get("colors", {})
+                if "title" in colors:
+                    node.color_title_bar = QColor(colors["title"])
+                if "body" in colors:
+                    node.color_body = QColor(colors["body"])
+
+                # BUG FIX: Explicitly tell the node to repaint itself after its
+                # color properties have been changed.
+                node.update()
+
+                node.apply_gui_state(node_data.get("gui_state", {}))
+                nodes_to_update.append(node)
+
             old_uuid = node_data["uuid"]
             node.uuid = str(uuid.uuid4()) if offset != QPointF(0, 0) else old_uuid
             uuid_to_node_map[old_uuid] = node
+
         for conn_data in data.get("connections", []):
             start_node = uuid_to_node_map.get(conn_data["start_node_uuid"])
             end_node = uuid_to_node_map.get(conn_data["end_node_uuid"])
@@ -64,6 +84,11 @@ class NodeGraph(QGraphicsScene):
                 end_pin = end_node.get_pin_by_name(conn_data["end_pin_name"])
                 if start_pin and end_pin:
                     self.create_connection(start_pin, end_pin)
+
+        # BUG FIX: Restore the final layout update loop. This ensures that nodes
+        # are correctly resized after all their properties and GUI states have been set.
+        for node in nodes_to_update:
+            node._update_layout()
         self.update()
 
     def copy_selected(self, copy_pos: QPointF):
@@ -86,6 +111,7 @@ class NodeGraph(QGraphicsScene):
         offset = paste_pos - self._copy_mouse_pos
         self.deserialize(self._clipboard, offset)
 
+    # --- Other methods remain the same ---
     def create_node(self, title, pos=(0, 0), is_reroute=False):
         node = RerouteNode() if is_reroute else Node(title)
         node.setPos(pos[0], pos[1])
