@@ -93,7 +93,9 @@ class GraphExecutor:
             )
 
             try:
-                process = subprocess.run([python_exe, "-c", runner_script], input=json.dumps(inputs_for_function), capture_output=True, text=True, check=True)
+                process = subprocess.run(
+                    [python_exe, "-c", runner_script], input=json.dumps(inputs_for_function), capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW
+                )
 
                 response = json.loads(process.stdout)
                 result = response.get("result")
