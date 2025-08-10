@@ -1,20 +1,21 @@
 # reroute_node.py
 # A simple, draggable node for organizing connections.
-# Now with a serialize method for saving and loading.
+# Now uses the dynamic color generation system.
 
 import uuid
 from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import QRectF, QPointF
-from PySide6.QtGui import (QPainter, QColor, QBrush, QPen, QRadialGradient, 
-                           QKeyEvent, QPainterPath)
+from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QRadialGradient, QKeyEvent, QPainterPath
 from pin import Pin
-from socket_type import SocketType
+from color_utils import generate_color_from_string
+
 
 class RerouteNode(QGraphicsItem):
     """
     A small, circular node that passes a connection through and
     adopts the color of the data type.
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFlag(QGraphicsItem.ItemIsMovable)
@@ -25,22 +26,14 @@ class RerouteNode(QGraphicsItem):
         self.title = "Reroute"
         self.radius = 8
         self.pins = []
-        
-        self.input_pin = self.add_pin("input", "input", SocketType.ANY)
-        self.output_pin = self.add_pin("output", "output", SocketType.ANY)
-        
+
+        self.input_pin = self.add_pin("input", "input", "any")
+        self.output_pin = self.add_pin("output", "output", "any")
+
         self.input_pin.setPos(0, 0)
         self.output_pin.setPos(0, 0)
-        
-        self.update_color()
 
-    def get_pin_by_name(self, name):
-        """Finds a pin on this node by its name ('input' or 'output')."""
-        if name == 'input':
-            return self.input_pin
-        elif name == 'output':
-            return self.output_pin
-        return None
+        self.update_color()
 
     def update_color(self):
         """Updates the node's color based on its input connection."""
@@ -49,8 +42,8 @@ class RerouteNode(QGraphicsItem):
             new_type = source_pin.pin_type
             new_color = source_pin.color
         else:
-            new_type = SocketType.ANY
-            new_color = SocketType.ANY.value
+            new_type = "any"
+            new_color = generate_color_from_string("any")
 
         self.color_base = new_color.darker(110)
         self.color_highlight = new_color.lighter(110)
@@ -60,23 +53,30 @@ class RerouteNode(QGraphicsItem):
 
         self.output_pin.pin_type = new_type
         self.output_pin.color = new_color
-        
+
         if self.scene():
             self.output_pin.update_connections()
             self.update()
 
-    def add_pin(self, name, direction, pin_type_enum):
-        pin = Pin(self, name, direction, pin_type_enum)
+    def add_pin(self, name, direction, pin_type_str):
+        pin = Pin(self, name, direction, pin_type_str)
         pin.hide()
         self.pins.append(pin)
         return pin
+
+    def get_pin_by_name(self, name):
+        if name == "input":
+            return self.input_pin
+        elif name == "output":
+            return self.output_pin
+        return None
 
     def boundingRect(self):
         return QRectF(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius).adjusted(-5, -5, 5, 5)
 
     def shape(self):
         path = QPainterPath()
-        hitbox_radius = self.radius + 4 
+        hitbox_radius = self.radius + 4
         path.addEllipse(QPointF(0, 0), hitbox_radius, hitbox_radius)
         return path
 
@@ -89,10 +89,10 @@ class RerouteNode(QGraphicsItem):
     def paint(self, painter: QPainter, option, widget=None):
         if option.state & QStyle.State_Selected:
             option.state &= ~QStyle.State_Selected
-        
+
         draw_rect = QRectF(-self.radius, -self.radius, self.radius * 2, self.radius * 2)
         gradient = QRadialGradient(QPointF(0, 0), self.radius)
-        
+
         if self.isSelected():
             painter.setPen(self.pen_selected)
             gradient.setColorAt(0, self.color_base.lighter(130))
@@ -106,9 +106,4 @@ class RerouteNode(QGraphicsItem):
         painter.drawEllipse(draw_rect)
 
     def serialize(self):
-        """Converts the reroute node's state to a serializable dictionary."""
-        return {
-            "uuid": self.uuid,
-            "pos": (self.pos().x(), self.pos().y()),
-            "is_reroute": True
-        }
+        return {"uuid": self.uuid, "pos": (self.pos().x(), self.pos().y()), "is_reroute": True}

@@ -1,7 +1,6 @@
 # node.py
 # Represents a single processing unit (node) in the graph.
-# This version contains the definitive fix for dynamic resizing and re-implements
-# the node properties context menu.
+# Now uses the simplified, dynamic pin creation system.
 
 import uuid
 import ast
@@ -9,7 +8,6 @@ from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem, QGraphicsProxyWi
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont, QLinearGradient, QPainterPath, QContextMenuEvent
 from pin import Pin
-from socket_type import SocketType
 from code_editor_dialog import CodeEditorDialog
 from node_properties_dialog import NodePropertiesDialog
 
@@ -78,13 +76,12 @@ class Node(QGraphicsItem):
             self._title_item.setPlainText(self.title)
             self.color_title_bar = QColor(props["title_color"])
             self.color_body = QColor(props["body_color"])
-            self.update()  # Redraw the node with new colors
+            self.update()
 
     def _create_content_widget(self):
         """Creates the main content area with the custom GUI and a single control button."""
         self.content_container = ResizableWidgetContainer()
         self.content_container.setAttribute(Qt.WA_TranslucentBackground)
-        # Connect the custom resized signal to our layout update function
         self.content_container.resized.connect(self._update_layout)
 
         main_layout = QVBoxLayout(self.content_container)
@@ -127,7 +124,6 @@ class Node(QGraphicsItem):
                 error_label.setStyleSheet("color: red;")
                 self.custom_widget_layout.addWidget(error_label)
 
-        # Trigger an initial layout update after building the GUI
         self._update_layout()
 
     def get_gui_values(self):
@@ -206,6 +202,7 @@ class Node(QGraphicsItem):
         num_pins = max(len(self.input_pins), len(self.output_pins))
         pin_area_height = (num_pins * pin_spacing) if num_pins > 0 else 0
 
+        self.content_container.layout().activate()
         content_size = self.content_container.sizeHint()
         content_height = content_size.height()
 
@@ -249,7 +246,6 @@ class Node(QGraphicsItem):
         painter.drawLine(0, 32, self.width, 32)
         painter.restore()
 
-    # --- Other methods remain the same ---
     def get_pin_by_name(self, name):
         for pin in self.pins:
             if pin.name == name:
@@ -296,6 +292,7 @@ class Node(QGraphicsItem):
                     new_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
         except (SyntaxError, AttributeError):
             return
+
         current_inputs = {pin.name: pin for pin in self.input_pins}
         current_outputs = {pin.name: pin for pin in self.output_pins}
         for name, pin in list(current_inputs.items()):
@@ -313,11 +310,8 @@ class Node(QGraphicsItem):
         self._update_layout()
 
     def add_pin(self, name, direction, pin_type_str):
-        type_map = {"STR": "STRING", "BOOL": "BOOLEAN"}
-        processed_type_str = pin_type_str.upper().split("[")[0]
-        final_type_str = type_map.get(processed_type_str, processed_type_str)
-        pin_type = SocketType[final_type_str] if final_type_str in SocketType.__members__ else SocketType.ANY
-        pin = Pin(self, name, direction, pin_type)
+        """Creates a new Pin, passing the raw type string for color generation."""
+        pin = Pin(self, name, direction, pin_type_str)
         self.pins.append(pin)
         if direction == "input":
             self.input_pins.append(pin)
