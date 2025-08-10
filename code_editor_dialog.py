@@ -18,7 +18,6 @@ class CodeEditorDialog(QDialog):
         self.setMinimumSize(750, 600)
 
         layout = QVBoxLayout(self)
-
         tab_widget = QTabWidget()
         layout.addWidget(tab_widget)
 
@@ -26,7 +25,8 @@ class CodeEditorDialog(QDialog):
         self.code_editor = PythonCodeEditor()
         self.code_editor.setFont(QFont("Monospace", 11))
         exec_placeholder = "from typing import Tuple\n\n" "@node_entry\n" "def node_function(input_1: str) -> Tuple[str, int]:\n" "    return 'hello', len(input_1)"
-        self.code_editor.setPlainText(code or exec_placeholder)
+        # Only add placeholder if the code is None (new node)
+        self.code_editor.setPlainText(code if code is not None else exec_placeholder)
         tab_widget.addTab(self.code_editor, "Execution Code")
 
         # --- GUI Layout Code Editor ---
@@ -40,10 +40,9 @@ class CodeEditorDialog(QDialog):
             "spinbox.setValue(2)\n"
             "layout.addWidget(label)\n"
             "layout.addWidget(spinbox)\n"
-            "# Store widgets by name to access them in the GUI Logic script.\n"
             "widgets['multiplier'] = spinbox\n"
         )
-        self.gui_editor.setPlainText(gui_code or gui_placeholder)
+        self.gui_editor.setPlainText(gui_code if gui_code is not None else gui_placeholder)
         tab_widget.addTab(self.gui_editor, "GUI Layout")
 
         # --- GUI Logic Code Editor ---
@@ -51,21 +50,16 @@ class CodeEditorDialog(QDialog):
         self.gui_logic_editor.setFont(QFont("Monospace", 11))
         gui_logic_placeholder = (
             "# This script defines how the GUI interacts with the execution code.\n\n"
-            "# Called BEFORE execution to get values from the GUI.\n"
             "def get_values(widgets):\n"
-            "    return {\n"
-            "        'multiplier': widgets['multiplier'].value()\n"
-            "    }\n\n"
-            "# Called AFTER execution to update the GUI with results.\n"
+            "    return {'multiplier': widgets['multiplier'].value()}\n\n"
             "def set_values(widgets, outputs):\n"
-            "    result = outputs.get('output_1', 'N/A')\n"
-            "    # Example: widgets['result_label'].setText(f'Result: {result}')\n\n"
-            "# Called ON LOAD to restore the GUI's saved state.\n"
+            "    # result = outputs.get('output_1', 'N/A')\n"
+            "    # widgets['result_label'].setText(f'Result: {result}')\n\n"
             "def set_initial_state(widgets, state):\n"
             "    if 'multiplier' in state:\n"
             "        widgets['multiplier'].setValue(state['multiplier'])\n"
         )
-        self.gui_logic_editor.setPlainText(gui_logic_code or gui_logic_placeholder)
+        self.gui_logic_editor.setPlainText(gui_logic_code if gui_logic_code is not None else gui_logic_placeholder)
         tab_widget.addTab(self.gui_logic_editor, "GUI Logic")
 
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
