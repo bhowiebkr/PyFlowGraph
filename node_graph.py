@@ -1,6 +1,6 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now applies saved GUI state when loading a graph.
+# Now handles the 'gui_code' key in serialization.
 
 import uuid
 from PySide6.QtWidgets import QGraphicsScene
@@ -37,7 +37,7 @@ class NodeGraph(QGraphicsScene):
         return {"nodes": nodes_data, "connections": connections_data}
 
     def deserialize(self, data, offset=QPointF(0, 0)):
-        """Deserializes graph data, creating all nodes and applying GUI state."""
+        """Deserializes graph data, creating all nodes and connections."""
         if not data:
             return
         if offset == QPointF(0, 0):
