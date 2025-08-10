@@ -65,18 +65,19 @@ class NodeInteractionHandler:
 
     def mouseMoveEvent(self, event):
         if self._is_resizing:
-            # --- Definitive Resizing Fix ---
-            # 1. Prepare the item for a geometry change.
             self.prepareGeometryChange()
             
-            # 2. The drag event is the source of truth for the new size.
+            # --- Definitive Minimum Size Fix ---
+            # Calculate the minimum height required to contain the title and pins.
+            title_height, pin_spacing, pin_margin_top = 32, 25, 15
+            num_pins = max(len(self.input_pins), len(self.output_pins))
+            pin_area_height = (num_pins * pin_spacing) if num_pins > 0 else 0
+            min_height = title_height + pin_area_height + pin_margin_top + 10
+            
             self.width = max(250, event.pos().x())
-            self.height = max(150, event.pos().y())
+            self.height = max(min_height, event.pos().y())
             
-            # 3. Trigger a layout update to make internal components conform to the new size.
             self._update_layout()
-            
-            # 4. Update connections in real-time.
             for pin in self.pins:
                 pin.update_connections()
         else:

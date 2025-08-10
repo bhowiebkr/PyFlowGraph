@@ -21,7 +21,7 @@ class NodeBase(QGraphicsItem):
         self.uuid = str(uuid.uuid4())
         self.title = title
         self.width = 250
-        self.height = 150 
+        self.height = 50 
         self.pins, self.input_pins, self.output_pins = [], [], []
         
         # --- Code Storage ---
