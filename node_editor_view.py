@@ -1,6 +1,6 @@
 # node_editor_view.py
 # The QGraphicsView responsible for rendering the scene and handling user interactions.
-# Now with a fix for the copy/paste key event crash.
+# Now with a darker grid and infinite panning.
 
 from PySide6.QtWidgets import QGraphicsView, QMenu
 from PySide6.QtCore import Qt, QPoint, QTimer
@@ -8,7 +8,7 @@ from PySide6.QtGui import QPainter, QPen, QColor, QMouseEvent, QContextMenuEvent
 
 class NodeEditorView(QGraphicsView):
     """
-    Custom QGraphicsView for the node editor. Handles zooming, panning, and key events.
+    Custom QGraphicsView for the node editor. Handles zooming and Blueprint-style panning.
     """
     def __init__(self, scene, parent=None):
         super().__init__(scene, parent)
@@ -17,13 +17,15 @@ class NodeEditorView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
+        # --- UI Enhancements ---
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
         self._is_panning = False
         self._pan_start_pos = QPoint()
 
     def keyPressEvent(self, event: QKeyEvent):
         """Handle key press events for copy and paste."""
-        # BUG FIX: QKeyEvent does not have globalPos(). Use QCursor.pos() instead
-        # to get the current global mouse position.
         if event.key() == Qt.Key_C and event.modifiers() == Qt.ControlModifier:
             cursor_pos = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
             self.scene().copy_selected(cursor_pos)
@@ -33,7 +35,6 @@ class NodeEditorView(QGraphicsView):
             self.scene().paste(cursor_pos)
             event.accept()
         else:
-            # Pass other key events (like Delete) to the scene
             super().keyPressEvent(event)
 
     def show_context_menu(self, event: QContextMenuEvent):
@@ -59,10 +60,9 @@ class NodeEditorView(QGraphicsView):
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self._is_panning:
-            delta = event.pos() - self._pan_start_pos
-            self._pan_start_pos = event.pos()
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
+            # Use translate() for smooth, infinite panning without scrollbars
+            delta = self.mapToScene(event.pos()) - self.mapToScene(self._pan_start_pos)
+            self.translate(delta.x(), delta.y())
             event.accept()
         else:
             super().mouseMoveEvent(event)
@@ -74,9 +74,7 @@ class NodeEditorView(QGraphicsView):
             self.setCursor(Qt.ArrowCursor)
             self.setDragMode(QGraphicsView.RubberBandDrag)
             if event.button() == Qt.RightButton and (event.pos() - self._pan_start_pos).manhattanLength() < 3:
-                pos = event.pos()
-                global_pos = event.globalPos()
-                modifiers = event.modifiers()
+                pos, global_pos, modifiers = event.pos(), event.globalPos(), event.modifiers()
                 QTimer.singleShot(0, lambda: self.show_context_menu(QContextMenuEvent(
                     QContextMenuEvent.Mouse, pos, global_pos, modifiers
                 )))
@@ -93,9 +91,10 @@ class NodeEditorView(QGraphicsView):
             self.scale(zoom_out_factor, zoom_out_factor)
 
     def drawBackground(self, painter, rect):
+        """Draw a darker, more refined grid background."""
         super().drawBackground(painter, rect)
-        background_color = QColor("#393939")
-        light_pen_color = QColor("#2F2F2F")
+        background_color = QColor("#2D2D2D")
+        light_pen_color = QColor("#3A3A3A")
         dark_pen_color = QColor("#202020")
         painter.fillRect(rect, background_color)
         grid_size_small, grid_size_large = 20, 100
