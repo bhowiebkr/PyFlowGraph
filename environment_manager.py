@@ -60,6 +60,12 @@ class EnvironmentWorker(QObject):
 
     def run_setup(self):
         self.progress.emit("--- STARTING SETUP PROCESS ---")
+
+        # --- Hide Console Window on Windows ---
+        creation_flags = 0
+        if sys.platform == "win32":
+            creation_flags = subprocess.CREATE_NO_WINDOW
+
         if not os.path.exists(self.venv_path):
             self.progress.emit(f"Target venv path does not exist: {self.venv_path}")
             self.progress.emit("Attempting to create new virtual environment...")
@@ -89,7 +95,7 @@ class EnvironmentWorker(QObject):
                 self.progress.emit(f"DEBUG: Subprocess command to run: {cmd}")
 
                 # No need to set cwd, as we use an absolute path to the executable.
-                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", creationflags=creation_flags)
 
                 if result.returncode != 0:
                     self.progress.emit(f"ERROR: Subprocess failed with return code {result.returncode}.")
@@ -136,7 +142,12 @@ class EnvironmentWorker(QObject):
 
         self.progress.emit("Checking installed packages...")
         cmd = [venv_python_exe, "-m", "pip", "freeze"]
-        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+
+        creation_flags = 0
+        if sys.platform == "win32":
+            creation_flags = subprocess.CREATE_NO_WINDOW
+
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", creationflags=creation_flags)
         if result.returncode != 0:
             self.finished.emit(False, "Verification Failed: Could not list installed packages.")
             return
