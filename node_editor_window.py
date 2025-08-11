@@ -1,18 +1,33 @@
 # node_editor_window.py
 # The main application window.
-# Now features a full toolbar, a settings dialog, and uses QSettings
-# to remember and reopen the last used graph file.
+# Now uses Font Awesome for toolbar icons.
 
 import json
 import os
-from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog, QToolBar, QStyle
-from PySide6.QtGui import QAction, QFont
+from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog, QToolBar
+from PySide6.QtGui import QAction, QFont, QIcon, QPainter, QColor
 from PySide6.QtCore import Qt, QPointF, QSettings
 from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
 from graph_executor import GraphExecutor
 from environment_manager import EnvironmentManagerDialog
 from settings_dialog import SettingsDialog
+
+
+def create_fa_icon(char_code, color="white"):
+    """Creates a QIcon from a Font Awesome character code."""
+    from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
+
+    pixmap = QPixmap(32, 32)
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    font = QFont("Font Awesome 6 Free Solid")
+    font.setPixelSize(24)
+    painter.setFont(font)
+    painter.setPen(QColor(color))
+    painter.drawText(pixmap.rect(), Qt.AlignCenter, char_code)
+    painter.end()
+    return QIcon(pixmap)
 
 
 class NodeEditorWindow(QMainWindow):
@@ -43,7 +58,6 @@ class NodeEditorWindow(QMainWindow):
         self._create_menus()
         self._create_toolbar()
 
-        # Attempt to load the last opened file on startup
         self.load_last_file()
 
     def get_current_venv_path(self):
@@ -51,13 +65,13 @@ class NodeEditorWindow(QMainWindow):
         return os.path.join(self.venv_parent_dir, self.current_graph_name)
 
     def _create_actions(self):
-        self.action_new = QAction(self.style().standardIcon(QStyle.SP_FileIcon), "&New Scene", self)
+        self.action_new = QAction(create_fa_icon("\uf15b"), "&New Scene", self)  # fa-file
         self.action_new.triggered.connect(self.on_new_scene)
 
-        self.action_save = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton), "&Save Graph...", self)
+        self.action_save = QAction(create_fa_icon("\uf0c7"), "&Save Graph...", self)  # fa-save
         self.action_save.triggered.connect(self.on_save)
 
-        self.action_load = QAction(self.style().standardIcon(QStyle.SP_DialogOpenButton), "&Load Graph...", self)
+        self.action_load = QAction(create_fa_icon("\uf07c"), "&Load Graph...", self)  # fa-folder-open
         self.action_load.triggered.connect(self.on_load)
 
         self.action_settings = QAction("Settings...", self)
@@ -66,8 +80,7 @@ class NodeEditorWindow(QMainWindow):
         self.action_manage_env = QAction("&Manage Environment...", self)
         self.action_manage_env.triggered.connect(self.on_manage_env)
 
-        icon = self.style().standardIcon(QStyle.SP_MediaPlay)
-        self.action_execute = QAction(icon, "&Execute Graph", self)
+        self.action_execute = QAction(create_fa_icon("\uf04b"), "&Execute Graph", self)  # fa-play
         self.action_execute.setShortcut("F5")
         self.action_execute.triggered.connect(self.on_execute)
 
@@ -108,7 +121,6 @@ class NodeEditorWindow(QMainWindow):
         if last_file and os.path.exists(last_file):
             self.on_load(file_path=last_file)
         else:
-            # If no last file, start with a default example
             self.load_initial_graph("examples/text_adventure_graph_rerouted.json")
 
     def on_new_scene(self):
