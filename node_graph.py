@@ -1,11 +1,11 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now includes a method to clear the graph for a new scene.
+# Now with a definitive fix for node resizing on initial graph load.
 
 import uuid
 import json
 from PySide6.QtWidgets import QGraphicsScene, QApplication
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF, QTimer
 from PySide6.QtGui import QKeyEvent, QColor
 from node import Node
 from reroute_node import RerouteNode
@@ -118,6 +118,14 @@ class NodeGraph(QGraphicsScene):
                 if start_pin and end_pin:
                     self.create_connection(start_pin, end_pin)
 
+        # --- Definitive Resizing Fix ---
+        # Defer the final layout calculation. This allows the Qt event loop to
+        # process all pending widget creation and resizing events first, ensuring
+        # that the size hints are accurate when fit_size_to_content is called.
+        QTimer.singleShot(0, lambda: self.final_load_update(nodes_to_update))
+
+    def final_load_update(self, nodes_to_update):
+        """A helper method called by a timer to run the final layout pass."""
         for node in nodes_to_update:
             node.fit_size_to_content()
         self.update()
