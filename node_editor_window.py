@@ -1,11 +1,11 @@
 # node_editor_window.py
 # The main application window.
-# Now uses Font Awesome for toolbar icons.
+# Now correctly saves and restores both pan and zoom state for each graph file.
 
 import json
 import os
-from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog, QToolBar
-from PySide6.QtGui import QAction, QFont, QIcon, QPainter, QColor
+from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog, QToolBar, QStyle
+from PySide6.QtGui import QAction, QFont, QTransform, QIcon, QPainter, QColor
 from PySide6.QtCore import Qt, QPointF, QSettings
 from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
@@ -16,7 +16,7 @@ from settings_dialog import SettingsDialog
 
 def create_fa_icon(char_code, color="white"):
     """Creates a QIcon from a Font Awesome character code."""
-    from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
+    from PySide6.QtGui import QPixmap
 
     pixmap = QPixmap(32, 32)
     pixmap.fill(Qt.transparent)
@@ -41,6 +41,7 @@ class NodeEditorWindow(QMainWindow):
         self.venv_parent_dir = self.settings.value("venv_parent_dir", os.path.join(os.getcwd(), "venvs"))
         self.current_graph_name = "untitled"
         self.current_requirements = []
+        self.current_file_path = None
 
         self.graph = NodeGraph(self)
         self.view = NodeEditorView(self.graph, self)
@@ -106,7 +107,6 @@ class NodeEditorWindow(QMainWindow):
         run_menu.addAction(self.action_execute)
 
     def _create_toolbar(self):
-        """Creates the main toolbar with common actions."""
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
         toolbar.addAction(self.action_new)
@@ -115,8 +115,40 @@ class NodeEditorWindow(QMainWindow):
         toolbar.addSeparator()
         toolbar.addAction(self.action_execute)
 
+    def save_view_state(self):
+        """Saves the current view's transform (zoom) and scrollbar positions (pan) to QSettings."""
+        if self.current_file_path:
+            self.settings.beginGroup(f"view_state/{self.current_file_path}")
+            self.settings.setValue("transform", self.view.transform())
+            self.settings.setValue("h_scroll", self.view.horizontalScrollBar().value())
+            self.settings.setValue("v_scroll", self.view.verticalScrollBar().value())
+            self.settings.endGroup()
+
+    def load_view_state(self):
+        """Loads and applies the view's transform and scrollbar positions from QSettings."""
+        if self.current_file_path:
+            self.settings.beginGroup(f"view_state/{self.current_file_path}")
+            transform_data = self.settings.value("transform")
+            h_scroll = self.settings.value("h_scroll", type=int)
+            v_scroll = self.settings.value("v_scroll", type=int)
+            self.settings.endGroup()
+
+            if isinstance(transform_data, QTransform):
+                self.view.setTransform(transform_data)
+            if h_scroll is not None:
+                self.view.horizontalScrollBar().setValue(h_scroll)
+            if v_scroll is not None:
+                self.view.verticalScrollBar().setValue(v_scroll)
+
+            # Force the viewport to redraw to ensure changes are visible
+            self.view.viewport().update()
+
+    def closeEvent(self, event):
+        """Save the view state of the current file before closing."""
+        self.save_view_state()
+        event.accept()
+
     def load_last_file(self):
-        """Loads the last opened file path from settings and opens it."""
         last_file = self.settings.value("last_file_path", None)
         if last_file and os.path.exists(last_file):
             self.on_load(file_path=last_file)
@@ -124,15 +156,15 @@ class NodeEditorWindow(QMainWindow):
             self.load_initial_graph("examples/text_adventure_graph_rerouted.json")
 
     def on_new_scene(self):
-        """Clears the graph and resets the application state for a new file."""
+        self.save_view_state()  # Save state of the old file before clearing
         self.graph.clear_graph()
         self.current_graph_name = "untitled"
         self.current_requirements = []
-        self.settings.remove("last_file_path")
+        self.current_file_path = None
+        self.view.resetTransform()
         self.output_log.append("New scene created.")
 
     def load_initial_graph(self, file_path):
-        """Loads a specific graph from a JSON file on startup."""
         if os.path.exists(file_path):
             self.on_load(file_path=file_path)
         else:
@@ -152,26 +184,34 @@ class NodeEditorWindow(QMainWindow):
             self.output_log.append("Environment requirements updated.")
 
     def on_save(self):
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save Graph", "", "JSON Files (*.json)")
-        if file_path:
-            data = self.graph.serialize()
-            data["requirements"] = self.current_requirements
-            with open(file_path, "w") as f:
-                json.dump(data, f, indent=4)
-            self.settings.setValue("last_file_path", file_path)
-            self.output_log.append(f"Graph saved to {file_path}")
+        if not self.current_file_path:
+            file_path, _ = QFileDialog.getSaveFileName(self, "Save Graph As...", "", "JSON Files (*.json)")
+            if not file_path:
+                return  # User cancelled
+            self.current_file_path = file_path
+
+        self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
+        data = self.graph.serialize()
+        data["requirements"] = self.current_requirements
+        with open(self.current_file_path, "w") as f:
+            json.dump(data, f, indent=4)
+        self.settings.setValue("last_file_path", self.current_file_path)
+        self.output_log.append(f"Graph saved to {self.current_file_path}")
 
     def on_load(self, file_path=None):
         if not file_path:
+            self.save_view_state()
             file_path, _ = QFileDialog.getOpenFileName(self, "Load Graph", "", "JSON Files (*.json)")
 
         if file_path and os.path.exists(file_path):
+            self.current_file_path = file_path
             self.current_graph_name = os.path.splitext(os.path.basename(file_path))[0]
             with open(file_path, "r") as f:
                 data = json.load(f)
             self.graph.deserialize(data)
             self.current_requirements = data.get("requirements", [])
             self.settings.setValue("last_file_path", file_path)
+            self.load_view_state()
             self.output_log.append(f"Graph loaded from {file_path}")
             self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
 
