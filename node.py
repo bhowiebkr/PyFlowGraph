@@ -147,7 +147,7 @@ class Node(QGraphicsItem):
         self.content_container.setAttribute(Qt.WA_TranslucentBackground)
 
         main_layout = QVBoxLayout(self.content_container)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setContentsMargins(5, 5, 5, 15)
         main_layout.setSpacing(5)
 
         self.custom_widget_host = QWidget()
