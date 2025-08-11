@@ -70,6 +70,7 @@ jobs:
             --remove-output `
             --lto=yes `
             --include-data-dir=examples=examples `
+            --include-data-dir=resources=resources `
             --include-data-file=dark_theme.qss=dark_theme.qss `
             --assume-yes-for-downloads `
             main.py

@@ -1,10 +1,11 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now with the corrected deserialize method to restore the final layout update.
+# Now with a definitive fix for node resizing on initial graph load.
 
 import uuid
-from PySide6.QtWidgets import QGraphicsScene
-from PySide6.QtCore import Qt, QPointF
+import json
+from PySide6.QtWidgets import QGraphicsScene, QApplication
+from PySide6.QtCore import Qt, QPointF, QTimer
 from PySide6.QtGui import QKeyEvent, QColor
 from node import Node
 from reroute_node import RerouteNode
@@ -16,9 +17,15 @@ class NodeGraph(QGraphicsScene):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setBackgroundBrush(Qt.darkGray)
+        self.setSceneRect(-10000, -10000, 20000, 20000)
         self.nodes, self.connections = [], []
         self._drag_connection, self._drag_start_pin = None, None
-        self._clipboard, self._copy_mouse_pos = None, QPointF()
+
+    def clear_graph(self):
+        """Removes all nodes and connections from the scene."""
+        for node in list(self.nodes):
+            self.remove_node(node)
+        self.update()
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Delete:
@@ -29,6 +36,36 @@ class NodeGraph(QGraphicsScene):
                     self.remove_connection(item)
         else:
             super().keyPressEvent(event)
+
+    def copy_selected(self):
+        """Copies selected nodes, their connections, and the graph's requirements to the clipboard."""
+        selected_nodes = [item for item in self.selectedItems() if isinstance(item, (Node, RerouteNode))]
+        if not selected_nodes:
+            return
+
+        nodes_data = [node.serialize() for node in selected_nodes]
+        connections_data = []
+        selected_node_uuids = {node.uuid for node in selected_nodes}
+        for conn in self.connections:
+            if hasattr(conn.start_pin.node, "uuid") and hasattr(conn.end_pin.node, "uuid") and conn.start_pin.node.uuid in selected_node_uuids and conn.end_pin.node.uuid in selected_node_uuids:
+                connections_data.append(conn.serialize())
+
+        main_window = self.views()[0].window()
+        requirements = main_window.current_requirements if hasattr(main_window, "current_requirements") else []
+
+        clipboard_data = {"requirements": requirements, "nodes": nodes_data, "connections": connections_data}
+
+        QApplication.clipboard().setText(json.dumps(clipboard_data, indent=4))
+        print(f"Copied {len(nodes_data)} nodes to clipboard.")
+
+    def paste(self):
+        """Pastes nodes and connections from the clipboard."""
+        clipboard_text = QApplication.clipboard().text()
+        try:
+            data = json.loads(clipboard_text)
+            self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
+        except (json.JSONDecodeError, TypeError):
+            print("Clipboard does not contain valid graph data.")
 
     def serialize(self):
         """Serializes all nodes and their connections."""
@@ -41,8 +78,7 @@ class NodeGraph(QGraphicsScene):
         if not data:
             return
         if offset == QPointF(0, 0):
-            for node in list(self.nodes):
-                self.remove_node(node)
+            self.clear_graph()
 
         uuid_to_node_map = {}
         nodes_to_update = []
@@ -55,20 +91,17 @@ class NodeGraph(QGraphicsScene):
                 node = self.create_node("", pos=(new_pos.x(), new_pos.y()), is_reroute=True)
             else:
                 node = self.create_node(node_data["title"], pos=(new_pos.x(), new_pos.y()))
+                if "size" in node_data:
+                    node.width, node.height = node_data["size"]
                 node.set_code(node_data.get("code", ""))
                 node.set_gui_code(node_data.get("gui_code", ""))
                 node.set_gui_get_values_code(node_data.get("gui_get_values_code", ""))
-
                 colors = node_data.get("colors", {})
                 if "title" in colors:
                     node.color_title_bar = QColor(colors["title"])
                 if "body" in colors:
                     node.color_body = QColor(colors["body"])
-
-                # BUG FIX: Explicitly tell the node to repaint itself after its
-                # color properties have been changed.
                 node.update()
-
                 node.apply_gui_state(node_data.get("gui_state", {}))
                 nodes_to_update.append(node)
 
@@ -85,31 +118,17 @@ class NodeGraph(QGraphicsScene):
                 if start_pin and end_pin:
                     self.create_connection(start_pin, end_pin)
 
-        # BUG FIX: Restore the final layout update loop. This ensures that nodes
-        # are correctly resized after all their properties and GUI states have been set.
+        # --- Definitive Resizing Fix ---
+        # Defer the final layout calculation. This allows the Qt event loop to
+        # process all pending widget creation and resizing events first, ensuring
+        # that the size hints are accurate when fit_size_to_content is called.
+        QTimer.singleShot(0, lambda: self.final_load_update(nodes_to_update))
+
+    def final_load_update(self, nodes_to_update):
+        """A helper method called by a timer to run the final layout pass."""
         for node in nodes_to_update:
-            node._update_layout()
+            node.fit_size_to_content()
         self.update()
-
-    def copy_selected(self, copy_pos: QPointF):
-        selected_nodes = [item for item in self.selectedItems() if isinstance(item, (Node, RerouteNode))]
-        if not selected_nodes:
-            self._clipboard = None
-            return
-        self._copy_mouse_pos = copy_pos
-        nodes_data = [node.serialize() for node in selected_nodes]
-        connections_data = []
-        selected_node_uuids = {node.uuid for node in selected_nodes}
-        for conn in self.connections:
-            if hasattr(conn.start_pin.node, "uuid") and hasattr(conn.end_pin.node, "uuid") and conn.start_pin.node.uuid in selected_node_uuids and conn.end_pin.node.uuid in selected_node_uuids:
-                connections_data.append(conn.serialize())
-        self._clipboard = {"nodes": nodes_data, "connections": connections_data}
-
-    def paste(self, paste_pos: QPointF):
-        if not self._clipboard:
-            return
-        offset = paste_pos - self._copy_mouse_pos
-        self.deserialize(self._clipboard, offset)
 
     # --- Other methods remain the same ---
     def create_node(self, title, pos=(0, 0), is_reroute=False):
