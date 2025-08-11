@@ -198,7 +198,7 @@ class Node(QGraphicsItem):
         self.content_container.layout().activate()
         content_height = self.content_container.sizeHint().height()
 
-        return title_height + pin_area_height + pin_margin_top + content_height
+        return title_height + pin_area_height + pin_margin_top + content_height + 1
 
     def fit_size_to_content(self):
         """Calculates and applies the optimal size for the node."""
