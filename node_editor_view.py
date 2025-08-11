@@ -36,12 +36,11 @@ class NodeEditorView(QGraphicsView):
     def keyPressEvent(self, event: QKeyEvent):
         """Handle key press events for copy and paste."""
         if event.key() == Qt.Key_C and event.modifiers() == Qt.ControlModifier:
-            cursor_pos = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
-            self.scene().copy_selected(cursor_pos)
+            # BUG FIX: The copy_selected method no longer takes the cursor position as an argument.
+            self.scene().copy_selected()
             event.accept()
         elif event.key() == Qt.Key_V and event.modifiers() == Qt.ControlModifier:
-            cursor_pos = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
-            self.scene().paste(cursor_pos)
+            self.scene().paste()
             event.accept()
         else:
             super().keyPressEvent(event)
@@ -69,7 +68,6 @@ class NodeEditorView(QGraphicsView):
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self._is_panning:
-            # --- New Panning Logic ---
             # This method simulates dragging the scrollbars for a more robust pan.
             delta = event.pos() - self._pan_start_pos
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
