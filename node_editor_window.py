@@ -1,7 +1,7 @@
 # node_editor_window.py
 # The main application window.
 # Now features a full toolbar, a settings dialog, and uses QSettings
-# for persistent environment path management.
+# to remember and reopen the last used graph file.
 
 import json
 import os
@@ -43,15 +43,20 @@ class NodeEditorWindow(QMainWindow):
         self._create_menus()
         self._create_toolbar()
 
-        self.load_initial_graph("examples/text_adventure_graph_rerouted.json")
+        # Attempt to load the last opened file on startup
+        self.load_last_file()
 
     def get_current_venv_path(self):
         """Provides the full path to the venv for the current graph."""
         return os.path.join(self.venv_parent_dir, self.current_graph_name)
 
     def _create_actions(self):
+        self.action_new = QAction(self.style().standardIcon(QStyle.SP_FileIcon), "&New Scene", self)
+        self.action_new.triggered.connect(self.on_new_scene)
+
         self.action_save = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton), "&Save Graph...", self)
         self.action_save.triggered.connect(self.on_save)
+
         self.action_load = QAction(self.style().standardIcon(QStyle.SP_DialogOpenButton), "&Load Graph...", self)
         self.action_load.triggered.connect(self.on_load)
 
@@ -74,8 +79,9 @@ class NodeEditorWindow(QMainWindow):
     def _create_menus(self):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("&File")
-        file_menu.addAction(self.action_save)
+        file_menu.addAction(self.action_new)
         file_menu.addAction(self.action_load)
+        file_menu.addAction(self.action_save)
         file_menu.addSeparator()
         file_menu.addAction(self.action_exit)
         edit_menu = menu_bar.addMenu("&Edit")
@@ -90,16 +96,33 @@ class NodeEditorWindow(QMainWindow):
         """Creates the main toolbar with common actions."""
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
+        toolbar.addAction(self.action_new)
         toolbar.addAction(self.action_load)
         toolbar.addAction(self.action_save)
         toolbar.addSeparator()
         toolbar.addAction(self.action_execute)
 
+    def load_last_file(self):
+        """Loads the last opened file path from settings and opens it."""
+        last_file = self.settings.value("last_file_path", None)
+        if last_file and os.path.exists(last_file):
+            self.on_load(file_path=last_file)
+        else:
+            # If no last file, start with a default example
+            self.load_initial_graph("examples/text_adventure_graph_rerouted.json")
+
+    def on_new_scene(self):
+        """Clears the graph and resets the application state for a new file."""
+        self.graph.clear_graph()
+        self.current_graph_name = "untitled"
+        self.current_requirements = []
+        self.settings.remove("last_file_path")
+        self.output_log.append("New scene created.")
+
     def load_initial_graph(self, file_path):
         """Loads a specific graph from a JSON file on startup."""
         if os.path.exists(file_path):
-            self.current_graph_name = os.path.splitext(os.path.basename(file_path))[0]
-            self.on_load(file_path)
+            self.on_load(file_path=file_path)
         else:
             self.output_log.append(f"Default graph file not found: '{file_path}'. Starting with an empty canvas.")
 
@@ -123,18 +146,20 @@ class NodeEditorWindow(QMainWindow):
             data["requirements"] = self.current_requirements
             with open(file_path, "w") as f:
                 json.dump(data, f, indent=4)
+            self.settings.setValue("last_file_path", file_path)
             self.output_log.append(f"Graph saved to {file_path}")
 
     def on_load(self, file_path=None):
         if not file_path:
             file_path, _ = QFileDialog.getOpenFileName(self, "Load Graph", "", "JSON Files (*.json)")
 
-        if file_path:
+        if file_path and os.path.exists(file_path):
             self.current_graph_name = os.path.splitext(os.path.basename(file_path))[0]
             with open(file_path, "r") as f:
                 data = json.load(f)
             self.graph.deserialize(data)
             self.current_requirements = data.get("requirements", [])
+            self.settings.setValue("last_file_path", file_path)
             self.output_log.append(f"Graph loaded from {file_path}")
             self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
 

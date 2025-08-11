@@ -1,6 +1,6 @@
 # node_graph.py
 # The QGraphicsScene that manages nodes, connections, and their interactions.
-# Now includes requirements in clipboard data.
+# Now includes a method to clear the graph for a new scene.
 
 import uuid
 import json
@@ -20,6 +20,12 @@ class NodeGraph(QGraphicsScene):
         self.setSceneRect(-10000, -10000, 20000, 20000)
         self.nodes, self.connections = [], []
         self._drag_connection, self._drag_start_pin = None, None
+
+    def clear_graph(self):
+        """Removes all nodes and connections from the scene."""
+        for node in list(self.nodes):
+            self.remove_node(node)
+        self.update()
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Delete:
@@ -44,7 +50,6 @@ class NodeGraph(QGraphicsScene):
             if hasattr(conn.start_pin.node, "uuid") and hasattr(conn.end_pin.node, "uuid") and conn.start_pin.node.uuid in selected_node_uuids and conn.end_pin.node.uuid in selected_node_uuids:
                 connections_data.append(conn.serialize())
 
-        # Get requirements from the main window
         main_window = self.views()[0].window()
         requirements = main_window.current_requirements if hasattr(main_window, "current_requirements") else []
 
@@ -58,8 +63,6 @@ class NodeGraph(QGraphicsScene):
         clipboard_text = QApplication.clipboard().text()
         try:
             data = json.loads(clipboard_text)
-            # For pasting, we don't handle requirements, just the nodes/connections.
-            # The user is responsible for ensuring the target graph's environment is correct.
             self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
         except (json.JSONDecodeError, TypeError):
             print("Clipboard does not contain valid graph data.")
@@ -75,8 +78,7 @@ class NodeGraph(QGraphicsScene):
         if not data:
             return
         if offset == QPointF(0, 0):
-            for node in list(self.nodes):
-                self.remove_node(node)
+            self.clear_graph()
 
         uuid_to_node_map = {}
         nodes_to_update = []
