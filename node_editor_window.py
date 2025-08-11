@@ -1,6 +1,6 @@
 # node_editor_window.py
 # The main application window.
-# Now correctly saves and restores both pan and zoom state for each graph file.
+# Now correctly saves and restores the view's center point for robust panning.
 
 import json
 import os
@@ -116,32 +116,29 @@ class NodeEditorWindow(QMainWindow):
         toolbar.addAction(self.action_execute)
 
     def save_view_state(self):
-        """Saves the current view's transform (zoom) and scrollbar positions (pan) to QSettings."""
+        """Saves the current view's transform (zoom) and center point (pan) to QSettings."""
         if self.current_file_path:
             self.settings.beginGroup(f"view_state/{self.current_file_path}")
             self.settings.setValue("transform", self.view.transform())
-            self.settings.setValue("h_scroll", self.view.horizontalScrollBar().value())
-            self.settings.setValue("v_scroll", self.view.verticalScrollBar().value())
+            # Save the scene coordinates of the center of the view
+            center_point = self.view.mapToScene(self.view.viewport().rect().center())
+            self.settings.setValue("center_point", center_point)
             self.settings.endGroup()
 
     def load_view_state(self):
-        """Loads and applies the view's transform and scrollbar positions from QSettings."""
+        """Loads and applies the view's transform and center point from QSettings."""
         if self.current_file_path:
             self.settings.beginGroup(f"view_state/{self.current_file_path}")
             transform_data = self.settings.value("transform")
-            h_scroll = self.settings.value("h_scroll", type=int)
-            v_scroll = self.settings.value("v_scroll", type=int)
+            center_point = self.settings.value("center_point")
             self.settings.endGroup()
 
             if isinstance(transform_data, QTransform):
                 self.view.setTransform(transform_data)
-            if h_scroll is not None:
-                self.view.horizontalScrollBar().setValue(h_scroll)
-            if v_scroll is not None:
-                self.view.verticalScrollBar().setValue(v_scroll)
 
-            # Force the viewport to redraw to ensure changes are visible
-            self.view.viewport().update()
+            if isinstance(center_point, QPointF):
+                # Use centerOn to robustly set the pan position
+                self.view.centerOn(center_point)
 
     def closeEvent(self, event):
         """Save the view state of the current file before closing."""
@@ -156,7 +153,7 @@ class NodeEditorWindow(QMainWindow):
             self.load_initial_graph("examples/text_adventure_graph_rerouted.json")
 
     def on_new_scene(self):
-        self.save_view_state()  # Save state of the old file before clearing
+        self.save_view_state()
         self.graph.clear_graph()
         self.current_graph_name = "untitled"
         self.current_requirements = []
@@ -187,7 +184,7 @@ class NodeEditorWindow(QMainWindow):
         if not self.current_file_path:
             file_path, _ = QFileDialog.getSaveFileName(self, "Save Graph As...", "", "JSON Files (*.json)")
             if not file_path:
-                return  # User cancelled
+                return
             self.current_file_path = file_path
 
         self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
