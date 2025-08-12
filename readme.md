@@ -2,9 +2,11 @@
 
 A universal, node-based visual scripting editor built with Python and PySide6. Dynamically create, connect, and execute any Python code as nodes in a data-driven graph.
 
-> **Note: This is a 100% AI-Generated Coding Experiment**
+> **Note: AI-Assisted Development Experiment**
 >
-> This codebase is a [Vibe coding](https://en.wikipedia.org/wiki/Vibe_coding) experiment, generated entirely with the assistance of Google's Gemini large language model (2.5 Pro). It is not intended for production use. The primary goal is to test and learn the capabilities of AI/ML-fully assisted code generation and guidance. While I have made an effort to cover edge cases, there are likely many bugs that I am not aware of. Even this README file may contain errors or inconsistencies.
+> This codebase represents an evolving [AI-assisted development](https://en.wikipedia.org/wiki/Vibe_coding) experiment exploring the capabilities of modern large language models for software engineering. The project was initially architected and generated using Google's Gemini 2.5 Pro, establishing the core framework and foundational components. Development has since transitioned to leveraging Anthropic's Claude Code for ongoing enhancements, bug fixes, and feature additions. Additional AI assistance is provided through GitHub Copilot for code autocompletion and commit message generation, creating a comprehensive multi-model development ecosystem that demonstrates the collaborative potential of diverse AI tools in modern software engineering workflows.
+>
+> While this experimental approach has produced a functional and feature-rich application, it remains a research project focused on understanding AI-assisted code generation patterns, architectural decisions, and development methodologies. The codebase serves as a practical case study in LLM-driven software development rather than a production-ready solution.
 
 ![Node Editor Showcase](images/gui.png)
 
@@ -22,20 +24,25 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
   * **Zoom**: Mouse Wheel Scroll.
   * **Select/Move**: Left-click to select and drag nodes.
 * **Data-Driven Execution Engine**: The graph executes based on data dependencies, flowing from nodes with available outputs to those that require them as inputs. No manual execution pins are needed.
+* **Isolated Execution Environment**: Each node runs in its own subprocess with isolated virtual environments for maximum security and dependency management.
 * **Mini-IDE Code Editor**:
   * A modal dialog provides a spacious and professional coding environment.
-  * **Syntax Highlighting** for Python.
-  * **Line Numbering**.
-  * **Smart Auto-Indentation** and Tab support.
+  * **Syntax Highlighting** for Python with custom color schemes.
+  * **Line Numbering** and **Smart Auto-Indentation**.
+  * **Tab support** and professional editing features.
 * **Advanced Connection Management**:
   * **Reroute Nodes**: Double-click a connection to create a reroute node for better graph organization.
   * **Connection Replacement**: Dragging a new wire to an already connected input pin automatically replaces the old connection.
-* **Clipboard Support**:
-  * Copy (`Ctrl+C`) and paste (`Ctrl+V`) multiple nodes.
-  * Internal connections between copied nodes are preserved.
-  * Pasted nodes are intelligently offset based on cursor position.
-* **Professional Dark Theme**: The entire application is styled with a custom QSS stylesheet for a consistent, modern, and visually appealing dark theme.
-* **Save & Load**: Graphs can be serialized to and deserialized from a clean JSON format.
+  * **Type-Safe Connections**: Pin colors indicate data types for visual type checking.
+* **Intelligent Clipboard System**:
+  * Copy (`Ctrl+C`) and paste (`Ctrl+V`) multiple nodes with preserved relationships.
+  * Internal connections between copied nodes are maintained automatically.
+  * Smart positioning system offsets pasted nodes based on cursor location.
+* **Professional UI/UX**:
+  * **Custom Dark Theme**: Consistent, modern QSS stylesheet throughout the application.
+  * **Font Awesome Integration**: Professional iconography for all UI elements.
+  * **Blueprint-Style Navigation**: Industry-standard node editor interaction patterns.
+* **Robust Persistence**: Graphs serialize to clean JSON format with full state preservation including node positions, connections, code, and environment requirements.
 
 ---
 
@@ -43,13 +50,19 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
 
 ### Main Interface
 
+The main PyFlowGraph interface showcasing a complete text adventure game implementation. This example demonstrates the node-based visual scripting approach with interconnected nodes handling game logic, user input processing, and narrative flow. Notice the clean dark theme, type-colored connection pins, and the intuitive layout of the node graph canvas.
+
 ![Node Editor Showcase](images/text_adventure_graph.png)
 
 ### Mini-IDE Code Editor
 
+The integrated Python code editor provides a professional development environment within PyFlowGraph. Features include syntax highlighting with custom color schemes, line numbering, smart auto-indentation, and tab support. The modal dialog design gives developers ample space to write and edit node logic while maintaining the visual context of the graph workflow.
+
 ![Python Code Editor](images/python_editor.png)
 
 ### Python Environment Manager
+
+The Python Environment Manager dialog enables sophisticated dependency management for each graph project. Users can specify custom pip requirements that are automatically installed in isolated virtual environments. This ensures each graph has its own clean dependency space, preventing conflicts between different projects while maintaining security through subprocess isolation.
 
 ![Python Environment Manager](images/environment_manager.png)
 
@@ -72,9 +85,11 @@ The project is organized into modular, single-responsibility Python files:
 * `code_editor_dialog.py`: The modal dialog window that contains the advanced code editor.
 * `python_code_editor.py`: The core code editor widget, featuring line numbers and smart indentation.
 * `python_syntax_highlighter.py`: Implements syntax highlighting for the code editor.
-* `socket_type.py`: An `Enum` that defines the data types and their corresponding colors.
-* `default_graphs.py`: Contains the function to generate the complex example graph on startup.
-* `run.sh`: A helper script for running the application within its virtual environment.
+* `color_utils.py`: Color manipulation utilities for the interface.
+* `environment_manager.py`: Virtual environment management dialog for graph-specific dependencies.
+* `settings_dialog.py`: Application settings configuration interface.
+* `node_properties_dialog.py`: Node property editing interface.
+* `run.sh` / `run.bat`: Helper scripts for running the application within its virtual environment.
 
 ---
 
@@ -116,21 +131,43 @@ This is the easiest way to run the application without needing to install Python
     ```
 
 5. **Run the Application**:
-    Use the provided shell script, which will automatically activate the environment and run the main script.
+    Use the provided scripts, which will automatically activate the environment and run the main script.
 
+    **Linux/macOS:**
     ```bash
     ./run.sh
+    ```
+    
+    **Windows:**
+    ```cmd
+    run.bat
     ```
 
 ---
 
-## How to Use
+## Quick Start Guide
 
-* **Create a Node**: Right-click on the canvas and select "Add Node."
-* **Edit Node Logic**: Click the "Edit Code" button on a node to open the code editor.
-* **Connect Nodes**: Click and drag from an output pin (right side of a node) to an input pin (left side).
-* **Delete Items**: Select any node, reroute node, or connection and press the `Delete` key.
-* **Execute the Graph**: Press `F5` or use the "Run > Execute Graph" menu option. The output will appear in the "Output Log" panel at the bottom.
+### Basic Operations
+* **Create a Node**: Right-click on the canvas and select "Add Node"
+* **Edit Node Logic**: Click the "Edit Code" button on a node to open the integrated code editor
+* **Connect Nodes**: Click and drag from an output pin (right side) to an input pin (left side)
+* **Navigate**: 
+  * **Pan**: Right-click + drag or middle-click + drag
+  * **Zoom**: Mouse wheel scroll
+  * **Select/Move**: Left-click to select and drag nodes
+* **Delete Items**: Select any node, reroute node, or connection and press `Delete`
+* **Execute Graph**: Press `F5` or use "Run > Execute Graph" menu
+
+### Advanced Features
+* **Reroute Connections**: Double-click any connection to create an organizational reroute node
+* **Copy/Paste**: Use `Ctrl+C` and `Ctrl+V` to duplicate node selections with preserved connections
+* **Environment Management**: Access "Run > Manage Environment" to configure pip dependencies
+* **Save/Load**: Use "File" menu to save graphs as JSON or load example projects
+
+### Testing the Application
+1. Load an example: "File > Load Graph..." and select from the `examples/` folder
+2. Try the `text_adventure_graph.json` for an interactive demonstration
+3. Press `F5` to execute and see results in the Output Log panel
 
 ---
 
@@ -188,12 +225,52 @@ def main_node_function(base_name: str) -> str:
     return f"{base_name}_{suffix}"
 ```
 
+### Advanced Features
+
+**Custom Dependencies**: Each graph can specify its own pip requirements through the Environment Manager. Dependencies are automatically installed in isolated virtual environments.
+
+**Type Flexibility**: The editor supports any Python type through type hints for automatic pin generation. Pin colors are determined by the type annotation, providing visual type identification. Common types include:
+- `int` - Integer values (blue pins)
+- `str` - String values (green pins) 
+- `float` - Floating point numbers (orange pins)
+- `bool` - Boolean values (red pins)
+- `Tuple[type, ...]` - Multiple outputs (colored by constituent types)
+- Custom classes, complex data structures, and any Python object are fully supported
+
+**Error Handling**: Node execution errors are captured and displayed in the Output Log with full stack traces for debugging.
+
+---
+
+## Virtual Environment Management
+
+PyFlowGraph features advanced virtual environment management:
+
+* **Isolated Environments**: Each graph can have its own virtual environment with custom pip dependencies
+* **Automatic Management**: The application creates project-specific environments in the `venvs/` directory
+* **Environment Dialog**: Use "Run > Manage Environment" to configure package dependencies for each graph
+* **Security**: All node execution happens in isolated subprocess environments
+
+---
+
+## Example Graphs
+
+The `examples/` directory contains sample graphs demonstrating various capabilities:
+
+* `api_fetch_graph.json` - Web API integration example
+* `fibonacci_graph.json` - Mathematical computation workflow
+* `file_analyzer_graph.json` - File processing and analysis
+* `meme_generator_graph.json` - Image manipulation pipeline
+* `procedural_texture_graph.json` - Algorithmic texture generation
+* `text_adventure_graph.json` - Interactive text-based game logic
+* `weather_analysis_graph.json` - Data analysis and visualization
+
 ---
 
 ## Dependencies
 
 * **Python 3.8+**
-* **PySide6**
+* **PySide6** - Qt6 framework for Python
+* **Font Awesome** - Professional iconography (included in `resources/`)
 
 ---
 
