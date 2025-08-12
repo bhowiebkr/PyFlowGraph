@@ -45,6 +45,7 @@ class Node(QGraphicsItem):
         self.width = self.base_width
         self.height = 150
         self.pins, self.input_pins, self.output_pins = [], [], []
+        self.execution_pins, self.data_pins = [], []
 
         # --- Code Storage ---
         self.code, self.gui_code, self.gui_get_values_code = "", "", ""
@@ -217,16 +218,42 @@ class Node(QGraphicsItem):
         self.prepareGeometryChange()
 
         title_height, pin_spacing, pin_margin_top = 32, 25, 15
-        num_pins = max(len(self.input_pins), len(self.output_pins))
+        
+        # Separate execution and data pins
+        input_exec_pins = [p for p in self.input_pins if p.pin_category == "execution"]
+        input_data_pins = [p for p in self.input_pins if p.pin_category == "data"]
+        output_exec_pins = [p for p in self.output_pins if p.pin_category == "execution"]
+        output_data_pins = [p for p in self.output_pins if p.pin_category == "data"]
+        
+        # Calculate total pin area height
+        max_input_pins = len(input_exec_pins) + len(input_data_pins)
+        max_output_pins = len(output_exec_pins) + len(output_data_pins)
+        num_pins = max(max_input_pins, max_output_pins)
         pin_area_height = (num_pins * pin_spacing) if num_pins > 0 else 0
 
         pin_start_y = title_height + pin_margin_top + (pin_spacing / 2)
-        for i, pin in enumerate(self.input_pins):
-            pin.setPos(0, pin_start_y + i * 25)
+        
+        # Position input pins (execution first, then data)
+        current_y = pin_start_y
+        for pin in input_exec_pins:
+            pin.setPos(0, current_y)
             pin.update_label_pos()
-        for i, pin in enumerate(self.output_pins):
-            pin.setPos(self.width, pin_start_y + i * 25)
+            current_y += pin_spacing
+        for pin in input_data_pins:
+            pin.setPos(0, current_y)
             pin.update_label_pos()
+            current_y += pin_spacing
+            
+        # Position output pins (execution first, then data)
+        current_y = pin_start_y
+        for pin in output_exec_pins:
+            pin.setPos(self.width, current_y)
+            pin.update_label_pos()
+            current_y += pin_spacing
+        for pin in output_data_pins:
+            pin.setPos(self.width, current_y)
+            pin.update_label_pos()
+            current_y += pin_spacing
 
         content_y = title_height + pin_area_height + pin_margin_top
         content_height = max(0, self.height - content_y)
@@ -367,8 +394,9 @@ class Node(QGraphicsItem):
         return "any"
 
     def update_pins_from_code(self):
-        new_inputs, new_outputs = {}, {}
+        new_data_inputs, new_data_outputs = {}, {}
         self.function_name, main_func_def = None, None
+        
         try:
             tree = ast.parse(self.code)
             for node in tree.body:
@@ -380,48 +408,88 @@ class Node(QGraphicsItem):
                     if main_func_def:
                         break
             if not main_func_def:
+                # Remove all pins if no valid function
                 for pin in list(self.pins):
                     self.remove_pin(pin)
                 self.fit_size_to_content()
                 return
+                
             self.function_name = main_func_def.name
+            
+            # Parse data input pins from function parameters
             for arg in main_func_def.args.args:
-                new_inputs[arg.arg] = self._parse_type_hint(arg.annotation).lower()
+                new_data_inputs[arg.arg] = self._parse_type_hint(arg.annotation).lower()
+            
+            # Parse data output pins from return annotation
             if main_func_def.returns:
                 return_annotation = main_func_def.returns
                 if isinstance(return_annotation, ast.Subscript) and isinstance(return_annotation.value, ast.Name) and return_annotation.value.id.lower() in ("tuple", "list"):
                     output_types = [self._parse_type_hint(elt).lower() for elt in return_annotation.slice.elts]
                     for i, type_name in enumerate(output_types):
-                        new_outputs[f"output_{i+1}"] = type_name
+                        new_data_outputs[f"output_{i+1}"] = type_name
                 else:
-                    new_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
+                    new_data_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
         except (SyntaxError, AttributeError):
             return
 
-        current_inputs = {pin.name: pin for pin in self.input_pins}
-        current_outputs = {pin.name: pin for pin in self.output_pins}
-        for name, pin in list(current_inputs.items()):
-            if name not in new_inputs:
+        # Manage data pins
+        current_data_inputs = {pin.name: pin for pin in self.input_pins if pin.pin_category == "data"}
+        current_data_outputs = {pin.name: pin for pin in self.output_pins if pin.pin_category == "data"}
+        
+        # Remove obsolete data input pins
+        for name, pin in list(current_data_inputs.items()):
+            if name not in new_data_inputs:
                 self.remove_pin(pin)
-        for name, type_name in new_inputs.items():
-            if name not in current_inputs:
-                self.add_pin(name, "input", type_name)
-        for name, pin in list(current_outputs.items()):
-            if name not in new_outputs:
+        
+        # Add new data input pins
+        for name, type_name in new_data_inputs.items():
+            if name not in current_data_inputs:
+                self.add_data_pin(name, "input", type_name)
+        
+        # Remove obsolete data output pins
+        for name, pin in list(current_data_outputs.items()):
+            if name not in new_data_outputs:
                 self.remove_pin(pin)
-        for name, type_name in new_outputs.items():
-            if name not in current_outputs:
-                self.add_pin(name, "output", type_name)
+        
+        # Add new data output pins
+        for name, type_name in new_data_outputs.items():
+            if name not in current_data_outputs:
+                self.add_data_pin(name, "output", type_name)
+
+        # Add default execution pins if they don't exist
+        current_exec_inputs = {pin.name: pin for pin in self.input_pins if pin.pin_category == "execution"}
+        current_exec_outputs = {pin.name: pin for pin in self.output_pins if pin.pin_category == "execution"}
+        
+        if "exec_in" not in current_exec_inputs:
+            self.add_execution_pin("exec_in", "input")
+        if "exec_out" not in current_exec_outputs:
+            self.add_execution_pin("exec_out", "output")
+            
         self.fit_size_to_content()
 
-    def add_pin(self, name, direction, pin_type_str):
-        pin = Pin(self, name, direction, pin_type_str)
+    def add_pin(self, name, direction, pin_type_str, pin_category="data"):
+        pin = Pin(self, name, direction, pin_type_str, pin_category)
         self.pins.append(pin)
+        
         if direction == "input":
             self.input_pins.append(pin)
         else:
             self.output_pins.append(pin)
+            
+        if pin_category == "execution":
+            self.execution_pins.append(pin)
+        else:
+            self.data_pins.append(pin)
+            
         return pin
+
+    def add_execution_pin(self, name, direction):
+        """Add an execution pin for flow control."""
+        return self.add_pin(name, direction, "exec", "execution")
+
+    def add_data_pin(self, name, direction, pin_type_str):
+        """Add a data pin for value transfer."""
+        return self.add_pin(name, direction, pin_type_str, "data")
 
     def remove_pin(self, pin_to_remove):
         if pin_to_remove.connections:
@@ -434,3 +502,7 @@ class Node(QGraphicsItem):
             self.input_pins.remove(pin_to_remove)
         if pin_to_remove in self.output_pins:
             self.output_pins.remove(pin_to_remove)
+        if pin_to_remove in self.execution_pins:
+            self.execution_pins.remove(pin_to_remove)
+        if pin_to_remove in self.data_pins:
+            self.data_pins.remove(pin_to_remove)

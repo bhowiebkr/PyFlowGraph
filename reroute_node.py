@@ -58,8 +58,8 @@ class RerouteNode(QGraphicsItem):
             self.output_pin.update_connections()
             self.update()
 
-    def add_pin(self, name, direction, pin_type_str):
-        pin = Pin(self, name, direction, pin_type_str)
+    def add_pin(self, name, direction, pin_type_str, pin_category="data"):
+        pin = Pin(self, name, direction, pin_type_str, pin_category)
         pin.hide()
         self.pins.append(pin)
         return pin
