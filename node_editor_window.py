@@ -316,7 +316,7 @@ class NodeEditorWindow(QMainWindow):
         if last_file and os.path.exists(last_file):
             self.on_load(file_path=last_file)
         else:
-            self.load_initial_graph("examples/text_adventure_graph_rerouted.json")
+            self.load_initial_graph("examples/password_generator_tool.json")
 
     def on_new_scene(self):
         self.save_view_state()
