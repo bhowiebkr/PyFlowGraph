@@ -23,7 +23,7 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
   * **Pan**: Right-click + Drag or Middle-click + Drag.
   * **Zoom**: Mouse Wheel Scroll.
   * **Select/Move**: Left-click to select and drag nodes.
-* **Hybrid Execution Engine**: 
+* **Hybrid Execution Engine**:
   * **Batch Mode**: Traditional execution where the entire graph runs sequentially based on data dependencies
   * **Live Mode**: Interactive execution with real-time event handling and persistent state for building interactive applications
 * **Event-Driven Interactive System**: Built-in event system supporting button clicks, timers, value changes, and user input for creating interactive experiences
@@ -101,7 +101,7 @@ The project is organized into modular, single-responsibility Python files:
 
 This is the easiest way to run the application without needing to install Python or any dependencies.
 
-1. **Go to the [Releases Page](https://github.com/bhowiebkr/PyFlowCanvas/releases)** on GitHub.
+1. **Go to the [Releases Page](https://github.com/bhowiebkr/PyFlowGraph/releases)** on GitHub.
 2. Find the latest release and download the `.zip` file (e.g., `NodeEditor_Windows_v1.0.0.zip`).
 3. **Unzip** the downloaded file to a location of your choice. This will create a new folder.
 4. Open the new folder and run the `main.exe` executable.
@@ -114,8 +114,8 @@ This is the easiest way to run the application without needing to install Python
 1. **Clone the Repository**:
 
     ```bash
-    git clone [https://github.com/bhowiebkr/PyFlowCanvas.git](https://github.com/bhowiebkr/PyFlowCanvas.git)
-    cd PyFlowCanvas
+    git clone [https://github.com/bhowiebkr/PyFlowGraph.git](https://github.com/bhowiebkr/PyFlowGraph.git)
+    cd PyFlowGraph
     ```
 
 2. **Create a Virtual Environment**:
@@ -138,11 +138,13 @@ This is the easiest way to run the application without needing to install Python
     Use the provided scripts, which will automatically activate the environment and run the main script.
 
     **Linux/macOS:**
+
     ```bash
     ./run.sh
     ```
-    
+
     **Windows:**
+
     ```cmd
     run.bat
     ```
@@ -152,24 +154,27 @@ This is the easiest way to run the application without needing to install Python
 ## Quick Start Guide
 
 ### Basic Operations
+
 * **Create a Node**: Right-click on the canvas and select "Add Node"
 * **Edit Node Logic**: Click the "Edit Code" button on a node to open the integrated code editor
 * **Connect Nodes**: Click and drag from an output pin (right side) to an input pin (left side)
-* **Navigate**: 
+* **Navigate**:
   * **Pan**: Right-click + drag or middle-click + drag
   * **Zoom**: Mouse wheel scroll
   * **Select/Move**: Left-click to select and drag nodes
 * **Delete Items**: Select any node, reroute node, or connection and press `Delete`
-* **Execute Graph**: 
+* **Execute Graph**:
   * **Batch Mode**: Press `F5` or use "Run > Execute Graph" menu
   * **Live Mode**: Select "Live" mode and click "Start Live Mode" for interactive execution
 
 ### Execution Modes
+
 * **Batch Mode**: Execute entire graph at once with traditional data-flow execution
 * **Live Mode**: Interactive mode with persistent state and event-driven execution for building interactive applications
 * **Event System**: Built-in support for user interactions, timers, and custom triggers within nodes
 
 ### Advanced Features
+
 * **Reroute Connections**: Double-click any connection to create an organizational reroute node
 * **Copy/Paste**: Use `Ctrl+C` and `Ctrl+V` to duplicate node selections with preserved connections
 * **Environment Management**: Access "Run > Manage Environment" to configure pip dependencies
@@ -177,6 +182,7 @@ This is the easiest way to run the application without needing to install Python
 * **Dynamic Window Titles**: Window title automatically updates to show the current graph name
 
 ### Testing the Application
+
 1. Load an example: "File > Load Graph..." and select from the `examples/` folder
 2. Try the `interactive_game_engine.json` for an interactive demonstration of Live Mode
 3. Select execution mode: **Batch Mode** for traditional execution or **Live Mode** for interactive applications
@@ -244,12 +250,12 @@ def main_node_function(base_name: str) -> str:
 **Custom Dependencies**: Each graph can specify its own pip requirements through the Environment Manager. Dependencies are automatically installed in isolated virtual environments.
 
 **Type Flexibility**: The editor supports any Python type through type hints for automatic pin generation. Pin colors are determined by the type annotation, providing visual type identification. Common types include:
-- `int` - Integer values (blue pins)
-- `str` - String values (green pins) 
-- `float` - Floating point numbers (orange pins)
-- `bool` - Boolean values (red pins)
-- `Tuple[type, ...]` - Multiple outputs (colored by constituent types)
-- Custom classes, complex data structures, and any Python object are fully supported
+* `int` - Integer values (blue pins)
+* `str` - String values (green pins)
+* `float` - Floating point numbers (orange pins)
+* `bool` - Boolean values (red pins)
+* `Tuple[type, ...]` - Multiple outputs (colored by constituent types)
+* Custom classes, complex data structures, and any Python object are fully supported
 
 **Error Handling**: Node execution errors are captured and displayed in the Output Log with full stack traces for debugging.
 

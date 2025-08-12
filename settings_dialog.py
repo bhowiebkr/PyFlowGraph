@@ -18,7 +18,7 @@ class SettingsDialog(QDialog):
         self.setMinimumWidth(500)
 
         # Use QSettings to store persistent application settings
-        self.settings = QSettings("PyFlowCanvas", "NodeEditor")
+        self.settings = QSettings("PyFlowGraph", "NodeEditor")
 
         layout = QVBoxLayout(self)
 

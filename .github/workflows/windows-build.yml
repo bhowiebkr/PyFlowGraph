@@ -89,8 +89,8 @@ jobs:
           $build_dir = "NodeEditor_Build"
           $dist_dir = Join-Path $build_dir "main.dist"
           
-          $new_dir_name = "PyFlowCanvas $version"
-          $zip_file_name = "PyFlowCanvas_Windows_$version.zip"
+          $new_dir_name = "PyFlowGraph $version"
+          $zip_file_name = "PyFlowGraph_Windows_$version.zip"
           
           Rename-Item -Path $dist_dir -NewName $new_dir_name
           
