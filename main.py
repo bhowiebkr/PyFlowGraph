@@ -26,14 +26,29 @@ if __name__ == "__main__":
     qInstallMessageHandler(custom_message_handler)
     app = QApplication(sys.argv)
 
-    # --- Load Font Awesome ---
-    font_path = os.path.join(os.path.dirname(__file__), "resources", "Font Awesome 6 Free-Solid-900.otf")
-    if os.path.exists(font_path):
-        font_id = QFontDatabase.addApplicationFont(font_path)
+    # --- Load Font Awesome Regular ---
+    font_path_regular = os.path.join(os.path.dirname(__file__), "resources", "Font Awesome 7 Free-Regular-400.otf")
+    if os.path.exists(font_path_regular):
+        font_id = QFontDatabase.addApplicationFont(font_path_regular)
         if font_id == -1:
-            print("Warning: Failed to load Font Awesome font.", file=sys.stderr)
+            print("Warning: Failed to load Font Awesome Regular font.", file=sys.stderr)
+        else:
+            families = QFontDatabase.applicationFontFamilies(font_id)
+            print(f"Loaded Font Awesome Regular families: {families}", file=sys.stderr)
     else:
-        print("Warning: Font Awesome font file not found at 'resources/Font Awesome 6 Free-Solid-900.otf'", file=sys.stderr)
+        print("Warning: Font Awesome Regular font file not found at 'resources/Font Awesome 7 Free-Regular-400.otf'", file=sys.stderr)
+
+    # --- Load Font Awesome Solid ---
+    font_path_solid = os.path.join(os.path.dirname(__file__), "resources", "Font Awesome 6 Free-Solid-900.otf")
+    if os.path.exists(font_path_solid):
+        font_id = QFontDatabase.addApplicationFont(font_path_solid)
+        if font_id == -1:
+            print("Warning: Failed to load Font Awesome Solid font.", file=sys.stderr)
+        else:
+            families = QFontDatabase.applicationFontFamilies(font_id)
+            print(f"Loaded Font Awesome Solid families: {families}", file=sys.stderr)
+    else:
+        print("Warning: Font Awesome Solid font file not found at 'resources/Font Awesome 6 Free-Solid-900.otf'", file=sys.stderr)
 
     # Load the dark theme stylesheet
     try:

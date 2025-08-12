@@ -14,14 +14,19 @@ from environment_manager import EnvironmentManagerDialog
 from settings_dialog import SettingsDialog
 
 
-def create_fa_icon(char_code, color="white"):
+def create_fa_icon(char_code, color="white", font_style="regular"):
     """Creates a QIcon from a Font Awesome character code."""
     from PySide6.QtGui import QPixmap
 
     pixmap = QPixmap(32, 32)
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
-    font = QFont("Font Awesome 6 Free Solid")
+    
+    if font_style == "solid":
+        font = QFont("Font Awesome 6 Free Solid")
+    else:
+        font = QFont("Font Awesome 7 Free Regular")
+    
     font.setPixelSize(24)
     painter.setFont(font)
     painter.setPen(QColor(color))
@@ -66,16 +71,16 @@ class NodeEditorWindow(QMainWindow):
         return os.path.join(self.venv_parent_dir, self.current_graph_name)
 
     def _create_actions(self):
-        self.action_new = QAction(create_fa_icon("\uf15b"), "&New Scene", self)  # fa-file
+        self.action_new = QAction(create_fa_icon("\uf15b", "lightblue"), "&New Scene", self)  # fa-file
         self.action_new.triggered.connect(self.on_new_scene)
 
-        self.action_save = QAction(create_fa_icon("\uf0c7"), "&Save Graph...", self)  # fa-save
+        self.action_save = QAction(create_fa_icon("\uf0c7", "orange"), "&Save Graph...", self)  # fa-save
         self.action_save.triggered.connect(self.on_save)
 
-        self.action_save_as = QAction(create_fa_icon("\uf0c5"), "Save &As...", self)  # fa-copy
+        self.action_save_as = QAction(create_fa_icon("\uf0c5", "orange"), "Save &As...", self)  # fa-copy
         self.action_save_as.triggered.connect(self.on_save_as)
 
-        self.action_load = QAction(create_fa_icon("\uf07c"), "&Load Graph...", self)  # fa-folder-open
+        self.action_load = QAction(create_fa_icon("\uf07c", "yellow"), "&Load Graph...", self)  # fa-folder-open
         self.action_load.triggered.connect(self.on_load)
 
         self.action_settings = QAction("Settings...", self)
@@ -84,7 +89,7 @@ class NodeEditorWindow(QMainWindow):
         self.action_manage_env = QAction("&Manage Environment...", self)
         self.action_manage_env.triggered.connect(self.on_manage_env)
 
-        self.action_execute = QAction(create_fa_icon("\uf04b"), "&Execute Graph", self)  # fa-play
+        self.action_execute = QAction(create_fa_icon("\uf04b", "green", "solid"), "&Execute Graph", self)  # fa-play
         self.action_execute.setShortcut("F5")
         self.action_execute.triggered.connect(self.on_execute)
 
