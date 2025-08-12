@@ -87,7 +87,7 @@ class Node(QGraphicsItem):
             for conn in pin.connections:
                 conn.setSelected(selected)
 
-    def contextMenuEvent(self, event: QContextMenuEvent):
+    def show_properties_dialog(self):
         parent_widget = self.scene().views()[0] if self.scene().views() else None
         dialog = NodePropertiesDialog(self.title, self.color_title_bar, self.color_body, parent_widget)
         if dialog.exec():
