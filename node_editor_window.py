@@ -72,6 +72,9 @@ class NodeEditorWindow(QMainWindow):
         self.action_save = QAction(create_fa_icon("\uf0c7"), "&Save Graph...", self)  # fa-save
         self.action_save.triggered.connect(self.on_save)
 
+        self.action_save_as = QAction(create_fa_icon("\uf0c5"), "Save &As...", self)  # fa-copy
+        self.action_save_as.triggered.connect(self.on_save_as)
+
         self.action_load = QAction(create_fa_icon("\uf07c"), "&Load Graph...", self)  # fa-folder-open
         self.action_load.triggered.connect(self.on_load)
 
@@ -96,6 +99,7 @@ class NodeEditorWindow(QMainWindow):
         file_menu.addAction(self.action_new)
         file_menu.addAction(self.action_load)
         file_menu.addAction(self.action_save)
+        file_menu.addAction(self.action_save_as)
         file_menu.addSeparator()
         file_menu.addAction(self.action_exit)
         edit_menu = menu_bar.addMenu("&Edit")
@@ -112,6 +116,7 @@ class NodeEditorWindow(QMainWindow):
         toolbar.addAction(self.action_new)
         toolbar.addAction(self.action_load)
         toolbar.addAction(self.action_save)
+        toolbar.addAction(self.action_save_as)
         toolbar.addSeparator()
         toolbar.addAction(self.action_execute)
 
@@ -187,6 +192,20 @@ class NodeEditorWindow(QMainWindow):
                 return
             self.current_file_path = file_path
 
+        self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
+        data = self.graph.serialize()
+        data["requirements"] = self.current_requirements
+        with open(self.current_file_path, "w") as f:
+            json.dump(data, f, indent=4)
+        self.settings.setValue("last_file_path", self.current_file_path)
+        self.output_log.append(f"Graph saved to {self.current_file_path}")
+
+    def on_save_as(self):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Graph As...", "", "JSON Files (*.json)")
+        if not file_path:
+            return
+        
+        self.current_file_path = file_path
         self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
         data = self.graph.serialize()
         data["requirements"] = self.current_requirements
