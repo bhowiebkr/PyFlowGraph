@@ -4,12 +4,13 @@
 
 import json
 import os
-from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog, QToolBar, QStyle
+from PySide6.QtWidgets import QMainWindow, QMenuBar, QFileDialog, QTextEdit, QDockWidget, QInputDialog, QToolBar, QStyle, QWidget, QHBoxLayout, QRadioButton, QPushButton, QButtonGroup, QLabel
 from PySide6.QtGui import QAction, QFont, QTransform, QIcon, QPainter, QColor
 from PySide6.QtCore import Qt, QPointF, QSettings
 from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
 from graph_executor import GraphExecutor
+from event_system import LiveGraphExecutor
 from environment_manager import EnvironmentManagerDialog
 from settings_dialog import SettingsDialog
 
@@ -58,7 +59,11 @@ class NodeEditorWindow(QMainWindow):
         dock.setWidget(self.output_log)
         self.addDockWidget(Qt.BottomDockWidgetArea, dock)
 
+        # Dual execution system: batch (traditional) and live (interactive)
         self.executor = GraphExecutor(self.graph, self.output_log, self.get_current_venv_path)
+        self.live_executor = LiveGraphExecutor(self.graph, self.output_log, self.get_current_venv_path)
+        self.live_mode = False
+        self.live_active = False  # Whether live mode is currently active
 
         self._create_actions()
         self._create_menus()
@@ -89,9 +94,7 @@ class NodeEditorWindow(QMainWindow):
         self.action_manage_env = QAction("&Manage Environment...", self)
         self.action_manage_env.triggered.connect(self.on_manage_env)
 
-        self.action_execute = QAction(create_fa_icon("\uf04b", "green", "solid"), "&Execute Graph", self)  # fa-play
-        self.action_execute.setShortcut("F5")
-        self.action_execute.triggered.connect(self.on_execute)
+        # Remove old execution actions - we'll use custom widgets instead
 
         self.action_add_node = QAction("Add &Node...", self)
         self.action_add_node.triggered.connect(self.on_add_node)
@@ -113,17 +116,159 @@ class NodeEditorWindow(QMainWindow):
         edit_menu.addAction(self.action_settings)
         run_menu = menu_bar.addMenu("&Run")
         run_menu.addAction(self.action_manage_env)
-        run_menu.addAction(self.action_execute)
+        run_menu.addSeparator()
+        # Execution controls are now in toolbar only for better UX
 
     def _create_toolbar(self):
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
+        
+        # File operations
         toolbar.addAction(self.action_new)
         toolbar.addAction(self.action_load)
         toolbar.addAction(self.action_save)
         toolbar.addAction(self.action_save_as)
         toolbar.addSeparator()
-        toolbar.addAction(self.action_execute)
+        
+        # Create execution control widget
+        self._create_execution_controls(toolbar)
+
+    def _create_execution_controls(self, toolbar):
+        """Create the execution mode and control widget."""
+        # Container widget
+        exec_widget = QWidget()
+        layout = QHBoxLayout(exec_widget)
+        layout.setContentsMargins(10, 5, 10, 5)
+        layout.setSpacing(15)
+        
+        # Mode selection label
+        mode_label = QLabel("Execution Mode:")
+        mode_label.setStyleSheet("font-weight: bold; color: #E0E0E0;")
+        layout.addWidget(mode_label)
+        
+        # Radio buttons for mode selection
+        self.mode_button_group = QButtonGroup()
+        
+        self.batch_radio = QRadioButton("Batch")
+        self.batch_radio.setToolTip("Traditional one-shot execution of entire graph")
+        self.batch_radio.setChecked(True)  # Default mode
+        self.batch_radio.setStyleSheet("""
+            QRadioButton { color: #E0E0E0; font-weight: bold; }
+            QRadioButton::indicator::checked { background-color: #4CAF50; }
+        """)
+        
+        self.live_radio = QRadioButton("Live")
+        self.live_radio.setToolTip("Interactive mode with event-driven execution")
+        self.live_radio.setStyleSheet("""
+            QRadioButton { color: #E0E0E0; font-weight: bold; }
+            QRadioButton::indicator::checked { background-color: #FF9800; }
+        """)
+        
+        self.mode_button_group.addButton(self.batch_radio, 0)
+        self.mode_button_group.addButton(self.live_radio, 1)
+        self.mode_button_group.idClicked.connect(self.on_mode_changed)
+        
+        layout.addWidget(self.batch_radio)
+        layout.addWidget(self.live_radio)
+        
+        # Separator
+        separator = QLabel("|")
+        separator.setStyleSheet("color: #666; font-size: 16px;")
+        layout.addWidget(separator)
+        
+        # Main execution button - changes based on mode
+        self.main_exec_button = QPushButton("▶️ Execute Graph")
+        self.main_exec_button.setMinimumSize(140, 35)
+        self.main_exec_button.setStyleSheet(self._get_button_style("batch"))
+        self.main_exec_button.clicked.connect(self.on_main_button_clicked)
+        self.main_exec_button.setShortcut("F5")
+        layout.addWidget(self.main_exec_button)
+        
+        # Status indicator
+        self.status_label = QLabel("Ready")
+        self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold; font-size: 12px;")
+        layout.addWidget(self.status_label)
+        
+        # Add to toolbar
+        toolbar.addWidget(exec_widget)
+    
+    def _get_button_style(self, mode, state="ready"):
+        """Get stylesheet for the main button based on mode and state."""
+        if mode == "batch":
+            if state == "ready":
+                return """
+                    QPushButton {
+                        background-color: #4CAF50;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        font-size: 12px;
+                    }
+                    QPushButton:hover {
+                        background-color: #45a049;
+                    }
+                    QPushButton:pressed {
+                        background-color: #3d8b40;
+                    }
+                """
+            else:  # executing
+                return """
+                    QPushButton {
+                        background-color: #607D8B;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        font-size: 12px;
+                    }
+                """
+        else:  # live mode
+            if state == "ready":
+                return """
+                    QPushButton {
+                        background-color: #FF9800;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        font-size: 12px;
+                    }
+                    QPushButton:hover {
+                        background-color: #F57C00;
+                    }
+                    QPushButton:pressed {
+                        background-color: #E65100;
+                    }
+                """
+            elif state == "active":
+                return """
+                    QPushButton {
+                        background-color: #4CAF50;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        font-size: 12px;
+                    }
+                    QPushButton:hover {
+                        background-color: #45a049;
+                    }
+                """
+            else:  # paused
+                return """
+                    QPushButton {
+                        background-color: #F44336;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        font-size: 12px;
+                    }
+                    QPushButton:hover {
+                        background-color: #da190b;
+                    }
+                """
 
     def save_view_state(self):
         """Saves the current view's transform (zoom) and center point (pan) to QSettings."""
@@ -236,11 +381,99 @@ class NodeEditorWindow(QMainWindow):
             self.output_log.append(f"Graph loaded from {file_path}")
             self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
 
-    def on_execute(self):
+    def on_mode_changed(self, mode_id):
+        """Handle radio button change between Batch (0) and Live (1) modes."""
+        self.live_mode = (mode_id == 1)
         self.output_log.clear()
-        self.output_log.append("--- Execution Started ---")
-        self.executor.execute()
-        self.output_log.append("--- Execution Finished ---")
+        
+        if self.live_mode:
+            # Switch to live mode
+            self.live_executor.set_live_mode(True)
+            self.live_active = False
+            self.main_exec_button.setText("🔥 Start Live Mode")
+            self.main_exec_button.setStyleSheet(self._get_button_style("live", "ready"))
+            self.status_label.setText("Live Ready")
+            self.status_label.setStyleSheet("color: #FF9800; font-weight: bold;")
+            
+            self.output_log.append("🎯 === LIVE MODE SELECTED ===")
+            self.output_log.append("📋 Click 'Start Live Mode' to activate interactive execution")
+            self.output_log.append("💡 Then use buttons inside nodes to control flow!")
+        else:
+            # Switch to batch mode
+            self.live_executor.set_live_mode(False)
+            self.live_active = False
+            self.main_exec_button.setText("▶️ Execute Graph")
+            self.main_exec_button.setStyleSheet(self._get_button_style("batch", "ready"))
+            self.status_label.setText("Ready")
+            self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+            
+            self.output_log.append("📦 === BATCH MODE SELECTED ===")
+            self.output_log.append("Click 'Execute Graph' to run entire graph at once")
+
+    def on_main_button_clicked(self):
+        """Handle the main execution button based on current mode and state."""
+        if not self.live_mode:
+            # Batch mode execution
+            self._execute_batch_mode()
+        else:
+            # Live mode - toggle between start/pause
+            if not self.live_active:
+                self._start_live_mode()
+            else:
+                self._pause_live_mode()
+    
+    def _execute_batch_mode(self):
+        """Execute graph in batch mode."""
+        self.output_log.clear()
+        self.output_log.append("▶️ === BATCH EXECUTION STARTED ===")
+        
+        # Update button state during execution
+        self.main_exec_button.setText("⏳ Executing...")
+        self.main_exec_button.setStyleSheet(self._get_button_style("batch", "executing"))
+        self.status_label.setText("Executing")
+        self.status_label.setStyleSheet("color: #607D8B; font-weight: bold;")
+        
+        try:
+            self.executor.execute()
+            self.output_log.append("✅ === BATCH EXECUTION FINISHED ===")
+        except Exception as e:
+            self.output_log.append(f"❌ === EXECUTION FAILED: {e} ===")
+        finally:
+            # Restore button state
+            self.main_exec_button.setText("▶️ Execute Graph")
+            self.main_exec_button.setStyleSheet(self._get_button_style("batch", "ready"))
+            self.status_label.setText("Ready")
+            self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+    
+    def _start_live_mode(self):
+        """Start live interactive mode."""
+        self.output_log.clear()
+        self.output_log.append("🔥 === LIVE MODE ACTIVATED ===")
+        self.output_log.append("✨ Interactive execution enabled!")
+        self.output_log.append("🎮 Click buttons inside nodes to trigger execution")
+        self.output_log.append("📋 Graph state has been reset and is ready for interaction")
+        
+        self.live_active = True
+        self.live_executor.restart_graph()
+        
+        # Update button to pause state
+        self.main_exec_button.setText("⏸️ Pause Live Mode") 
+        self.main_exec_button.setStyleSheet(self._get_button_style("live", "active"))
+        self.status_label.setText("Live Active")
+        self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+    
+    def _pause_live_mode(self):
+        """Pause live mode."""
+        self.live_active = False
+        self.live_executor.set_live_mode(False)
+        
+        self.main_exec_button.setText("🔥 Resume Live Mode")
+        self.main_exec_button.setStyleSheet(self._get_button_style("live", "paused"))
+        self.status_label.setText("Live Paused")
+        self.status_label.setStyleSheet("color: #F44336; font-weight: bold;")
+        
+        self.output_log.append("⏸️ Live mode paused - node buttons are now inactive")
+        self.output_log.append("Click 'Resume Live Mode' to reactivate")
 
     def on_add_node(self, scene_pos=None):
         title, ok = QInputDialog.getText(self, "Add Node", "Enter Node Title:")
