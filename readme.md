@@ -23,8 +23,11 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
   * **Pan**: Right-click + Drag or Middle-click + Drag.
   * **Zoom**: Mouse Wheel Scroll.
   * **Select/Move**: Left-click to select and drag nodes.
-* **Data-Driven Execution Engine**: The graph executes based on data dependencies, flowing from nodes with available outputs to those that require them as inputs. No manual execution pins are needed.
-* **Isolated Execution Environment**: Each node runs in its own subprocess with isolated virtual environments for maximum security and dependency management.
+* **Hybrid Execution Engine**: 
+  * **Batch Mode**: Traditional execution where the entire graph runs sequentially based on data dependencies
+  * **Live Mode**: Interactive execution with real-time event handling and persistent state for building interactive applications
+* **Event-Driven Interactive System**: Built-in event system supporting button clicks, timers, value changes, and user input for creating interactive experiences
+* **Isolated Execution Environment**: Each node runs in its own subprocess with isolated virtual environments for maximum security and dependency management
 * **Mini-IDE Code Editor**:
   * A modal dialog provides a spacious and professional coding environment.
   * **Syntax Highlighting** for Python with custom color schemes.
@@ -42,7 +45,8 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
   * **Custom Dark Theme**: Consistent, modern QSS stylesheet throughout the application.
   * **Font Awesome Integration**: Professional iconography for all UI elements.
   * **Blueprint-Style Navigation**: Industry-standard node editor interaction patterns.
-* **Robust Persistence**: Graphs serialize to clean JSON format with full state preservation including node positions, connections, code, and environment requirements.
+* **Robust Persistence**: Graphs serialize to clean JSON format with full state preservation including node positions, connections, code, and environment requirements. All file operations use UTF-8 encoding for proper international character support.
+* **Dynamic Interface**: Window title automatically updates to display the current graph name for better project identification.
 
 ---
 
@@ -156,18 +160,28 @@ This is the easiest way to run the application without needing to install Python
   * **Zoom**: Mouse wheel scroll
   * **Select/Move**: Left-click to select and drag nodes
 * **Delete Items**: Select any node, reroute node, or connection and press `Delete`
-* **Execute Graph**: Press `F5` or use "Run > Execute Graph" menu
+* **Execute Graph**: 
+  * **Batch Mode**: Press `F5` or use "Run > Execute Graph" menu
+  * **Live Mode**: Select "Live" mode and click "Start Live Mode" for interactive execution
+
+### Execution Modes
+* **Batch Mode**: Execute entire graph at once with traditional data-flow execution
+* **Live Mode**: Interactive mode with persistent state and event-driven execution for building interactive applications
+* **Event System**: Built-in support for user interactions, timers, and custom triggers within nodes
 
 ### Advanced Features
 * **Reroute Connections**: Double-click any connection to create an organizational reroute node
 * **Copy/Paste**: Use `Ctrl+C` and `Ctrl+V` to duplicate node selections with preserved connections
 * **Environment Management**: Access "Run > Manage Environment" to configure pip dependencies
 * **Save/Load**: Use "File" menu to save graphs as JSON or load example projects
+* **Dynamic Window Titles**: Window title automatically updates to show the current graph name
 
 ### Testing the Application
 1. Load an example: "File > Load Graph..." and select from the `examples/` folder
-2. Try the `text_adventure_graph.json` for an interactive demonstration
-3. Press `F5` to execute and see results in the Output Log panel
+2. Try the `interactive_game_engine.json` for an interactive demonstration of Live Mode
+3. Select execution mode: **Batch Mode** for traditional execution or **Live Mode** for interactive applications
+4. Press `F5` (Batch) or "Start Live Mode" (Live) to execute and see results in the Output Log panel
+5. Notice how the window title updates to show the current graph name
 
 ---
 
@@ -256,13 +270,15 @@ PyFlowGraph features advanced virtual environment management:
 
 The `examples/` directory contains sample graphs demonstrating various capabilities:
 
-* `api_fetch_graph.json` - Web API integration example
-* `fibonacci_graph.json` - Mathematical computation workflow
-* `file_analyzer_graph.json` - File processing and analysis
-* `meme_generator_graph.json` - Image manipulation pipeline
-* `procedural_texture_graph.json` - Algorithmic texture generation
-* `text_adventure_graph.json` - Interactive text-based game logic
-* `weather_analysis_graph.json` - Data analysis and visualization
+* `data_analysis_dashboard.json` - Interactive data visualization dashboard
+* `file_organizer_automation.json` - Automated file organization system
+* `interactive_game_engine.json` - Interactive game with event-driven execution
+* `password_generator_tool.json` - Secure password generation utility
+* `personal_finance_tracker.json` - Personal finance management system
+* `recipe_nutrition_calculator.json` - Recipe analysis and nutrition calculator
+* `social_media_scheduler.json` - Social media content scheduling tool
+* `text_processing_pipeline.json` - Advanced text processing workflow
+* `weather_data_processor.json` - Weather data analysis and processing
 
 ---
 
