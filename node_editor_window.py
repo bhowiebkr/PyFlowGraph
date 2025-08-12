@@ -354,8 +354,8 @@ class NodeEditorWindow(QMainWindow):
         self.update_window_title()
         data = self.graph.serialize()
         data["requirements"] = self.current_requirements
-        with open(self.current_file_path, "w") as f:
-            json.dump(data, f, indent=4)
+        with open(self.current_file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
         self.settings.setValue("last_file_path", self.current_file_path)
         self.output_log.append(f"Graph saved to {self.current_file_path}")
 
@@ -369,8 +369,8 @@ class NodeEditorWindow(QMainWindow):
         self.update_window_title()
         data = self.graph.serialize()
         data["requirements"] = self.current_requirements
-        with open(self.current_file_path, "w") as f:
-            json.dump(data, f, indent=4)
+        with open(self.current_file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
         self.settings.setValue("last_file_path", self.current_file_path)
         self.output_log.append(f"Graph saved to {self.current_file_path}")
 
@@ -383,7 +383,7 @@ class NodeEditorWindow(QMainWindow):
             self.current_file_path = file_path
             self.current_graph_name = os.path.splitext(os.path.basename(file_path))[0]
             self.update_window_title()
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             self.graph.deserialize(data)
             self.current_requirements = data.get("requirements", [])
