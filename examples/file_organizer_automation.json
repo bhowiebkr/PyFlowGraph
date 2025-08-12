@@ -1,0 +1,115 @@
+{
+    "nodes": [
+        {
+            "uuid": "folder-scanner",
+            "title": "Folder Scanner",
+            "pos": [100, 200],
+            "size": [280, 200],
+            "code": "import os\nfrom typing import List\n\n@node_entry\ndef scan_folder(folder_path: str) -> List[str]:\n    if not os.path.exists(folder_path):\n        print(f\"Error: Folder '{folder_path}' does not exist\")\n        return []\n    \n    files = []\n    for item in os.listdir(folder_path):\n        item_path = os.path.join(folder_path, item)\n        if os.path.isfile(item_path):\n            files.append(item)\n    \n    print(f\"Found {len(files)} files in '{folder_path}'\")\n    for file in files[:10]:  # Show first 10\n        print(f\"  - {file}\")\n    if len(files) > 10:\n        print(f\"  ... and {len(files) - 10} more files\")\n    \n    return files",
+            "gui_code": "from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton, QFileDialog\n\nlayout.addWidget(QLabel('Folder to Organize:', parent))\nwidgets['folder_path'] = QLineEdit(parent)\nwidgets['folder_path'].setPlaceholderText('Select or enter folder path...')\nlayout.addWidget(widgets['folder_path'])\n\nwidgets['browse_btn'] = QPushButton('Browse Folder', parent)\nlayout.addWidget(widgets['browse_btn'])\n\nwidgets['scan_btn'] = QPushButton('Scan Folder', parent)\nlayout.addWidget(widgets['scan_btn'])\n\n# Connect browse button\ndef browse_folder():\n    folder = QFileDialog.getExistingDirectory(parent, 'Select Folder to Organize')\n    if folder:\n        widgets['folder_path'].setText(folder)\n\nwidgets['browse_btn'].clicked.connect(browse_folder)",
+            "gui_get_values_code": "def get_values(widgets):\n    return {\n        'folder_path': widgets['folder_path'].text()\n    }\n\ndef set_initial_state(widgets, state):\n    widgets['folder_path'].setText(state.get('folder_path', ''))",
+            "gui_state": {
+                "folder_path": ""
+            },
+            "colors": {
+                "title": "#007bff",
+                "body": "#0056b3"
+            }
+        },
+        {
+            "uuid": "file-categorizer",
+            "title": "File Type Categorizer",
+            "pos": [450, 150],
+            "size": [300, 250],
+            "code": "import os\nfrom typing import Dict, List\n\n@node_entry\ndef categorize_files(files: List[str]) -> Dict[str, List[str]]:\n    categories = {\n        'Images': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.svg'],\n        'Documents': ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.odt'],\n        'Spreadsheets': ['.xls', '.xlsx', '.csv', '.ods'],\n        'Audio': ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a'],\n        'Video': ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv'],\n        'Archives': ['.zip', '.rar', '.7z', '.tar', '.gz'],\n        'Code': ['.py', '.js', '.html', '.css', '.cpp', '.java', '.c'],\n        'Other': []\n    }\n    \n    result = {cat: [] for cat in categories.keys()}\n    \n    for file in files:\n        file_ext = os.path.splitext(file)[1].lower()\n        categorized = False\n        \n        for category, extensions in categories.items():\n            if file_ext in extensions:\n                result[category].append(file)\n                categorized = True\n                break\n        \n        if not categorized:\n            result['Other'].append(file)\n    \n    # Print summary\n    print(\"\\n=== FILE CATEGORIZATION RESULTS ===\")\n    for category, file_list in result.items():\n        if file_list:\n            print(f\"{category}: {len(file_list)} files\")\n            for file in file_list[:3]:  # Show first 3\n                print(f\"  - {file}\")\n            if len(file_list) > 3:\n                print(f\"  ... and {len(file_list) - 3} more\")\n    \n    return result",
+            "gui_code": "",
+            "gui_get_values_code": "",
+            "gui_state": {},
+            "colors": {
+                "title": "#28a745",
+                "body": "#1e7e34"
+            }
+        },
+        {
+            "uuid": "folder-creator",
+            "title": "Folder Structure Creator",
+            "pos": [820, 200],
+            "size": [280, 200],
+            "code": "import os\nfrom typing import Dict, List\n\n@node_entry\ndef create_folders(base_path: str, categorized_files: Dict[str, List[str]]) -> str:\n    if not os.path.exists(base_path):\n        return f\"Error: Base path '{base_path}' does not exist\"\n    \n    organized_folder = os.path.join(base_path, \"Organized_Files\")\n    \n    try:\n        # Create main organized folder\n        if not os.path.exists(organized_folder):\n            os.makedirs(organized_folder)\n            print(f\"Created main folder: {organized_folder}\")\n        \n        # Create subfolders for each category\n        created_folders = []\n        for category, files in categorized_files.items():\n            if files:  # Only create folder if there are files\n                category_folder = os.path.join(organized_folder, category)\n                if not os.path.exists(category_folder):\n                    os.makedirs(category_folder)\n                    created_folders.append(category)\n                    print(f\"Created subfolder: {category}\")\n        \n        result = f\"Successfully created organized structure with {len(created_folders)} categories\"\n        print(result)\n        return result\n        \n    except Exception as e:\n        error_msg = f\"Error creating folders: {str(e)}\"\n        print(error_msg)\n        return error_msg",
+            "gui_code": "",
+            "gui_get_values_code": "",
+            "gui_state": {},
+            "colors": {
+                "title": "#fd7e14",
+                "body": "#e8590c"
+            }
+        },
+        {
+            "uuid": "file-mover",
+            "title": "File Organizer & Mover",
+            "pos": [1170, 150],
+            "size": [320, 300],
+            "code": "import os\nimport shutil\nfrom typing import Dict, List\n\n@node_entry\ndef organize_files(base_path: str, categorized_files: Dict[str, List[str]], dry_run: bool) -> str:\n    organized_folder = os.path.join(base_path, \"Organized_Files\")\n    \n    if dry_run:\n        print(\"\\n=== DRY RUN MODE - NO FILES WILL BE MOVED ===\")\n    else:\n        print(\"\\n=== ORGANIZING FILES ===\")\n    \n    moved_count = 0\n    errors = []\n    \n    for category, files in categorized_files.items():\n        if not files:\n            continue\n            \n        category_folder = os.path.join(organized_folder, category)\n        \n        for file in files:\n            source_path = os.path.join(base_path, file)\n            dest_path = os.path.join(category_folder, file)\n            \n            try:\n                if os.path.exists(source_path):\n                    if dry_run:\n                        print(f\"Would move: {file} -> {category}/\")\n                    else:\n                        # Handle file name conflicts\n                        if os.path.exists(dest_path):\n                            base, ext = os.path.splitext(file)\n                            counter = 1\n                            while os.path.exists(dest_path):\n                                new_name = f\"{base}_{counter}{ext}\"\n                                dest_path = os.path.join(category_folder, new_name)\n                                counter += 1\n                        \n                        shutil.move(source_path, dest_path)\n                        print(f\"Moved: {file} -> {category}/\")\n                    \n                    moved_count += 1\n                else:\n                    errors.append(f\"File not found: {file}\")\n                    \n            except Exception as e:\n                errors.append(f\"Error moving {file}: {str(e)}\")\n    \n    # Summary\n    action = \"would be moved\" if dry_run else \"moved\"\n    result = f\"Successfully {action}: {moved_count} files\"\n    if errors:\n        result += f\"\\nErrors: {len(errors)}\"\n        for error in errors[:5]:  # Show first 5 errors\n            result += f\"\\n  - {error}\"\n    \n    print(f\"\\n=== ORGANIZATION COMPLETE ===\")\n    print(result)\n    return result",
+            "gui_code": "from PySide6.QtWidgets import QLabel, QCheckBox, QPushButton, QTextEdit\nfrom PySide6.QtCore import Qt\n\nwidgets['dry_run'] = QCheckBox('Dry Run (Preview Only)', parent)\nwidgets['dry_run'].setChecked(True)\nwidgets['dry_run'].setToolTip('Check this to preview changes without actually moving files')\nlayout.addWidget(widgets['dry_run'])\n\nwidgets['organize_btn'] = QPushButton('Start Organization', parent)\nlayout.addWidget(widgets['organize_btn'])\n\nwidgets['result_display'] = QTextEdit(parent)\nwidgets['result_display'].setMinimumHeight(150)\nwidgets['result_display'].setReadOnly(True)\nwidgets['result_display'].setPlainText('Click \"Start Organization\" to begin...')\nlayout.addWidget(widgets['result_display'])",
+            "gui_get_values_code": "def get_values(widgets):\n    return {\n        'dry_run': widgets['dry_run'].isChecked()\n    }\n\ndef set_values(widgets, outputs):\n    result = outputs.get('output_1', 'No result')\n    widgets['result_display'].setPlainText(result)\n\ndef set_initial_state(widgets, state):\n    widgets['dry_run'].setChecked(state.get('dry_run', True))",
+            "gui_state": {
+                "dry_run": true
+            },
+            "colors": {
+                "title": "#6c757d",
+                "body": "#545b62"
+            }
+        }
+    ],
+    "connections": [
+        {
+            "start_node_uuid": "folder-scanner",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "file-categorizer",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "folder-scanner",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "file-categorizer",
+            "end_pin_name": "files"
+        },
+        {
+            "start_node_uuid": "file-categorizer",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "folder-creator",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "folder-scanner",
+            "start_pin_name": "folder_path",
+            "end_node_uuid": "folder-creator",
+            "end_pin_name": "base_path"
+        },
+        {
+            "start_node_uuid": "file-categorizer",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "folder-creator",
+            "end_pin_name": "categorized_files"
+        },
+        {
+            "start_node_uuid": "folder-creator",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "file-mover",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "folder-scanner",
+            "start_pin_name": "folder_path",
+            "end_node_uuid": "file-mover",
+            "end_pin_name": "base_path"
+        },
+        {
+            "start_node_uuid": "file-categorizer",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "file-mover",
+            "end_pin_name": "categorized_files"
+        }
+    ],
+    "requirements": []
+}

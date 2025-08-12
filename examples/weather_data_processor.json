@@ -1,0 +1,151 @@
+{
+    "nodes": [
+        {
+            "uuid": "weather-simulator",
+            "title": "Weather Data Simulator",
+            "pos": [100, 200],
+            "size": [300, 300],
+            "code": "import random\nimport datetime\nfrom typing import List, Dict, Tuple\n\n@node_entry\ndef simulate_weather_data(city: str, days: int, season: str) -> Tuple[str, List[Dict]]:\n    # Temperature ranges by season (Celsius)\n    temp_ranges = {\n        'Spring': (10, 20),\n        'Summer': (20, 35),\n        'Fall': (5, 18),\n        'Winter': (-5, 10)\n    }\n    \n    base_temp_range = temp_ranges.get(season, (10, 25))\n    \n    weather_data = []\n    current_date = datetime.datetime.now()\n    \n    for i in range(days):\n        date = current_date + datetime.timedelta(days=i)\n        \n        # Generate realistic weather patterns\n        base_temp = random.uniform(base_temp_range[0], base_temp_range[1])\n        temp_variation = random.uniform(-3, 3)  # Daily variation\n        temperature = round(base_temp + temp_variation, 1)\n        \n        # Humidity tends to be higher in summer and with rain\n        base_humidity = 60 if season == 'Summer' else 70\n        humidity = max(30, min(95, base_humidity + random.randint(-20, 20)))\n        \n        # Wind speed\n        wind_speed = round(random.uniform(5, 25), 1)\n        \n        # Precipitation (higher chance in fall/winter)\n        precip_chance = 0.4 if season in ['Fall', 'Winter'] else 0.2\n        precipitation = round(random.uniform(0, 15), 1) if random.random() < precip_chance else 0\n        \n        # Weather conditions\n        if precipitation > 10:\n            condition = 'Heavy Rain'\n        elif precipitation > 2:\n            condition = 'Light Rain'\n        elif humidity > 85:\n            condition = 'Cloudy'\n        elif temperature > 28:\n            condition = 'Hot'\n        elif temperature < 5:\n            condition = 'Cold'\n        else:\n            condition = 'Clear'\n        \n        weather_data.append({\n            'date': date.strftime('%Y-%m-%d'),\n            'temperature': temperature,\n            'humidity': humidity,\n            'wind_speed': wind_speed,\n            'precipitation': precipitation,\n            'condition': condition,\n            'day_of_week': date.strftime('%A')\n        })\n    \n    print(f\"\\n=== WEATHER SIMULATION ===\")\n    print(f\"City: {city}\")\n    print(f\"Season: {season}\")\n    print(f\"Generated {len(weather_data)} days of data\")\n    print(f\"Date range: {weather_data[0]['date']} to {weather_data[-1]['date']}\")\n    \n    return city, weather_data",
+            "gui_code": "from PySide6.QtWidgets import QLabel, QLineEdit, QSpinBox, QComboBox, QPushButton\n\nlayout.addWidget(QLabel('City:', parent))\nwidgets['city'] = QLineEdit(parent)\nwidgets['city'].setPlaceholderText('Enter city name...')\nwidgets['city'].setText('New York')\nlayout.addWidget(widgets['city'])\n\nlayout.addWidget(QLabel('Number of Days:', parent))\nwidgets['days'] = QSpinBox(parent)\nwidgets['days'].setRange(7, 365)\nwidgets['days'].setValue(30)\nlayout.addWidget(widgets['days'])\n\nlayout.addWidget(QLabel('Season:', parent))\nwidgets['season'] = QComboBox(parent)\nwidgets['season'].addItems(['Spring', 'Summer', 'Fall', 'Winter'])\nlayout.addWidget(widgets['season'])\n\nwidgets['simulate_btn'] = QPushButton('Generate Weather Data', parent)\nlayout.addWidget(widgets['simulate_btn'])",
+            "gui_get_values_code": "def get_values(widgets):\n    return {\n        'city': widgets['city'].text(),\n        'days': widgets['days'].value(),\n        'season': widgets['season'].currentText()\n    }\n\ndef set_initial_state(widgets, state):\n    widgets['city'].setText(state.get('city', 'New York'))\n    widgets['days'].setValue(state.get('days', 30))\n    widgets['season'].setCurrentText(state.get('season', 'Spring'))",
+            "gui_state": {
+                "city": "New York",
+                "days": 30,
+                "season": "Spring"
+            },
+            "colors": {
+                "title": "#007bff",
+                "body": "#0056b3"
+            }
+        },
+        {
+            "uuid": "weather-analyzer",
+            "title": "Weather Statistics Analyzer",
+            "pos": [470, 150],
+            "size": [300, 250],
+            "code": "from typing import List, Dict, Tuple\nfrom collections import Counter\nimport statistics\n\n@node_entry\ndef analyze_weather(weather_data: List[Dict]) -> Tuple[Dict, Dict, Dict]:\n    if not weather_data:\n        return {}, {}, {}\n    \n    # Temperature statistics\n    temperatures = [day['temperature'] for day in weather_data]\n    temp_stats = {\n        'avg': round(statistics.mean(temperatures), 1),\n        'min': min(temperatures),\n        'max': max(temperatures),\n        'median': round(statistics.median(temperatures), 1)\n    }\n    \n    if len(temperatures) > 1:\n        temp_stats['std_dev'] = round(statistics.stdev(temperatures), 1)\n    \n    # Weather conditions analysis\n    conditions = [day['condition'] for day in weather_data]\n    condition_counts = Counter(conditions)\n    \n    # Environmental analysis\n    humidity_vals = [day['humidity'] for day in weather_data]\n    wind_vals = [day['wind_speed'] for day in weather_data]\n    precip_vals = [day['precipitation'] for day in weather_data]\n    \n    env_stats = {\n        'avg_humidity': round(statistics.mean(humidity_vals), 1),\n        'avg_wind': round(statistics.mean(wind_vals), 1),\n        'total_precipitation': round(sum(precip_vals), 1),\n        'rainy_days': len([p for p in precip_vals if p > 0]),\n        'hottest_day': max(weather_data, key=lambda x: x['temperature']),\n        'coldest_day': min(weather_data, key=lambda x: x['temperature']),\n        'windiest_day': max(weather_data, key=lambda x: x['wind_speed'])\n    }\n    \n    print(f\"\\n=== WEATHER ANALYSIS ===\")\n    print(f\"Temperature: {temp_stats['min']}°C to {temp_stats['max']}°C (avg: {temp_stats['avg']}°C)\")\n    print(f\"Most common condition: {condition_counts.most_common(1)[0][0]}\")\n    print(f\"Rainy days: {env_stats['rainy_days']}/{len(weather_data)}\")\n    \n    return temp_stats, dict(condition_counts), env_stats",
+            "gui_code": "",
+            "gui_get_values_code": "",
+            "gui_state": {},
+            "colors": {
+                "title": "#28a745",
+                "body": "#1e7e34"
+            }
+        },
+        {
+            "uuid": "trend-detector",
+            "title": "Weather Trend Detector",
+            "pos": [470, 450],
+            "size": [300, 250],
+            "code": "from typing import List, Dict, Tuple\n\n@node_entry\ndef detect_trends(weather_data: List[Dict]) -> Tuple[str, str, List[str]]:\n    if len(weather_data) < 3:\n        return \"Insufficient data\", \"No patterns\", []\n    \n    temperatures = [day['temperature'] for day in weather_data]\n    precip_values = [day['precipitation'] for day in weather_data]\n    \n    # Temperature trend analysis\n    temp_trend = \"Stable\"\n    if len(temperatures) >= 5:\n        early_avg = sum(temperatures[:len(temperatures)//3]) / (len(temperatures)//3)\n        late_avg = sum(temperatures[-len(temperatures)//3:]) / (len(temperatures)//3)\n        \n        if late_avg > early_avg + 2:\n            temp_trend = \"Warming\"\n        elif late_avg < early_avg - 2:\n            temp_trend = \"Cooling\"\n    \n    # Precipitation pattern\n    total_precip = sum(precip_values)\n    rainy_days = len([p for p in precip_values if p > 0])\n    \n    if total_precip > len(weather_data) * 3:  # More than 3mm per day on average\n        precip_pattern = \"Wet period\"\n    elif rainy_days < len(weather_data) * 0.2:  # Less than 20% rainy days\n        precip_pattern = \"Dry period\"\n    else:\n        precip_pattern = \"Normal precipitation\"\n    \n    # Weather insights\n    insights = []\n    \n    # Temperature extremes\n    max_temp = max(temperatures)\n    min_temp = min(temperatures)\n    if max_temp - min_temp > 20:\n        insights.append(f\"High temperature variability ({max_temp - min_temp:.1f}°C range)\")\n    \n    # Consecutive patterns\n    hot_streak = 0\n    cold_streak = 0\n    rain_streak = 0\n    current_hot = 0\n    current_cold = 0\n    current_rain = 0\n    \n    for day in weather_data:\n        if day['temperature'] > 25:\n            current_hot += 1\n            current_cold = 0\n        elif day['temperature'] < 10:\n            current_cold += 1\n            current_hot = 0\n        else:\n            current_hot = 0\n            current_cold = 0\n        \n        if day['precipitation'] > 1:\n            current_rain += 1\n        else:\n            current_rain = 0\n        \n        hot_streak = max(hot_streak, current_hot)\n        cold_streak = max(cold_streak, current_cold)\n        rain_streak = max(rain_streak, current_rain)\n    \n    if hot_streak >= 3:\n        insights.append(f\"Heat wave detected ({hot_streak} consecutive hot days)\")\n    \n    if cold_streak >= 3:\n        insights.append(f\"Cold snap detected ({cold_streak} consecutive cold days)\")\n    \n    if rain_streak >= 3:\n        insights.append(f\"Rainy period detected ({rain_streak} consecutive rainy days)\")\n    \n    # Weekly patterns\n    weekend_temps = [day['temperature'] for day in weather_data if day['day_of_week'] in ['Saturday', 'Sunday']]\n    weekday_temps = [day['temperature'] for day in weather_data if day['day_of_week'] not in ['Saturday', 'Sunday']]\n    \n    if weekend_temps and weekday_temps:\n        weekend_avg = sum(weekend_temps) / len(weekend_temps)\n        weekday_avg = sum(weekday_temps) / len(weekday_temps)\n        \n        if abs(weekend_avg - weekday_avg) > 3:\n            insights.append(f\"Weekend/weekday temperature difference: {abs(weekend_avg - weekday_avg):.1f}°C\")\n    \n    print(f\"\\n=== TREND DETECTION ===\")\n    print(f\"Temperature trend: {temp_trend}\")\n    print(f\"Precipitation pattern: {precip_pattern}\")\n    print(f\"Insights: {len(insights)} patterns detected\")\n    \n    return temp_trend, precip_pattern, insights",
+            "gui_code": "",
+            "gui_get_values_code": "",
+            "gui_state": {},
+            "colors": {
+                "title": "#fd7e14",
+                "body": "#e8590c"
+            }
+        },
+        {
+            "uuid": "weather-report",
+            "title": "Weather Report Generator",
+            "pos": [850, 300],
+            "size": [400, 350],
+            "code": "from typing import List, Dict\n\n@node_entry\ndef generate_weather_report(city: str, weather_data: List[Dict], temp_stats: Dict, conditions: Dict, env_stats: Dict, temp_trend: str, precip_pattern: str, insights: List[str]) -> str:\n    if not weather_data:\n        return \"No weather data available\"\n    \n    report = \"\\n\" + \"=\"*70 + \"\\n\"\n    report += \"                    WEATHER ANALYSIS REPORT\\n\"\n    report += \"=\"*70 + \"\\n\\n\"\n    \n    # Location and Period\n    report += f\"🌍 LOCATION: {city.upper()}\\n\"\n    report += f\"📅 PERIOD: {weather_data[0]['date']} to {weather_data[-1]['date']}\\n\"\n    report += f\"📊 DATASET: {len(weather_data)} days\\n\\n\"\n    \n    # Temperature Summary\n    if temp_stats:\n        report += f\"🌡️  TEMPERATURE ANALYSIS\\n\"\n        report += f\"   Average:        {temp_stats['avg']:6.1f}°C\\n\"\n        report += f\"   Range:          {temp_stats['min']:6.1f}°C to {temp_stats['max']:6.1f}°C\\n\"\n        report += f\"   Median:         {temp_stats['median']:6.1f}°C\\n\"\n        if 'std_dev' in temp_stats:\n            report += f\"   Variation:      {temp_stats['std_dev']:6.1f}°C std dev\\n\"\n        report += f\"   Trend:          {temp_trend}\\n\\n\"\n    \n    # Environmental Conditions\n    if env_stats:\n        report += f\"🌦️  ENVIRONMENTAL CONDITIONS\\n\"\n        report += f\"   Avg Humidity:   {env_stats['avg_humidity']:6.1f}%\\n\"\n        report += f\"   Avg Wind Speed: {env_stats['avg_wind']:6.1f} km/h\\n\"\n        report += f\"   Total Rainfall: {env_stats['total_precipitation']:6.1f} mm\\n\"\n        report += f\"   Rainy Days:     {env_stats['rainy_days']:6d} days\\n\"\n        report += f\"   Pattern:        {precip_pattern}\\n\\n\"\n    \n    # Weather Conditions Distribution\n    if conditions:\n        report += f\"☁️  WEATHER CONDITIONS\\n\"\n        total_days = sum(conditions.values())\n        for condition, count in sorted(conditions.items(), key=lambda x: x[1], reverse=True):\n            percentage = (count / total_days) * 100\n            report += f\"   {condition:<12} {count:3d} days ({percentage:4.1f}%)\\n\"\n        report += \"\\n\"\n    \n    # Notable Weather Events\n    if env_stats:\n        report += f\"📋 NOTABLE EVENTS\\n\"\n        hottest = env_stats.get('hottest_day', {})\n        coldest = env_stats.get('coldest_day', {})\n        windiest = env_stats.get('windiest_day', {})\n        \n        if hottest:\n            report += f\"   Hottest Day:    {hottest['date']} ({hottest['temperature']}°C)\\n\"\n        if coldest:\n            report += f\"   Coldest Day:    {coldest['date']} ({coldest['temperature']}°C)\\n\"\n        if windiest:\n            report += f\"   Windiest Day:   {windiest['date']} ({windiest['wind_speed']} km/h)\\n\"\n        report += \"\\n\"\n    \n    # Weather Patterns & Insights\n    if insights:\n        report += f\"🔍 WEATHER PATTERNS\\n\"\n        for insight in insights:\n            report += f\"   • {insight}\\n\"\n        report += \"\\n\"\n    \n    # Recent Weather (last 5 days)\n    report += f\"📅 RECENT WEATHER (Last 5 Days)\\n\"\n    recent_days = weather_data[-5:] if len(weather_data) >= 5 else weather_data\n    for day in recent_days:\n        report += f\"   {day['date']} {day['temperature']:4.1f}°C {day['condition']:<12} \"\n        if day['precipitation'] > 0:\n            report += f\"({day['precipitation']}mm rain)\\n\"\n        else:\n            report += \"\\n\"\n    \n    report += \"\\n\" + \"=\"*70\n    \n    print(report)\n    return report",
+            "gui_code": "from PySide6.QtWidgets import QLabel, QTextEdit, QPushButton\nfrom PySide6.QtCore import Qt\nfrom PySide6.QtGui import QFont\n\ntitle_label = QLabel('Weather Analysis Report', parent)\ntitle_font = QFont()\ntitle_font.setPointSize(14)\ntitle_font.setBold(True)\ntitle_label.setFont(title_font)\nlayout.addWidget(title_label)\n\nwidgets['report_display'] = QTextEdit(parent)\nwidgets['report_display'].setMinimumHeight(250)\nwidgets['report_display'].setReadOnly(True)\nwidgets['report_display'].setPlainText('Generate weather data to see analysis report...')\nfont = QFont('Courier New', 9)\nwidgets['report_display'].setFont(font)\nlayout.addWidget(widgets['report_display'])\n\nwidgets['export_csv_btn'] = QPushButton('Export Data as CSV', parent)\nlayout.addWidget(widgets['export_csv_btn'])\n\nwidgets['compare_btn'] = QPushButton('Compare with Other Cities', parent)\nlayout.addWidget(widgets['compare_btn'])\n\nwidgets['forecast_btn'] = QPushButton('Generate Forecast', parent)\nlayout.addWidget(widgets['forecast_btn'])",
+            "gui_get_values_code": "def get_values(widgets):\n    return {}\n\ndef set_values(widgets, outputs):\n    report = outputs.get('output_1', 'No report data')\n    widgets['report_display'].setPlainText(report)",
+            "gui_state": {},
+            "colors": {
+                "title": "#6c757d",
+                "body": "#545b62"
+            }
+        }
+    ],
+    "connections": [
+        {
+            "start_node_uuid": "weather-simulator",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "weather-analyzer",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "weather-simulator",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "weather-analyzer",
+            "end_pin_name": "weather_data"
+        },
+        {
+            "start_node_uuid": "weather-simulator",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "trend-detector",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "weather-simulator",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "trend-detector",
+            "end_pin_name": "weather_data"
+        },
+        {
+            "start_node_uuid": "weather-analyzer",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "trend-detector",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "weather-simulator",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "city"
+        },
+        {
+            "start_node_uuid": "weather-simulator",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "weather_data"
+        },
+        {
+            "start_node_uuid": "weather-analyzer",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "temp_stats"
+        },
+        {
+            "start_node_uuid": "weather-analyzer",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "conditions"
+        },
+        {
+            "start_node_uuid": "weather-analyzer",
+            "start_pin_name": "output_3",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "env_stats"
+        },
+        {
+            "start_node_uuid": "trend-detector",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "temp_trend"
+        },
+        {
+            "start_node_uuid": "trend-detector",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "precip_pattern"
+        },
+        {
+            "start_node_uuid": "trend-detector",
+            "start_pin_name": "output_3",
+            "end_node_uuid": "weather-report",
+            "end_pin_name": "insights"
+        }
+    ],
+    "requirements": []
+}

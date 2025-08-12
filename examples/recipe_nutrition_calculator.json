@@ -1,0 +1,145 @@
+{
+    "nodes": [
+        {
+            "uuid": "recipe-input",
+            "title": "Recipe Input & Parser",
+            "pos": [100, 200],
+            "size": [300, 300],
+            "code": "import re\nfrom typing import List, Tuple, Dict\n\n@node_entry\ndef parse_recipe(recipe_name: str, servings: int, ingredients_text: str) -> Tuple[str, int, List[Dict]]:\n    # Parse ingredients from text\n    ingredients = []\n    lines = [line.strip() for line in ingredients_text.split('\\n') if line.strip()]\n    \n    for line in lines:\n        # Try to extract quantity, unit, and ingredient name\n        # Pattern: number unit ingredient (e.g., \"2 cups flour\")\n        match = re.match(r'([\\d.]+)\\s*([a-zA-Z]*)?\\s+(.+)', line)\n        \n        if match:\n            quantity = float(match.group(1))\n            unit = match.group(2) if match.group(2) else \"item\"\n            name = match.group(3).strip()\n        else:\n            # If no quantity found, assume 1 item\n            quantity = 1.0\n            unit = \"item\"\n            name = line\n        \n        ingredients.append({\n            'name': name,\n            'quantity': quantity,\n            'unit': unit,\n            'original_line': line\n        })\n    \n    print(f\"\\n=== RECIPE PARSING ===\")\n    print(f\"Recipe: {recipe_name}\")\n    print(f\"Servings: {servings}\")\n    print(f\"Parsed {len(ingredients)} ingredients:\")\n    for ing in ingredients:\n        print(f\"  - {ing['quantity']} {ing['unit']} {ing['name']}\")\n    \n    return recipe_name, servings, ingredients",
+            "gui_code": "from PySide6.QtWidgets import QLabel, QLineEdit, QSpinBox, QTextEdit, QPushButton\n\nlayout.addWidget(QLabel('Recipe Name:', parent))\nwidgets['recipe_name'] = QLineEdit(parent)\nwidgets['recipe_name'].setPlaceholderText('Enter recipe name...')\nlayout.addWidget(widgets['recipe_name'])\n\nlayout.addWidget(QLabel('Number of Servings:', parent))\nwidgets['servings'] = QSpinBox(parent)\nwidgets['servings'].setRange(1, 20)\nwidgets['servings'].setValue(4)\nlayout.addWidget(widgets['servings'])\n\nlayout.addWidget(QLabel('Ingredients (one per line):', parent))\nwidgets['ingredients_text'] = QTextEdit(parent)\nwidgets['ingredients_text'].setMinimumHeight(150)\nwidgets['ingredients_text'].setPlaceholderText('Example:\\n2 cups flour\\n3 eggs\\n1 cup milk\\n1 tsp salt')\nlayout.addWidget(widgets['ingredients_text'])\n\nwidgets['parse_btn'] = QPushButton('Parse Recipe', parent)\nlayout.addWidget(widgets['parse_btn'])",
+            "gui_get_values_code": "def get_values(widgets):\n    return {\n        'recipe_name': widgets['recipe_name'].text(),\n        'servings': widgets['servings'].value(),\n        'ingredients_text': widgets['ingredients_text'].toPlainText()\n    }\n\ndef set_initial_state(widgets, state):\n    widgets['recipe_name'].setText(state.get('recipe_name', ''))\n    widgets['servings'].setValue(state.get('servings', 4))\n    widgets['ingredients_text'].setPlainText(state.get('ingredients_text', ''))",
+            "gui_state": {
+                "recipe_name": "",
+                "servings": 4,
+                "ingredients_text": ""
+            },
+            "colors": {
+                "title": "#007bff",
+                "body": "#0056b3"
+            }
+        },
+        {
+            "uuid": "nutrition-database",
+            "title": "Nutrition Database Lookup",
+            "pos": [470, 150],
+            "size": [320, 250],
+            "code": "from typing import List, Dict\n\n@node_entry\ndef lookup_nutrition(ingredients: List[Dict]) -> List[Dict]:\n    # Simplified nutrition database (calories per 100g/100ml/1 item)\n    nutrition_db = {\n        'flour': {'calories': 364, 'protein': 10.3, 'carbs': 76.3, 'fat': 1.0, 'unit_conversion': {'cup': 125}},\n        'eggs': {'calories': 155, 'protein': 13.0, 'carbs': 1.1, 'fat': 11.0, 'unit_conversion': {'item': 50}},\n        'milk': {'calories': 42, 'protein': 3.4, 'carbs': 5.0, 'fat': 1.0, 'unit_conversion': {'cup': 240}},\n        'butter': {'calories': 717, 'protein': 0.9, 'carbs': 0.1, 'fat': 81.0, 'unit_conversion': {'tbsp': 14, 'cup': 227}},\n        'sugar': {'calories': 387, 'protein': 0, 'carbs': 100, 'fat': 0, 'unit_conversion': {'cup': 200, 'tbsp': 12}},\n        'salt': {'calories': 0, 'protein': 0, 'carbs': 0, 'fat': 0, 'unit_conversion': {'tsp': 6}},\n        'chicken breast': {'calories': 165, 'protein': 31.0, 'carbs': 0, 'fat': 3.6, 'unit_conversion': {'item': 200}},\n        'rice': {'calories': 130, 'protein': 2.7, 'carbs': 28, 'fat': 0.3, 'unit_conversion': {'cup': 195}},\n        'cheese': {'calories': 113, 'protein': 7.0, 'carbs': 1.0, 'fat': 9.0, 'unit_conversion': {'cup': 113}},\n        'oil': {'calories': 884, 'protein': 0, 'carbs': 0, 'fat': 100, 'unit_conversion': {'tbsp': 14}},\n        'bread': {'calories': 265, 'protein': 9.0, 'carbs': 49, 'fat': 3.2, 'unit_conversion': {'slice': 25}},\n        'potato': {'calories': 77, 'protein': 2.0, 'carbs': 17, 'fat': 0.1, 'unit_conversion': {'item': 150}}\n    }\n    \n    enriched_ingredients = []\n    \n    for ingredient in ingredients:\n        name = ingredient['name'].lower()\n        quantity = ingredient['quantity']\n        unit = ingredient['unit'].lower()\n        \n        # Find matching nutrition data\n        nutrition = None\n        matched_name = None\n        \n        for db_name, db_nutrition in nutrition_db.items():\n            if db_name in name or any(word in name for word in db_name.split()):\n                nutrition = db_nutrition\n                matched_name = db_name\n                break\n        \n        if nutrition:\n            # Convert to grams\n            if unit in nutrition['unit_conversion']:\n                grams = quantity * nutrition['unit_conversion'][unit]\n            elif unit in ['g', 'gram', 'grams']:\n                grams = quantity\n            elif unit in ['kg', 'kilogram']:\n                grams = quantity * 1000\n            elif unit in ['lb', 'pound']:\n                grams = quantity * 453.592\n            elif unit in ['oz', 'ounce']:\n                grams = quantity * 28.3495\n            else:\n                grams = quantity * 100  # Default assumption\n            \n            # Calculate nutrition per ingredient\n            factor = grams / 100  # Nutrition data is per 100g\n            \n            enriched_ingredient = ingredient.copy()\n            enriched_ingredient.update({\n                'matched_food': matched_name,\n                'grams': round(grams, 1),\n                'calories': round(nutrition['calories'] * factor, 1),\n                'protein': round(nutrition['protein'] * factor, 1),\n                'carbs': round(nutrition['carbs'] * factor, 1),\n                'fat': round(nutrition['fat'] * factor, 1)\n            })\n        else:\n            # Unknown ingredient\n            enriched_ingredient = ingredient.copy()\n            enriched_ingredient.update({\n                'matched_food': 'Unknown',\n                'grams': 0,\n                'calories': 0,\n                'protein': 0,\n                'carbs': 0,\n                'fat': 0\n            })\n        \n        enriched_ingredients.append(enriched_ingredient)\n    \n    print(f\"\\n=== NUTRITION LOOKUP ===\")\n    for ing in enriched_ingredients:\n        if ing['matched_food'] != 'Unknown':\n            print(f\"{ing['name']}: {ing['calories']} cal, {ing['protein']}g protein\")\n        else:\n            print(f\"{ing['name']}: No nutrition data found\")\n    \n    return enriched_ingredients",
+            "gui_code": "",
+            "gui_get_values_code": "",
+            "gui_state": {},
+            "colors": {
+                "title": "#28a745",
+                "body": "#1e7e34"
+            }
+        },
+        {
+            "uuid": "nutrition-calculator",
+            "title": "Nutrition Calculator",
+            "pos": [850, 200],
+            "size": [300, 250],
+            "code": "from typing import List, Dict, Tuple\n\n@node_entry\ndef calculate_nutrition(recipe_name: str, servings: int, ingredients: List[Dict]) -> Tuple[Dict, Dict, str]:\n    # Calculate total nutrition\n    total = {\n        'calories': 0,\n        'protein': 0,\n        'carbs': 0,\n        'fat': 0,\n        'grams': 0\n    }\n    \n    for ingredient in ingredients:\n        total['calories'] += ingredient.get('calories', 0)\n        total['protein'] += ingredient.get('protein', 0)\n        total['carbs'] += ingredient.get('carbs', 0)\n        total['fat'] += ingredient.get('fat', 0)\n        total['grams'] += ingredient.get('grams', 0)\n    \n    # Round totals\n    for key in total:\n        total[key] = round(total[key], 1)\n    \n    # Calculate per serving\n    per_serving = {\n        'calories': round(total['calories'] / servings, 1),\n        'protein': round(total['protein'] / servings, 1),\n        'carbs': round(total['carbs'] / servings, 1),\n        'fat': round(total['fat'] / servings, 1),\n        'grams': round(total['grams'] / servings, 1)\n    }\n    \n    # Generate nutrition analysis\n    analysis = f\"Recipe: {recipe_name}\\n\"\n    analysis += f\"Total weight: {total['grams']}g\\n\"\n    analysis += f\"Servings: {servings}\\n\\n\"\n    \n    # Calorie distribution\n    if total['calories'] > 0:\n        protein_cal = total['protein'] * 4\n        carbs_cal = total['carbs'] * 4\n        fat_cal = total['fat'] * 9\n        \n        protein_pct = round((protein_cal / total['calories']) * 100, 1)\n        carbs_pct = round((carbs_cal / total['calories']) * 100, 1)\n        fat_pct = round((fat_cal / total['calories']) * 100, 1)\n        \n        analysis += f\"Macronutrient distribution:\\n\"\n        analysis += f\"Protein: {protein_pct}%, Carbs: {carbs_pct}%, Fat: {fat_pct}%\\n\\n\"\n    \n    # Health assessment\n    if per_serving['calories'] < 200:\n        analysis += \"Light meal/snack\\n\"\n    elif per_serving['calories'] < 500:\n        analysis += \"Moderate meal\\n\"\n    else:\n        analysis += \"Hearty meal\\n\"\n    \n    if per_serving['protein'] >= 20:\n        analysis += \"High protein content\\n\"\n    \n    if per_serving['fat'] > 20:\n        analysis += \"High fat content\\n\"\n    \n    print(f\"\\n=== NUTRITION CALCULATION ===\")\n    print(f\"Total: {total['calories']} cal, {total['protein']}g protein\")\n    print(f\"Per serving: {per_serving['calories']} cal, {per_serving['protein']}g protein\")\n    print(f\"Analysis: {analysis}\")\n    \n    return total, per_serving, analysis",
+            "gui_code": "",
+            "gui_get_values_code": "",
+            "gui_state": {},
+            "colors": {
+                "title": "#fd7e14",
+                "body": "#e8590c"
+            }
+        },
+        {
+            "uuid": "nutrition-report",
+            "title": "Nutrition Report Generator",
+            "pos": [1220, 200],
+            "size": [380, 350],
+            "code": "from typing import Dict, List\n\n@node_entry\ndef generate_nutrition_report(recipe_name: str, servings: int, ingredients: List[Dict], total_nutrition: Dict, per_serving: Dict, analysis: str) -> str:\n    report = \"\\n\" + \"=\"*70 + \"\\n\"\n    report += \"                    NUTRITION REPORT\\n\"\n    report += \"=\"*70 + \"\\n\\n\"\n    \n    # Recipe Overview\n    report += f\"🍽️  RECIPE: {recipe_name.upper()}\\n\"\n    report += f\"👥 Servings: {servings}\\n\"\n    report += f\"⚖️  Total Weight: {total_nutrition['grams']}g\\n\\n\"\n    \n    # Ingredients List\n    report += f\"📋 INGREDIENTS\\n\"\n    for i, ing in enumerate(ingredients, 1):\n        if ing.get('matched_food', 'Unknown') != 'Unknown':\n            report += f\"   {i:2d}. {ing['original_line']}\\n\"\n            report += f\"       ({ing['grams']}g, {ing['calories']} cal, {ing['protein']}g protein)\\n\"\n        else:\n            report += f\"   {i:2d}. {ing['original_line']} (nutrition data unavailable)\\n\"\n    report += \"\\n\"\n    \n    # Total Nutrition\n    report += f\"📊 TOTAL NUTRITION\\n\"\n    report += f\"   Calories:     {total_nutrition['calories']:8.1f} kcal\\n\"\n    report += f\"   Protein:      {total_nutrition['protein']:8.1f} g\\n\"\n    report += f\"   Carbohydrates:{total_nutrition['carbs']:8.1f} g\\n\"\n    report += f\"   Fat:          {total_nutrition['fat']:8.1f} g\\n\\n\"\n    \n    # Per Serving\n    report += f\"🍽️  PER SERVING\\n\"\n    report += f\"   Calories:     {per_serving['calories']:8.1f} kcal\\n\"\n    report += f\"   Protein:      {per_serving['protein']:8.1f} g\\n\"\n    report += f\"   Carbohydrates:{per_serving['carbs']:8.1f} g\\n\"\n    report += f\"   Fat:          {per_serving['fat']:8.1f} g\\n\"\n    report += f\"   Weight:       {per_serving['grams']:8.1f} g\\n\\n\"\n    \n    # Macronutrient Breakdown\n    if total_nutrition['calories'] > 0:\n        protein_cal = total_nutrition['protein'] * 4\n        carbs_cal = total_nutrition['carbs'] * 4\n        fat_cal = total_nutrition['fat'] * 9\n        \n        protein_pct = (protein_cal / total_nutrition['calories']) * 100\n        carbs_pct = (carbs_cal / total_nutrition['calories']) * 100\n        fat_pct = (fat_cal / total_nutrition['calories']) * 100\n        \n        report += f\"📈 MACRONUTRIENT BREAKDOWN\\n\"\n        report += f\"   Protein:      {protein_pct:5.1f}% ({protein_cal:.0f} kcal)\\n\"\n        report += f\"   Carbohydrates:{carbs_pct:5.1f}% ({carbs_cal:.0f} kcal)\\n\"\n        report += f\"   Fat:          {fat_pct:5.1f}% ({fat_cal:.0f} kcal)\\n\\n\"\n    \n    # Analysis\n    report += f\"💡 ANALYSIS\\n\"\n    for line in analysis.split('\\n'):\n        if line.strip():\n            report += f\"   • {line.strip()}\\n\"\n    \n    report += \"\\n\" + \"=\"*70\n    \n    print(report)\n    return report",
+            "gui_code": "from PySide6.QtWidgets import QLabel, QTextEdit, QPushButton\nfrom PySide6.QtCore import Qt\nfrom PySide6.QtGui import QFont\n\ntitle_label = QLabel('Nutrition Report', parent)\ntitle_font = QFont()\ntitle_font.setPointSize(14)\ntitle_font.setBold(True)\ntitle_label.setFont(title_font)\nlayout.addWidget(title_label)\n\nwidgets['report_display'] = QTextEdit(parent)\nwidgets['report_display'].setMinimumHeight(250)\nwidgets['report_display'].setReadOnly(True)\nwidgets['report_display'].setPlainText('Enter recipe ingredients to generate nutrition report...')\nfont = QFont('Courier New', 9)\nwidgets['report_display'].setFont(font)\nlayout.addWidget(widgets['report_display'])\n\nwidgets['save_report_btn'] = QPushButton('Save Report', parent)\nlayout.addWidget(widgets['save_report_btn'])\n\nwidgets['scale_recipe_btn'] = QPushButton('Scale Recipe', parent)\nlayout.addWidget(widgets['scale_recipe_btn'])\n\nwidgets['new_recipe_btn'] = QPushButton('New Recipe', parent)\nlayout.addWidget(widgets['new_recipe_btn'])",
+            "gui_get_values_code": "def get_values(widgets):\n    return {}\n\ndef set_values(widgets, outputs):\n    report = outputs.get('output_1', 'No report data')\n    widgets['report_display'].setPlainText(report)",
+            "gui_state": {},
+            "colors": {
+                "title": "#6c757d",
+                "body": "#545b62"
+            }
+        }
+    ],
+    "connections": [
+        {
+            "start_node_uuid": "recipe-input",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "nutrition-database",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "recipe-input",
+            "start_pin_name": "output_3",
+            "end_node_uuid": "nutrition-database",
+            "end_pin_name": "ingredients"
+        },
+        {
+            "start_node_uuid": "nutrition-database",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "nutrition-calculator",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "recipe-input",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "nutrition-calculator",
+            "end_pin_name": "recipe_name"
+        },
+        {
+            "start_node_uuid": "recipe-input",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "nutrition-calculator",
+            "end_pin_name": "servings"
+        },
+        {
+            "start_node_uuid": "nutrition-database",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "nutrition-calculator",
+            "end_pin_name": "ingredients"
+        },
+        {
+            "start_node_uuid": "nutrition-calculator",
+            "start_pin_name": "exec_out",
+            "end_node_uuid": "nutrition-report",
+            "end_pin_name": "exec_in"
+        },
+        {
+            "start_node_uuid": "recipe-input",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "nutrition-report",
+            "end_pin_name": "recipe_name"
+        },
+        {
+            "start_node_uuid": "recipe-input",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "nutrition-report",
+            "end_pin_name": "servings"
+        },
+        {
+            "start_node_uuid": "nutrition-database",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "nutrition-report",
+            "end_pin_name": "ingredients"
+        },
+        {
+            "start_node_uuid": "nutrition-calculator",
+            "start_pin_name": "output_1",
+            "end_node_uuid": "nutrition-report",
+            "end_pin_name": "total_nutrition"
+        },
+        {
+            "start_node_uuid": "nutrition-calculator",
+            "start_pin_name": "output_2",
+            "end_node_uuid": "nutrition-report",
+            "end_pin_name": "per_serving"
+        },
+        {
+            "start_node_uuid": "nutrition-calculator",
+            "start_pin_name": "output_3",
+            "end_node_uuid": "nutrition-report",
+            "end_pin_name": "analysis"
+        }
+    ],
+    "requirements": []
+}
