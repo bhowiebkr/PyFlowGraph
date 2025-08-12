@@ -46,14 +46,35 @@ class NodeEditorView(QGraphicsView):
             super().keyPressEvent(event)
 
     def show_context_menu(self, event: QContextMenuEvent):
+        scene_pos = self.mapToScene(event.pos())
+        item_at_pos = self.scene().itemAt(scene_pos, self.transform())
+        
+        # Find the top-level node if we clicked on a child item
+        from node import Node
+        node = None
+        if item_at_pos:
+            current_item = item_at_pos
+            while current_item and not isinstance(current_item, Node):
+                current_item = current_item.parentItem()
+            if isinstance(current_item, Node):
+                node = current_item
+        
         menu = QMenu(self)
-        add_node_action = menu.addAction("Add Node")
-        action = menu.exec(event.globalPos())
-        if action == add_node_action:
-            main_window = self.window()
-            if hasattr(main_window, "on_add_node"):
-                scene_pos = self.mapToScene(event.pos())
-                main_window.on_add_node(scene_pos=scene_pos)
+        
+        if node:
+            # Context menu for a node
+            properties_action = menu.addAction("Properties")
+            action = menu.exec(event.globalPos())
+            if action == properties_action:
+                node.show_properties_dialog()
+        else:
+            # Context menu for empty space
+            add_node_action = menu.addAction("Add Node")
+            action = menu.exec(event.globalPos())
+            if action == add_node_action:
+                main_window = self.window()
+                if hasattr(main_window, "on_add_node"):
+                    main_window.on_add_node(scene_pos=scene_pos)
 
     def mousePressEvent(self, event: QMouseEvent):
         is_pan_button = event.button() in (Qt.RightButton, Qt.MiddleButton)

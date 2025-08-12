@@ -4,7 +4,7 @@
 
 import uuid
 import ast
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QVBoxLayout, QWidget, QStyle
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QVBoxLayout, QWidget, QStyle, QApplication
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont, QLinearGradient, QPainterPath, QContextMenuEvent, QMouseEvent
 from pin import Pin
@@ -87,7 +87,7 @@ class Node(QGraphicsItem):
             for conn in pin.connections:
                 conn.setSelected(selected)
 
-    def contextMenuEvent(self, event: QContextMenuEvent):
+    def show_properties_dialog(self):
         parent_widget = self.scene().views()[0] if self.scene().views() else None
         dialog = NodePropertiesDialog(self.title, self.color_title_bar, self.color_body, parent_widget)
         if dialog.exec():
@@ -144,6 +144,7 @@ class Node(QGraphicsItem):
         # --- Definitive Fix for Initialization Order ---
         # 1. Create all objects first.
         self.content_container = ResizableWidgetContainer()
+        # Set background to match node body color instead of transparent
         self.content_container.setAttribute(Qt.WA_TranslucentBackground)
 
         main_layout = QVBoxLayout(self.content_container)
@@ -151,6 +152,7 @@ class Node(QGraphicsItem):
         main_layout.setSpacing(5)
 
         self.custom_widget_host = QWidget()
+        self.custom_widget_host.setAttribute(Qt.WA_TranslucentBackground)
         self.custom_widget_layout = QVBoxLayout(self.custom_widget_host)
         self.custom_widget_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.custom_widget_host)
