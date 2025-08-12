@@ -39,13 +39,13 @@ def create_fa_icon(char_code, color="white", font_style="regular"):
 class NodeEditorWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("PyFlowCanvas")
         self.setGeometry(100, 100, 1800, 1000)
 
         # --- Settings and Environment Configuration ---
         self.settings = QSettings("PyFlowCanvas", "NodeEditor")
         self.venv_parent_dir = self.settings.value("venv_parent_dir", os.path.join(os.getcwd(), "venvs"))
         self.current_graph_name = "untitled"
+        self.update_window_title()
         self.current_requirements = []
         self.current_file_path = None
 
@@ -74,6 +74,13 @@ class NodeEditorWindow(QMainWindow):
     def get_current_venv_path(self):
         """Provides the full path to the venv for the current graph."""
         return os.path.join(self.venv_parent_dir, self.current_graph_name)
+    
+    def update_window_title(self):
+        """Updates the window title to show the current graph name."""
+        if self.current_graph_name == "untitled":
+            self.setWindowTitle("PyFlowCanvas - Untitled")
+        else:
+            self.setWindowTitle(f"PyFlowCanvas - {self.current_graph_name}")
 
     def _create_actions(self):
         self.action_new = QAction(create_fa_icon("\uf15b", "lightblue"), "&New Scene", self)  # fa-file
@@ -313,6 +320,7 @@ class NodeEditorWindow(QMainWindow):
         self.current_graph_name = "untitled"
         self.current_requirements = []
         self.current_file_path = None
+        self.update_window_title()
         self.view.resetTransform()
         self.output_log.append("New scene created.")
 
@@ -343,6 +351,7 @@ class NodeEditorWindow(QMainWindow):
             self.current_file_path = file_path
 
         self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
+        self.update_window_title()
         data = self.graph.serialize()
         data["requirements"] = self.current_requirements
         with open(self.current_file_path, "w") as f:
@@ -357,6 +366,7 @@ class NodeEditorWindow(QMainWindow):
         
         self.current_file_path = file_path
         self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
+        self.update_window_title()
         data = self.graph.serialize()
         data["requirements"] = self.current_requirements
         with open(self.current_file_path, "w") as f:
@@ -372,6 +382,7 @@ class NodeEditorWindow(QMainWindow):
         if file_path and os.path.exists(file_path):
             self.current_file_path = file_path
             self.current_graph_name = os.path.splitext(os.path.basename(file_path))[0]
+            self.update_window_title()
             with open(file_path, "r") as f:
                 data = json.load(f)
             self.graph.deserialize(data)
