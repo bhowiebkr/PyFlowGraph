@@ -34,7 +34,6 @@ if __name__ == "__main__":
             print("Warning: Failed to load Font Awesome Regular font.", file=sys.stderr)
         else:
             families = QFontDatabase.applicationFontFamilies(font_id)
-            print(f"Loaded Font Awesome Regular families: {families}", file=sys.stderr)
     else:
         print("Warning: Font Awesome Regular font file not found at 'resources/Font Awesome 7 Free-Regular-400.otf'", file=sys.stderr)
 
@@ -46,7 +45,6 @@ if __name__ == "__main__":
             print("Warning: Failed to load Font Awesome Solid font.", file=sys.stderr)
         else:
             families = QFontDatabase.applicationFontFamilies(font_id)
-            print(f"Loaded Font Awesome Solid families: {families}", file=sys.stderr)
     else:
         print("Warning: Font Awesome Solid font file not found at 'resources/Font Awesome 6 Free-Solid-900.otf'", file=sys.stderr)
 
