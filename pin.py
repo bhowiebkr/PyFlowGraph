@@ -12,16 +12,17 @@ from color_utils import generate_color_from_string
 class Pin(QGraphicsItem):
     """
     A pin represents an input or output on a Node.
-    Its type is a string, and its color is generated dynamically from that string.
+    Supports both execution flow control and data transfer.
     """
 
-    def __init__(self, node, name, direction, pin_type_str, parent=None):
+    def __init__(self, node, name, direction, pin_type_str, pin_category="data", parent=None):
         super().__init__(node)
 
         self.node = node
         self.name = name
-        self.direction = direction
-        self.pin_type = pin_type_str  # The type is now just a string
+        self.direction = direction  # "input" or "output"
+        self.pin_type = pin_type_str  # Data type for data pins, "exec" for execution pins
+        self.pin_category = pin_category  # "data" or "execution"
         self.uuid = str(uuid.uuid4())
 
         self.radius = 6
@@ -30,7 +31,13 @@ class Pin(QGraphicsItem):
         self.label_margin = 8
 
         # --- Dynamic Color Generation ---
-        self.color = generate_color_from_string(self.pin_type)
+        if self.pin_category == "execution":
+            # Execution pins are white/gray
+            self.color = QColor("#E0E0E0") if direction == "output" else QColor("#A0A0A0")
+        else:
+            # Data pins use type-based colors
+            self.color = generate_color_from_string(self.pin_type)
+        
         self.brush = QBrush(self.color)
         self.pen = QPen(QColor("#F0F0F0"))
         self.pen.setWidth(2)
@@ -83,7 +90,7 @@ class Pin(QGraphicsItem):
         self.scene().update()
 
     def can_connect_to(self, other_pin):
-        """Checks for compatibility based on pin type strings."""
+        """Checks for compatibility based on pin category and type."""
         if not other_pin or self == other_pin:
             return False
         if self.node == other_pin.node:
@@ -95,6 +102,15 @@ class Pin(QGraphicsItem):
         if self.direction == "input" and len(self.connections) > 0:
             return False
 
+        # Pins must be the same category (execution to execution, data to data)
+        if self.pin_category != other_pin.pin_category:
+            return False
+
+        # Execution pins can always connect to each other
+        if self.pin_category == "execution":
+            return True
+
+        # For data pins, check type compatibility
         # Allow 'any' to connect to anything
         if self.pin_type == "any" or other_pin.pin_type == "any":
             return True
@@ -110,4 +126,10 @@ class Pin(QGraphicsItem):
             event.ignore()
 
     def serialize(self):
-        return {"uuid": self.uuid, "name": self.name, "direction": self.direction, "type": self.pin_type}
+        return {
+            "uuid": self.uuid, 
+            "name": self.name, 
+            "direction": self.direction, 
+            "type": self.pin_type,
+            "category": self.pin_category
+        }
