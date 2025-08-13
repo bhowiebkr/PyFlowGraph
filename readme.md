@@ -2,12 +2,6 @@
 
 A universal, node-based visual scripting editor built with Python and PySide6. Dynamically create, connect, and execute any Python code as nodes in a data-driven graph.
 
-> **Note: AI-Assisted Development Experiment**
->
-> This codebase represents an evolving [AI-assisted development](https://en.wikipedia.org/wiki/Vibe_coding) experiment exploring the capabilities of modern large language models for software engineering. The project was initially architected and generated using Google's Gemini 2.5 Pro, establishing the core framework and foundational components. Development has since transitioned to leveraging Anthropic's Claude Code for ongoing enhancements, bug fixes, and feature additions. Additional AI assistance is provided through GitHub Copilot for code autocompletion and commit message generation, creating a comprehensive multi-model development ecosystem that demonstrates the collaborative potential of diverse AI tools in modern software engineering workflows.
->
-> While this experimental approach has produced a functional and feature-rich application, it remains a research project focused on understanding AI-assisted code generation patterns, architectural decisions, and development methodologies. The codebase serves as a practical case study in LLM-driven software development rather than a production-ready solution.
-
 ![Node Editor Showcase](images/gui.png)
 
 This project is a universal implementation of a node-based Python environment. It provides a highly interactive and visually polished interface for creating, connecting, and executing custom logic nodes. The application is designed to handle any Python code, including scripts with embedded pip dependencies. The compiled application is fully self-contained and includes a portable Python runtime, so users do not need to have Python installed on their system.
@@ -45,7 +39,7 @@ The core philosophy of this editor is **"Code as Nodes."** Instead of manually a
   * **Custom Dark Theme**: Consistent, modern QSS stylesheet throughout the application.
   * **Font Awesome Integration**: Professional iconography for all UI elements.
   * **Blueprint-Style Navigation**: Industry-standard node editor interaction patterns.
-* **Robust Persistence**: Graphs serialize to clean JSON format with full state preservation including node positions, connections, code, and environment requirements. All file operations use UTF-8 encoding for proper international character support.
+* **Robust Persistence**: Graphs serialize to human-readable Markdown format with embedded metadata, making files both machine-readable and easily editable by humans. Full state preservation including node positions, connections, code, and environment requirements. All file operations use UTF-8 encoding for proper international character support.
 * **Dynamic Interface**: Window title automatically updates to display the current graph name for better project identification.
 
 ---
@@ -69,6 +63,28 @@ The integrated Python code editor provides a professional development environmen
 The Python Environment Manager dialog enables sophisticated dependency management for each graph project. Users can specify custom pip requirements that are automatically installed in isolated virtual environments. This ensures each graph has its own clean dependency space, preventing conflicts between different projects while maintaining security through subprocess isolation.
 
 ![Python Environment Manager](images/environment_manager.png)
+
+### Markdown File Format
+
+PyFlowGraph uses a innovative Markdown-based file format (`.md`) that combines human readability with structured data storage. This format makes graphs both machine-readable for the application and easily editable by humans or AI assistants. The format includes embedded metadata for node positions, connections, and execution requirements while presenting the code in a clean, readable format.
+
+![Markdown Format Example](images/markdown_format.png)
+
+For detailed information about the file format specification, see [flow_spec.md](flow_spec.md).
+
+## Example Graphs
+
+The `examples/` directory contains sample graphs demonstrating various capabilities:
+
+* [`data_analysis_dashboard.md`](examples/data_analysis_dashboard.md) - Interactive data visualization dashboard
+* [`file_organizer_automation.md`](examples/file_organizer_automation.md) - Automated file organization system
+* [`interactive_game_engine.md`](examples/interactive_game_engine.md) - Interactive game with event-driven execution
+* [`password_generator_tool.md`](examples/password_generator_tool.md) - Secure password generation utility
+* [`personal_finance_tracker.md`](examples/personal_finance_tracker.md) - Personal finance management system
+* [`recipe_nutrition_calculator.md`](examples/recipe_nutrition_calculator.md) - Recipe analysis and nutrition calculator
+* [`social_media_scheduler.md`](examples/social_media_scheduler.md) - Social media content scheduling tool
+* [`text_processing_pipeline.md`](examples/text_processing_pipeline.md) - Advanced text processing workflow
+* [`weather_data_processor.md`](examples/weather_data_processor.md) - Weather data analysis and processing
 
 ---
 
@@ -105,7 +121,7 @@ This is the easiest way to run the application without needing to install Python
 2. Find the latest release and download the `.zip` file (e.g., `NodeEditor_Windows_v1.0.0.zip`).
 3. **Unzip** the downloaded file to a location of your choice. This will create a new folder.
 4. Open the new folder and run the `main.exe` executable.
-5. To test the application, go to `File > Load Graph...` and open one of the `.json` files from the `examples` folder.
+5. To test the application, go to `File > Load Graph...` and open one of the `.md` files from the `examples` folder.
 
 ---
 
@@ -178,13 +194,13 @@ This is the easiest way to run the application without needing to install Python
 * **Reroute Connections**: Double-click any connection to create an organizational reroute node
 * **Copy/Paste**: Use `Ctrl+C` and `Ctrl+V` to duplicate node selections with preserved connections
 * **Environment Management**: Access "Run > Manage Environment" to configure pip dependencies
-* **Save/Load**: Use "File" menu to save graphs as JSON or load example projects
+* **Save/Load**: Use "File" menu to save graphs as Markdown or load example projects
 * **Dynamic Window Titles**: Window title automatically updates to show the current graph name
 
 ### Testing the Application
 
 1. Load an example: "File > Load Graph..." and select from the `examples/` folder
-2. Try the `interactive_game_engine.json` for an interactive demonstration of Live Mode
+2. Try the `interactive_game_engine.md` for an interactive demonstration of Live Mode
 3. Select execution mode: **Batch Mode** for traditional execution or **Live Mode** for interactive applications
 4. Press `F5` (Batch) or "Start Live Mode" (Live) to execute and see results in the Output Log panel
 5. Notice how the window title updates to show the current graph name
@@ -269,22 +285,6 @@ PyFlowGraph features advanced virtual environment management:
 * **Automatic Management**: The application creates project-specific environments in the `venvs/` directory
 * **Environment Dialog**: Use "Run > Manage Environment" to configure package dependencies for each graph
 * **Security**: All node execution happens in isolated subprocess environments
-
----
-
-## Example Graphs
-
-The `examples/` directory contains sample graphs demonstrating various capabilities:
-
-* `data_analysis_dashboard.json` - Interactive data visualization dashboard
-* `file_organizer_automation.json` - Automated file organization system
-* `interactive_game_engine.json` - Interactive game with event-driven execution
-* `password_generator_tool.json` - Secure password generation utility
-* `personal_finance_tracker.json` - Personal finance management system
-* `recipe_nutrition_calculator.json` - Recipe analysis and nutrition calculator
-* `social_media_scheduler.json` - Social media content scheduling tool
-* `text_processing_pipeline.json` - Advanced text processing workflow
-* `weather_data_processor.json` - Weather data analysis and processing
 
 ---
 
