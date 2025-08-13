@@ -1,2 +1,3 @@
 pyside6
 nuitka
+markdown-it-py
