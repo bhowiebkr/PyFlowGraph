@@ -19,9 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-NOTICE REGARDING AI-GENERATED CODE
-
-The code in this repository was generated entirely with the assistance of Google's Gemini large language model. The copyright holder and contributors make no representations or warranties regarding the ownership, intellectual property rights, or legal fitness of the generated code.
-
-Users of this software are solely responsible for conducting their own legal due diligence to ensure that their use of this software complies with all applicable laws, regulations, and third-party rights. By using this software, you acknowledge and agree that the copyright holder and contributors are not liable for any legal issues, claims, or damages that may arise from its use.
