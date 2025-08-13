@@ -10,13 +10,13 @@ echo.
 
 echo [1/2] Testing for specific GUI bugs (text_processing_pipeline.md)...
 echo ================================================
-python test_specific_gui_bugs.py
+python tests\test_specific_gui_bugs.py
 set gui_result=%errorlevel%
 echo.
 
 echo [2/2] Testing for pin creation bugs (root cause)...
 echo ================================================
-python test_pin_creation_bug.py
+python tests\test_pin_creation_bug.py
 set pin_result=%errorlevel%
 echo.
 

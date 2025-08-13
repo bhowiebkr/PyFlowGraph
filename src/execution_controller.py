@@ -2,9 +2,9 @@
 # Execution controller for managing batch and live mode execution
 
 from PySide6.QtWidgets import QPushButton, QLabel
-from graph_executor import GraphExecutor
-from event_system import LiveGraphExecutor
-from ui_utils import ButtonStyleManager
+from .graph_executor import GraphExecutor
+from .event_system import LiveGraphExecutor
+from .ui_utils import ButtonStyleManager
 
 
 class ExecutionController:

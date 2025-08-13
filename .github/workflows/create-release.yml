@@ -1,0 +1,156 @@
+# .github/workflows/create-release.yml
+# Manual workflow to create GitHub releases from stored build artifacts.
+# This allows you to test builds locally before making them public.
+
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - prerelease
+      make_latest:
+        description: 'Mark as latest release'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # To create the release
+      actions: read        # To download artifacts
+      pull-requests: read  # To read PRs for the changelog
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag_name }}
+
+      - name: Validate tag exists
+        run: |
+          if ! git tag --list | grep -q "^${{ inputs.tag_name }}$"; then
+            echo "ERROR: Tag '${{ inputs.tag_name }}' does not exist!"
+            exit 1
+          fi
+          echo "SUCCESS: Tag '${{ inputs.tag_name }}' found"
+
+      - name: Find build artifact
+        id: find_artifact
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifactName = `PyFlowGraph-Windows-${{ inputs.tag_name }}`;
+            
+            // Search for workflow runs that built this tag
+            const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'windows-build.yml',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: 'success'
+            });
+            
+            if (workflowRuns.data.workflow_runs.length === 0) {
+              throw new Error(`No successful build found for tag ${{ inputs.tag_name }}`);
+            }
+            
+            const runId = workflowRuns.data.workflow_runs[0].id;
+            console.log(`Found build run: ${runId}`);
+            
+            // Find the artifact in that run
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId
+            });
+            
+            const artifact = artifacts.data.artifacts.find(a => a.name === artifactName);
+            if (!artifact) {
+              throw new Error(`Artifact '${artifactName}' not found in build run ${runId}`);
+            }
+            
+            console.log(`Found artifact: ${artifact.name} (ID: ${artifact.id})`);
+            
+            core.setOutput('artifact_id', artifact.id);
+            core.setOutput('run_id', runId);
+            core.setOutput('artifact_name', artifact.name);
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PyFlowGraph-Windows-${{ inputs.tag_name }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.find_artifact.outputs.run_id }}
+
+      - name: Verify downloaded artifact
+        id: verify
+        run: |
+          zip_file="PyFlowGraph_Windows_${{ inputs.tag_name }}.zip"
+          if [ ! -f "$zip_file" ]; then
+            echo "ERROR: Expected zip file not found: $zip_file"
+            ls -la
+            exit 1
+          fi
+          
+          file_size=$(stat -f%z "$zip_file" 2>/dev/null || stat -c%s "$zip_file" 2>/dev/null)
+          echo "SUCCESS: Found artifact: $zip_file ($file_size bytes)"
+          echo "zip_file=$zip_file" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          fromTag: ${{ inputs.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag_name }}
+          name: ${{ inputs.tag_name }}
+          body: |
+            ## What's Changed
+            ---
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ---
+            
+            **Build Information:**
+            - Built from commit: ${{ github.sha }}
+            - Artifact: ${{ steps.verify.outputs.zip_file }}
+            - Build run: [#${{ steps.find_artifact.outputs.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ steps.find_artifact.outputs.run_id }})
+          files: ${{ steps.verify.outputs.zip_file }}
+          prerelease: ${{ inputs.release_type == 'prerelease' }}
+          make_latest: ${{ inputs.make_latest }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        run: |
+          echo "## Release Created Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ inputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Type:** ${{ inputs.release_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Latest:** ${{ inputs.make_latest }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release URL:** ${{ steps.create_release.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release has been published and is now available for download."

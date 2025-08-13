@@ -3,7 +3,7 @@ rem A Windows batch script to set up the environment and run the main Python app
 
 rem --- Configuration ---
 set VENV_DIR=venv
-set PYTHON_SCRIPT=main.py
+set PYTHON_SCRIPT=src\main.py
 rem ---------------------
 
 rem Check if the virtual environment directory exists.

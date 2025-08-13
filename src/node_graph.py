@@ -7,10 +7,10 @@ import json
 from PySide6.QtWidgets import QGraphicsScene, QApplication
 from PySide6.QtCore import Qt, QPointF, QTimer
 from PySide6.QtGui import QKeyEvent, QColor
-from node import Node
-from reroute_node import RerouteNode
-from connection import Connection
-from pin import Pin
+from .node import Node
+from .reroute_node import RerouteNode
+from .connection import Connection
+from .pin import Pin
 
 
 class NodeGraph(QGraphicsScene):

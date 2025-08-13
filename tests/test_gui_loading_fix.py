@@ -15,10 +15,10 @@ from PySide6.QtCore import QTimer, QEventLoop
 from PySide6.QtTest import QTest
 
 # Add the project root to the path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from node_graph import NodeGraph
-from flow_format import FlowFormatHandler
+from src.node_graph import NodeGraph
+from src.flow_format import FlowFormatHandler
 
 
 class TestGUILoadingFix:

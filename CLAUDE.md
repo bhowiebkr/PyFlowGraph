@@ -12,7 +12,7 @@ PyFlowGraph is a universal node-based visual scripting editor built with Python 
 
 - **Windows**: `run.bat` or `.\run.bat`
 - **Linux/macOS**: `./run.sh`
-- Both scripts automatically activate the virtual environment and run `main.py`
+- Both scripts automatically activate the virtual environment and run `src/main.py`
 
 ### Environment Setup
 
@@ -32,35 +32,37 @@ PyFlowGraph is a universal node-based visual scripting editor built with Python 
 
 ### Core Application Structure
 
-- **main.py**: Entry point, loads Font Awesome fonts and QSS stylesheet
-- **node_editor_window.py**: Main QMainWindow with menus, toolbars, and dock widgets
-- **node_editor_view.py**: QGraphicsView handling mouse/keyboard interactions (pan, zoom, copy/paste)
-- **node_graph.py**: QGraphicsScene managing nodes, connections, and clipboard operations
-- **graph_executor.py**: Execution engine that runs node graphs using subprocess isolation
+All source code is organized in the `src/` directory:
+
+- **src/main.py**: Entry point, loads Font Awesome fonts and QSS stylesheet
+- **src/node_editor_window.py**: Main QMainWindow with menus, toolbars, and dock widgets
+- **src/node_editor_view.py**: QGraphicsView handling mouse/keyboard interactions (pan, zoom, copy/paste)
+- **src/node_graph.py**: QGraphicsScene managing nodes, connections, and clipboard operations
+- **src/graph_executor.py**: Execution engine that runs node graphs using subprocess isolation
 
 ### Node System
 
-- **node.py**: Main Node class with automatic pin generation from Python function parsing
-- **pin.py**: Input/output connection points with type-based coloring
-- **connection.py**: Bezier curve connections between pins
-- **reroute_node.py**: Simple organizational nodes for connection routing
+- **src/node.py**: Main Node class with automatic pin generation from Python function parsing
+- **src/pin.py**: Input/output connection points with type-based coloring
+- **src/connection.py**: Bezier curve connections between pins
+- **src/reroute_node.py**: Simple organizational nodes for connection routing
 
 ### Code Editing
 
-- **code_editor_dialog.py**: Modal dialog containing the code editor
-- **python_code_editor.py**: Core editor widget with line numbers and smart indentation
-- **python_syntax_highlighter.py**: Python syntax highlighting implementation
+- **src/code_editor_dialog.py**: Modal dialog containing the code editor
+- **src/python_code_editor.py**: Core editor widget with line numbers and smart indentation
+- **src/python_syntax_highlighter.py**: Python syntax highlighting implementation
 
 ### Event System
 
-- **event_system.py**: Event-driven execution system for interactive applications with live mode support
+- **src/event_system.py**: Event-driven execution system for interactive applications with live mode support
 
 ### Utilities
 
-- **color_utils.py**: Color manipulation utilities
-- **environment_manager.py**: Virtual environment management dialog
-- **settings_dialog.py**: Application settings configuration
-- **node_properties_dialog.py**: Node property editing interface
+- **src/color_utils.py**: Color manipulation utilities
+- **src/environment_manager.py**: Virtual environment management dialog
+- **src/settings_dialog.py**: Application settings configuration
+- **src/node_properties_dialog.py**: Node property editing interface
 
 ## Key Concepts
 
@@ -87,22 +89,52 @@ PyFlowGraph is a universal node-based visual scripting editor built with Python 
 
 ## File Organization
 
-### Examples and Resources
+### Project Structure
 
-- `examples/`: Sample graph files demonstrating various use cases
-- `resources/`: Font Awesome font files for UI icons
-- `venvs/`: Project-specific virtual environments
-- `dark_theme.qss`: Application-wide dark theme stylesheet
+The project follows a clean, organized structure:
 
-### Missing Files Referenced in README
+```
+PyFlowGraph/
+├── src/                     # All Python source code
+├── tests/                   # All test files  
+├── docs/                    # Static documentation
+├── test_reports/           # Generated test outputs
+├── examples/               # Sample graph files
+├── resources/              # Font Awesome fonts, UI assets
+├── venvs/                  # Project-specific virtual environments  
+├── .github/workflows/      # CI/CD pipeline
+├── run.bat, run.sh         # Application launcher scripts
+├── run_tests.bat, etc.     # Test runner scripts
+├── dark_theme.qss          # Application stylesheet
+├── requirements.txt        # Python dependencies
+└── CLAUDE.md              # This file
+```
 
-The README mentions `socket_type.py` and `default_graphs.py` but these files don't exist in the current codebase. The socket type functionality appears to be implemented directly in other modules.
+### Core Directories
+
+- **`src/`**: All 22 Python modules organized in one location
+- **`tests/`**: 7 test files with comprehensive GUI and execution testing
+- **`docs/`**: Hand-written documentation (flow_spec.md, test guides)
+- **`test_reports/`**: Auto-generated test outputs and summaries
+- **`examples/`**: Sample .md graph files demonstrating features
+- **`resources/`**: Static assets (Font Awesome fonts)
+- **`venvs/`**: Isolated Python environments for graph execution
 
 ## Testing
 
-- **test_execution_flow.py**: Simple test script for validating node execution flow and architecture
-- No formal test suite exists - testing is primarily done through example graphs in the `examples/` directory
-- Use `python test_execution_flow.py` to run basic execution tests
+### Test Organization
+
+- **tests/test_execution_flow.py**: Basic node execution validation
+- **tests/test_gui_loading*.py**: GUI component loading tests
+- **tests/test_pin_creation_bug.py**: Pin system validation
+- **tests/test_specific_gui_bugs.py**: Targeted bug reproduction tests
+
+### Running Tests
+
+- **Quick test**: `run_quick_test.bat` - Key GUI/pin tests
+- **Full suite**: `run_tests.bat` - Interactive test menu
+- **Single test**: `run_gui_test.bat` - GUI loading fix test
+- **Manual**: `python tests/test_name.py` - Individual test files
 
 ## Development Notes
 
@@ -111,3 +143,5 @@ The README mentions `socket_type.py` and `default_graphs.py` but these files don
 - Font Awesome integration provides professional iconography
 - All nodes execute in isolated environments for security
 - Dependencies are managed via `requirements.txt` (PySide6, Nuitka for compilation)
+
+- Don't add claude attribution to git commits

@@ -6,7 +6,7 @@ import uuid
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont
-from color_utils import generate_color_from_string
+from .color_utils import generate_color_from_string
 
 
 class Pin(QGraphicsItem):

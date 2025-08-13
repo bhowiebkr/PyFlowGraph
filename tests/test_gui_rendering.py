@@ -15,17 +15,17 @@ import unittest
 import time
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QApplication, QGraphicsView, QWidget, QMainWindow
 from PySide6.QtCore import QTimer, Qt, QRectF
 from PySide6.QtTest import QTest
 
-from node import Node
-from node_graph import NodeGraph
-from flow_format import load_flow_file
-from node_editor_view import NodeEditorView
-from node_editor_window import NodeEditorWindow
+from src.node import Node
+from src.node_graph import NodeGraph
+from src.flow_format import load_flow_file
+from src.node_editor_view import NodeEditorView
+from src.node_editor_window import NodeEditorWindow
 
 
 class TestGUIRendering(unittest.TestCase):
@@ -70,7 +70,7 @@ class TestGUIRendering(unittest.TestCase):
     
     def test_text_processing_pipeline_gui_rendering(self):
         """Test that the text_processing_pipeline.md file loads with visible GUIs."""
-        pipeline_path = os.path.join(os.path.dirname(__file__), 'examples', 'text_processing_pipeline.md')
+        pipeline_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples', 'text_processing_pipeline.md')
         
         if not os.path.exists(pipeline_path):
             self.skipTest(f"Test file not found: {pipeline_path}")
@@ -347,7 +347,7 @@ class TestGUIRenderingIntegration(unittest.TestCase):
             QTest.qWait(100)
             
             # Try to load the text processing pipeline
-            pipeline_path = os.path.join(os.path.dirname(__file__), 'examples', 'text_processing_pipeline.md')
+            pipeline_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples', 'text_processing_pipeline.md')
             
             if os.path.exists(pipeline_path):
                 # Use the window's file operations to load

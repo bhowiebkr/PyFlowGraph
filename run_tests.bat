@@ -37,7 +37,7 @@ echo Running Quick GUI Bug Detection Tests
 echo ================================================
 echo This tests the specific issues you reported
 echo.
-python test_specific_gui_bugs.py
+python tests\test_specific_gui_bugs.py
 echo.
 pause
 goto :menu
@@ -49,7 +49,7 @@ echo Running Pin Creation Bug Tests
 echo ================================================
 echo This identifies the root cause of the issues
 echo.
-python test_pin_creation_bug.py
+python tests\test_pin_creation_bug.py
 echo.
 pause
 goto :menu
@@ -61,7 +61,7 @@ echo Running GUI Rendering Tests
 echo ================================================
 echo This verifies visual GUI components work correctly
 echo.
-python test_gui_rendering.py
+python tests\test_gui_rendering.py
 echo.
 pause
 goto :menu
@@ -73,7 +73,7 @@ echo Running Comprehensive GUI Tests
 echo ================================================
 echo This is the full GUI loading test suite
 echo.
-python test_gui_loading.py
+python tests\test_gui_loading.py
 echo.
 pause
 goto :menu
@@ -87,27 +87,27 @@ echo This will run every test file in sequence
 echo.
 
 echo --- Basic GUI Loading Tests ---
-python test_gui_loading_bugs.py
+python tests\test_gui_loading_bugs.py
 echo.
 
 echo --- Specific GUI Bug Tests ---
-python test_specific_gui_bugs.py
+python tests\test_specific_gui_bugs.py
 echo.
 
 echo --- GUI Rendering Tests ---
-python test_gui_rendering.py
+python tests\test_gui_rendering.py
 echo.
 
 echo --- Pin Creation Bug Tests ---
-python test_pin_creation_bug.py
+python tests\test_pin_creation_bug.py
 echo.
 
 echo --- Comprehensive GUI Tests ---
-python test_gui_loading.py
+python tests\test_gui_loading.py
 echo.
 
 echo --- Original Execution Flow Test ---
-python test_execution_flow.py
+python tests\test_execution_flow.py
 echo.
 
 echo ================================================
@@ -123,7 +123,7 @@ echo Running Original Execution Flow Test
 echo ================================================
 echo This is the original test from the codebase
 echo.
-python test_execution_flow.py
+python tests\test_execution_flow.py
 echo.
 pause
 goto :menu

@@ -17,15 +17,15 @@ import unittest
 import time
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QApplication, QGraphicsView
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtTest import QTest
 
-from node import Node
-from node_graph import NodeGraph
-from flow_format import load_flow_file
+from src.node import Node
+from src.node_graph import NodeGraph
+from src.flow_format import load_flow_file
 
 
 class TestSpecificGUIBugs(unittest.TestCase):
@@ -63,7 +63,7 @@ class TestSpecificGUIBugs(unittest.TestCase):
     
     def test_text_processing_pipeline_specific_bugs(self):
         """Test the specific text_processing_pipeline.md for GUI rendering issues."""
-        pipeline_path = os.path.join(os.path.dirname(__file__), 'examples', 'text_processing_pipeline.md')
+        pipeline_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples', 'text_processing_pipeline.md')
         
         if not os.path.exists(pipeline_path):
             self.skipTest(f"Test file not found: {pipeline_path}")

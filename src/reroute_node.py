@@ -6,8 +6,8 @@ import uuid
 from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import QRectF, QPointF
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QRadialGradient, QKeyEvent, QPainterPath
-from pin import Pin
-from color_utils import generate_color_from_string
+from .pin import Pin
+from .color_utils import generate_color_from_string
 
 
 class RerouteNode(QGraphicsItem):
