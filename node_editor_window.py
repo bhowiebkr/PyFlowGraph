@@ -80,16 +80,16 @@ class NodeEditorWindow(QMainWindow):
 
     def _create_actions(self):
         """Create all the action objects for menus and toolbars."""
-        self.action_new = QAction(create_fa_icon("\\uf15b", "lightblue"), "&New Scene", self)
+        self.action_new = QAction(create_fa_icon("\uf15b", "lightblue"), "&New Scene", self)
         self.action_new.triggered.connect(self.on_new_scene)
 
-        self.action_save = QAction(create_fa_icon("\\uf0c7", "orange"), "&Save Graph...", self)
+        self.action_save = QAction(create_fa_icon("\uf0c7", "orange"), "&Save Graph...", self)
         self.action_save.triggered.connect(self.on_save)
 
-        self.action_save_as = QAction(create_fa_icon("\\uf0c5", "orange"), "Save &As...", self)
+        self.action_save_as = QAction(create_fa_icon("\uf0c5", "orange"), "Save &As...", self)
         self.action_save_as.triggered.connect(self.on_save_as)
 
-        self.action_load = QAction(create_fa_icon("\\uf07c", "yellow"), "&Load Graph...", self)
+        self.action_load = QAction(create_fa_icon("\uf07c", "yellow"), "&Load Graph...", self)
         self.action_load.triggered.connect(self.on_load)
 
         self.action_settings = QAction("Settings...", self)
