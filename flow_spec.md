@@ -9,7 +9,8 @@ FlowSpec is a structured, document-based file format for defining node-based gra
 
 **Core Philosophy:** "the document is the graph."
 
-### Guiding Principles:
+### Guiding Principles
+
 - **Readability First**: Clear structure for human authors and reviewers
 - **Structured & Unambiguous**: Rigid structure allowing deterministic parsing  
 - **Version Control Native**: Clean diffs in Git and other VCS
@@ -26,6 +27,7 @@ FlowSpec is a structured, document-based file format for defining node-based gra
 ## 3. File Structure Specification
 
 ### 3.1 Graph Header
+
 Every .md file MUST begin with a single Level 1 Heading (#).
 
 ```markdown
@@ -35,6 +37,7 @@ Optional graph description goes here.
 ```
 
 ### 3.2 Node Definitions
+
 Each node MUST use this exact format:
 
 ```markdown
@@ -53,22 +56,25 @@ Optional node description.
 ```
 
 ### Logic
+
 ```python
 @node_entry
 def node_function(input_param: str) -> str:
     return f"Processed: {input_param}"
 ```
-```
 
 ### 3.3 Required Components
+
 - **Metadata**: JSON object with uuid, title, and optional pos/size
 - **Logic**: Python function with @node_entry decorator
 
 ### 3.4 Optional Components
+
 - **GUI Definition**: Python code for user interface widgets
 - **GUI State Handler**: Functions for widget state management
 
 ### 3.5 Connections Section
+
 The file MUST contain exactly one Connections section:
 
 ```markdown
@@ -82,7 +88,6 @@ The file MUST contain exactly one Connections section:
         "end_pin_name": "input_param"
     }
 ]
-```
 ```
 
 ## 4. Simple Example
@@ -107,6 +112,7 @@ Creates a simple text message.
 ```
 
 ### Logic
+
 ```python
 @node_entry
 def generate_text() -> str:
@@ -118,6 +124,7 @@ def generate_text() -> str:
 Prints the received text message.
 
 ### Metadata
+
 ```json
 {
     "uuid": "printer", 
@@ -128,6 +135,7 @@ Prints the received text message.
 ```
 
 ### Logic
+
 ```python
 @node_entry
 def print_text(message: str) -> str:
@@ -136,6 +144,7 @@ def print_text(message: str) -> str:
 ```
 
 ## Connections
+
 ```json
 [
     {
@@ -146,13 +155,13 @@ def print_text(message: str) -> str:
     }
 ]
 ```
-```
 
 ## 5. Parser Implementation
 
 A parser should use markdown-it-py to tokenize the document:
 
 ### 5.1 Algorithm
+
 1. **Tokenize**: Parse file into token stream (don't render to HTML)
 2. **State Machine**: Track current node and component being parsed
 3. **Section Detection**:
@@ -163,11 +172,13 @@ A parser should use markdown-it-py to tokenize the document:
 5. **Graph Construction**: Build in-memory graph from collected data
 
 ### 5.2 Token Types
+
 - `heading_open` with `h1/h2/h3` tags
 - `fence` with `info` property for language detection
 - `inline` for text content
 
 ### 5.3 Validation Rules
+
 - Exactly one h1 heading
 - Each node must have unique uuid
 - Metadata and Logic components are required
@@ -177,6 +188,7 @@ A parser should use markdown-it-py to tokenize the document:
 ## 6. Extension Points
 
 The format supports extension through:
+
 - Additional component types (### Custom Component)
 - Custom metadata fields
 - Multiple programming languages in Logic blocks
