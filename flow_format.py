@@ -52,6 +52,10 @@ class FlowFormatHandler:
             "size": node.get("size", [200, 150])
         }
         
+        # Include is_reroute flag if this is a reroute node
+        if node.get("is_reroute", False):
+            metadata["is_reroute"] = True
+        
         # Always include colors (even if empty) for consistency
         metadata["colors"] = node.get("colors", {})
         
@@ -134,7 +138,8 @@ class FlowFormatHandler:
                                     "gui_code": "",
                                     "gui_get_values_code": "",
                                     "gui_state": {},
-                                    "colors": {}
+                                    "colors": {},
+                                    "is_reroute": False  # Default to False, will be updated from metadata
                                 }
                                 graph_data["nodes"].append(current_node)
                                 current_section = "node"
@@ -159,7 +164,8 @@ class FlowFormatHandler:
                                 "pos": metadata.get("pos", [0, 0]),
                                 "size": metadata.get("size", [200, 150]),
                                 "colors": metadata.get("colors", {}),
-                                "gui_state": metadata.get("gui_state", {})
+                                "gui_state": metadata.get("gui_state", {}),
+                                "is_reroute": metadata.get("is_reroute", False)
                             })
                         except json.JSONDecodeError:
                             pass

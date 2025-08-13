@@ -91,11 +91,15 @@ class NodeGraph(QGraphicsScene):
                 node = self.create_node("", pos=(new_pos.x(), new_pos.y()), is_reroute=True)
             else:
                 node = self.create_node(node_data["title"], pos=(new_pos.x(), new_pos.y()))
-                if "size" in node_data:
-                    node.width, node.height = node_data["size"]
                 node.set_code(node_data.get("code", ""))
                 node.set_gui_code(node_data.get("gui_code", ""))
                 node.set_gui_get_values_code(node_data.get("gui_get_values_code", ""))
+                # Apply saved size if reasonable, otherwise use calculated size
+                if "size" in node_data:
+                    saved_width, saved_height = node_data["size"]
+                    # Only apply saved size if it's reasonable (not zero/negative)
+                    if saved_width > 0 and saved_height > 0:
+                        node.width, node.height = saved_width, saved_height
                 colors = node_data.get("colors", {})
                 if "title" in colors:
                     node.color_title_bar = QColor(colors["title"])
