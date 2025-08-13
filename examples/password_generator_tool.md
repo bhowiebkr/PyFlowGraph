@@ -1,10 +1,12 @@
 # Password Generator Tool
 
-A comprehensive password generation tool with strength analysis and customizable options.
+Password generation workflow with configurable parameters, random character selection, strength scoring algorithm, and GUI output display. Implements user-defined character set selection, random.choice() generation, regex-based strength analysis, and formatted result presentation.
 
 ## Node: Password Configuration (ID: config-input)
 
-Configuration node for setting password generation parameters including length and character types.
+Collects password generation parameters through QSpinBox (length 4-128) and QCheckBox widgets for character set selection. Returns Tuple[int, bool, bool, bool, bool] containing length and boolean flags for uppercase, lowercase, numbers, and symbols inclusion.
+
+GUI state management handles default values: length=12, uppercase=True, lowercase=True, numbers=True, symbols=False. Uses standard get_values() and set_initial_state() functions for parameter persistence and retrieval.
 
 ### Metadata
 
@@ -92,7 +94,9 @@ def set_initial_state(widgets, state):
 
 ## Node: Password Generator Engine (ID: password-generator)
 
-Core password generation logic that creates secure passwords based on configuration.
+Constructs character set by concatenating string.ascii_uppercase, string.ascii_lowercase, string.digits, and custom symbol string based on boolean input flags. Uses random.choice() with list comprehension to generate password of specified length.
+
+Includes error handling for empty character sets, returning "Error: No character types selected!" when no character categories are enabled. Character set construction is conditional based on input parameters, symbols include '!@#$%^&*()_+-=[]{}|;:,.<>?' set.
 
 ### Metadata
 
@@ -139,7 +143,11 @@ def generate_password(length: int, include_uppercase: bool, include_lowercase: b
 
 ## Node: Password Strength Analyzer (ID: strength-analyzer)
 
-Analyzes password strength using multiple criteria and provides improvement feedback.
+Analyzes password strength using regex pattern matching and point-based scoring system. Length scoring: 25 points for >=12 chars, 15 points for >=8 chars. Character variety scoring: 20 points each for uppercase (A-Z), lowercase (a-z), numbers (0-9), 15 points for symbols.
+
+Uses re.search() with specific patterns to detect character categories. Score thresholds: >=80 Very Strong, >=60 Strong, >=40 Moderate, >=20 Weak, <20 Very Weak. Returns Tuple[str, int, str] containing strength label, numerical score, and feedback text.
+
+Feedback generation uses list accumulation for missing elements, joined with semicolons. Provides specific recommendations for improving password complexity based on detected deficiencies.
 
 ### Metadata
 
@@ -220,7 +228,11 @@ def analyze_strength(password: str) -> Tuple[str, int, str]:
 
 ## Node: Password Output & Copy (ID: output-display)
 
-Final output node that displays the generated password with strength analysis and copy functionality.
+Formats password generation results into display string combining password, strength rating, score, and feedback. Uses string concatenation to create structured output: "Generated Password: {password}\nStrength: {strength} ({score}/100)\nFeedback: {feedback}".
+
+GUI implementation includes QLineEdit for password display (read-only), QTextEdit for strength analysis, and QPushButton components for copy and regeneration actions. String parsing in set_values() extracts password from formatted result using string.split() and string replacement operations.
+
+Handles multiple input parameters (password, strength, score, feedback) and consolidates them into single formatted output string for display and further processing.
 
 ### Metadata
 
