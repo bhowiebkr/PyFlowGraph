@@ -51,6 +51,10 @@ PyFlowGraph is a universal node-based visual scripting editor built with Python 
 - **python_code_editor.py**: Core editor widget with line numbers and smart indentation
 - **python_syntax_highlighter.py**: Python syntax highlighting implementation
 
+### Event System
+
+- **event_system.py**: Event-driven execution system for interactive applications with live mode support
+
 ### Utilities
 
 - **color_utils.py**: Color manipulation utilities
@@ -73,6 +77,7 @@ PyFlowGraph is a universal node-based visual scripting editor built with Python 
 - Nodes execute when all input dependencies are satisfied
 - Each node runs in an isolated subprocess for security
 - Pin values are serialized/deserialized as JSON between nodes
+- Supports both **Batch Mode** (traditional sequential execution) and **Live Mode** (event-driven interactive execution)
 
 ### Graph Persistence
 
@@ -93,10 +98,16 @@ PyFlowGraph is a universal node-based visual scripting editor built with Python 
 
 The README mentions `socket_type.py` and `default_graphs.py` but these files don't exist in the current codebase. The socket type functionality appears to be implemented directly in other modules.
 
+## Testing
+
+- **test_execution_flow.py**: Simple test script for validating node execution flow and architecture
+- No formal test suite exists - testing is primarily done through example graphs in the `examples/` directory
+- Use `python test_execution_flow.py` to run basic execution tests
+
 ## Development Notes
 
 - This is an experimental AI-generated codebase for learning purposes
-- No formal test suite exists - testing is done through example graphs
-- The application uses PySide6 for the Qt-based GUI
+- The application uses PySide6 for the Qt-based GUI  
 - Font Awesome integration provides professional iconography
 - All nodes execute in isolated environments for security
+- Dependencies are managed via `requirements.txt` (PySide6, Nuitka for compilation)

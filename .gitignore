@@ -112,3 +112,4 @@ python_runtime
 
 # Ignore Claude AI files
 .claude/
+.claude_code/

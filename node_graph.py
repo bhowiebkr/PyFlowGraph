@@ -91,11 +91,11 @@ class NodeGraph(QGraphicsScene):
                 node = self.create_node("", pos=(new_pos.x(), new_pos.y()), is_reroute=True)
             else:
                 node = self.create_node(node_data["title"], pos=(new_pos.x(), new_pos.y()))
-                if "size" in node_data:
-                    node.width, node.height = node_data["size"]
                 node.set_code(node_data.get("code", ""))
                 node.set_gui_code(node_data.get("gui_code", ""))
                 node.set_gui_get_values_code(node_data.get("gui_get_values_code", ""))
+                if "size" in node_data:
+                    node.width, node.height = node_data["size"]
                 colors = node_data.get("colors", {})
                 if "title" in colors:
                     node.color_title_bar = QColor(colors["title"])
@@ -127,7 +127,13 @@ class NodeGraph(QGraphicsScene):
     def final_load_update(self, nodes_to_update):
         """A helper method called by a timer to run the final layout pass."""
         for node in nodes_to_update:
-            node.fit_size_to_content()
+            # Force a complete layout rebuild like manual resize does
+            node._update_layout()
+            # Update all pin connections like manual resize does
+            for pin in node.pins:
+                pin.update_connections()
+            # Force node visual update
+            node.update()
         self.update()
 
     # --- Other methods remain the same ---
