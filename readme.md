@@ -82,7 +82,7 @@ The `examples/` directory contains sample graphs demonstrating various capabilit
 
 The main PyFlowGraph interface showcasing a complete text adventure game implementation. This example demonstrates the node-based visual scripting approach with interconnected nodes handling game logic, user input processing, and narrative flow. Notice the clean dark theme, type-colored connection pins, and the intuitive layout of the node graph canvas.
 
-![Node Editor Showcase](images/text_adventure_graph.png)
+![Node Editor Showcase](images/scifi_world_generator.png)
 
 ### Mini-IDE Code Editor
 
