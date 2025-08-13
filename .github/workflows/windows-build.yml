@@ -90,18 +90,34 @@ jobs:
 
       - name: Prepare build artifact
         id: package
+        shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}"
+          # Extract version from tag, fallback to ref_name if not a tag
+          if ("${{ github.ref }}" -like "refs/tags/*") {
+            $version = "${{ github.ref_name }}"
+          } else {
+            $version = "dev-${{ github.sha }}".Substring(0, 15)
+          }
+          $version = $version -replace '[\/\\:*?"<>|]', '-'  # Replace invalid characters
           $build_dir = "NodeEditor_Build"
           $dist_dir = Join-Path $build_dir "main.dist"
+          
+          # Verify the directory exists
+          if (-not (Test-Path $dist_dir)) {
+            Write-Error "Build directory not found: $dist_dir"
+            Get-ChildItem $build_dir -ErrorAction SilentlyContinue
+            exit 1
+          }
           
           $new_dir_name = "PyFlowGraph $version"
           $zip_file_name = "PyFlowGraph_Windows_$version.zip"
           
-          Rename-Item -Path $dist_dir -NewName $new_dir_name
+          Write-Host "Renaming $dist_dir to $new_dir_name"
+          Rename-Item -Path $dist_dir -NewName $new_dir_name -Force
           
           $archive_source = Join-Path $build_dir $new_dir_name
-          Compress-Archive -Path "$archive_source\*" -DestinationPath $zip_file_name
+          Write-Host "Creating archive from $archive_source"
+          Compress-Archive -Path "$archive_source\*" -DestinationPath $zip_file_name -Force
           
           echo "zip_name=$zip_file_name" >> $env:GITHUB_OUTPUT
           echo "version=$version" >> $env:GITHUB_OUTPUT
