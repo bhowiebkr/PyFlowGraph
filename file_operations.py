@@ -96,25 +96,9 @@ class FileOperationsManager:
                 self.current_requirements = data.get("requirements", [])
                 self.settings.setValue("last_file_path", file_path)
                 
-                # Force a complete view refresh to ensure proper rendering
-                # This addresses GUI refresh issues particularly with .md file loading
-                from PySide6.QtCore import QTimer
-                
-                def force_complete_refresh():
-                    # Update the scene
-                    self.graph.update()
-                    self.graph.invalidate()  # Force scene to recalculate everything
-                    
-                    # Update all views  
-                    for view in self.graph.views():
-                        view.invalidateScene()  # Invalidate cached scene data
-                        view.update()
-                        view.viewport().update()
-                        view.repaint()  # Force immediate repaint
-                
-                # Execute refresh immediately and also defer one for after Qt event processing
-                force_complete_refresh()
-                QTimer.singleShot(10, force_complete_refresh)
+                # Let the graph's built-in deferred sizing fix handle the rendering
+                # The original fix from v0.5.0 already handles proper timing for node sizing
+                pass
                 
                 self.output_log.append(f"Graph loaded from {file_path}")
                 self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
