@@ -7,9 +7,9 @@ import ast
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QVBoxLayout, QWidget, QStyle, QApplication
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont, QLinearGradient, QPainterPath, QContextMenuEvent, QMouseEvent
-from pin import Pin
-from code_editor_dialog import CodeEditorDialog
-from node_properties_dialog import NodePropertiesDialog
+from .pin import Pin
+from .code_editor_dialog import CodeEditorDialog
+from .node_properties_dialog import NodePropertiesDialog
 
 
 class ResizableWidgetContainer(QWidget):

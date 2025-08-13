@@ -13,16 +13,16 @@ from unittest.mock import Mock, patch
 import json
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QApplication, QGraphicsView
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtTest import QTest
 
-from node import Node
-from node_graph import NodeGraph
-from flow_format import FlowFormatHandler, load_flow_file
-from file_operations import FileOperationsManager
+from src.node import Node
+from src.node_graph import NodeGraph
+from src.flow_format import FlowFormatHandler, load_flow_file
+from src.file_operations import FileOperationsManager
 
 
 class TestGUILoading(unittest.TestCase):

@@ -9,7 +9,7 @@ set -e
 VENV_DIR="venv"
 
 # Name of the main python script to run.
-PYTHON_SCRIPT="main.py"
+PYTHON_SCRIPT="src/main.py"
 # ---------------------
 
 # Check if the virtual environment directory exists.

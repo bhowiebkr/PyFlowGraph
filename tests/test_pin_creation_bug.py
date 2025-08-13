@@ -17,13 +17,13 @@ import os
 import unittest
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QApplication
 
-from node import Node
-from node_graph import NodeGraph
-from flow_format import load_flow_file
+from src.node import Node
+from src.node_graph import NodeGraph
+from src.flow_format import load_flow_file
 
 
 class TestPinCreationBug(unittest.TestCase):
@@ -48,7 +48,7 @@ class TestPinCreationBug(unittest.TestCase):
     
     def test_text_analyzer_pin_creation(self):
         """Test the specific Text Statistics Analyzer node that has no pins."""
-        pipeline_path = os.path.join(os.path.dirname(__file__), 'examples', 'text_processing_pipeline.md')
+        pipeline_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples', 'text_processing_pipeline.md')
         
         if not os.path.exists(pipeline_path):
             self.skipTest(f"Test file not found: {pipeline_path}")
@@ -143,7 +143,7 @@ def analyze_text(text: str) -> Tuple[int, int, int, int, float, str]:
 ''')
         
         # 2. Load the same node from markdown
-        pipeline_path = os.path.join(os.path.dirname(__file__), 'examples', 'text_processing_pipeline.md')
+        pipeline_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples', 'text_processing_pipeline.md')
         if os.path.exists(pipeline_path):
             data = load_flow_file(pipeline_path)
             

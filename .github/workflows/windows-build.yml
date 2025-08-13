@@ -1,21 +1,26 @@
 # .github/workflows/windows-build.yml
-# This workflow correctly downloads a portable Python runtime, prepares it with pip,
-# forcefully removes all debugging symbols (.pdb files), and then bundles the
-# clean runtime with the Nuitka-compiled application.
+# This workflow builds the Windows application and stores it as an artifact.
+# Use the separate "Create Release" workflow to manually create releases from these builds.
 
-name: Build and Release Windows App
+name: Build Windows App
 
 on:
   push:
     tags:
       - 'v*' # Triggers on version tags like v1.0.0
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'requirements.txt'
+      - '.github/workflows/windows-build.yml'
 
 jobs:
   build-windows:
     runs-on: windows-latest
     permissions:
-      contents: write      # To create the release
-      pull-requests: read  # To read PRs for the changelog
+      contents: read       # To checkout code
+      actions: write       # To upload artifacts
 
     steps:
       - name: Checkout code
@@ -65,6 +70,7 @@ jobs:
             --enable-plugin=pyside6 `
             --include-qt-plugins=platforms `
             --output-dir=NodeEditor_Build `
+            --include-package=src `
             --nofollow-import-to=tkinter,unittest,setuptools,pip,wheel `
             --windows-disable-console `
             --remove-output `
@@ -73,7 +79,7 @@ jobs:
             --include-data-dir=resources=resources `
             --include-data-file=dark_theme.qss=dark_theme.qss `
             --assume-yes-for-downloads `
-            main.py
+            src/main.py
 
       - name: Copy Python runtime after Nuitka build
         shell: pwsh
@@ -82,7 +88,7 @@ jobs:
           Write-Host "Copying python_runtime to $distDir..."
           Copy-Item -Path "python_runtime" -Destination $distDir -Recurse -Force
 
-      - name: Prepare artifact for release
+      - name: Prepare build artifact
         id: package
         run: |
           $version = "${{ github.ref_name }}"
@@ -98,22 +104,36 @@ jobs:
           Compress-Archive -Path "$archive_source\*" -DestinationPath $zip_file_name
           
           echo "zip_name=$zip_file_name" >> $env:GITHUB_OUTPUT
+          echo "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Generate changelog
-        id: changelog
-        uses: mikepenz/release-changelog-builder-action@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+      - name: Upload build artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.ref_name }}
-          body: |
-            ## What's Changed
-            ---
+          name: PyFlowGraph-Windows-${{ steps.package.outputs.version }}
+          path: ${{ steps.package.outputs.zip_name }}
+          retention-days: 90
+          compression-level: 0  # Already compressed
+          
+      - name: Build summary (Tag Build)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "## Tag Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.package.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** ${{ steps.package.outputs.zip_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the artifact from this build to test locally" >> $GITHUB_STEP_SUMMARY
+          echo "2. Once verified, use the 'Create Release' workflow to publish" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[Download Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
 
-            ${{ steps.changelog.outputs.changelog }}
-          files: ${{ steps.package.outputs.zip_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build summary (PR Build)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## PR Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build verification passed for this pull request.**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The application builds successfully with the proposed changes." >> $GITHUB_STEP_SUMMARY

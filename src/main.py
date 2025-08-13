@@ -4,10 +4,16 @@
 
 import sys
 import os
+
+# Add project root to Python path so we can import from src
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import qInstallMessageHandler, QtMsgType
 from PySide6.QtGui import QFontDatabase
-from node_editor_window import NodeEditorWindow
+from src.node_editor_window import NodeEditorWindow
 
 
 def custom_message_handler(mode, context, message):
@@ -27,7 +33,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # --- Load Font Awesome Regular ---
-    font_path_regular = os.path.join(os.path.dirname(__file__), "resources", "Font Awesome 7 Free-Regular-400.otf")
+    font_path_regular = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "Font Awesome 7 Free-Regular-400.otf")
     if os.path.exists(font_path_regular):
         font_id = QFontDatabase.addApplicationFont(font_path_regular)
         if font_id == -1:
@@ -38,7 +44,7 @@ if __name__ == "__main__":
         print("Warning: Font Awesome Regular font file not found at 'resources/Font Awesome 7 Free-Regular-400.otf'", file=sys.stderr)
 
     # --- Load Font Awesome Solid ---
-    font_path_solid = os.path.join(os.path.dirname(__file__), "resources", "Font Awesome 6 Free-Solid-900.otf")
+    font_path_solid = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "Font Awesome 6 Free-Solid-900.otf")
     if os.path.exists(font_path_solid):
         font_id = QFontDatabase.addApplicationFont(font_path_solid)
         if font_id == -1:
@@ -50,7 +56,7 @@ if __name__ == "__main__":
 
     # Load the dark theme stylesheet
     try:
-        with open("dark_theme.qss", "r") as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "dark_theme.qss"), "r") as f:
             style = f.read()
             app.setStyleSheet(style)
     except FileNotFoundError:

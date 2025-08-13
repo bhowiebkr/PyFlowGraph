@@ -7,11 +7,11 @@ This creates a basic linear execution flow: Start -> Process -> End
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from node import Node
-from node_graph import NodeGraph
-from graph_executor import GraphExecutor
+from src.node import Node
+from src.node_graph import NodeGraph
+from src.graph_executor import GraphExecutor
 from PySide6.QtWidgets import QApplication, QTextEdit
 from PySide6.QtCore import QPointF
 

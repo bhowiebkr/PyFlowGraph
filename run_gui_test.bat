@@ -9,7 +9,7 @@ if exist "venv\Scripts\activate.bat" (
 )
 
 REM Run the test
-python test_gui_loading_fix.py
+python tests\test_gui_loading_fix.py
 
 echo.
 echo Test completed. Press any key to exit...

@@ -4,7 +4,7 @@
 
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox, QTabWidget
 from PySide6.QtGui import QFont
-from python_code_editor import PythonCodeEditor
+from .python_code_editor import PythonCodeEditor
 
 
 class CodeEditorDialog(QDialog):
