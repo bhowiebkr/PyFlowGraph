@@ -55,49 +55,47 @@ jobs:
           script: |
             const artifactName = `PyFlowGraph-Windows-${{ inputs.tag_name }}`;
             
-            // Get the commit SHA for the tag
-            const tagRef = await github.rest.git.getRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: 'tags/${{ inputs.tag_name }}'
-            });
-            const tagSha = tagRef.data.object.sha;
-            console.log(`Tag ${{ inputs.tag_name }} points to commit: ${tagSha}`);
-            
-            // Search for workflow runs that built this specific commit
+            // Search for recent successful builds (last 50 runs)
             const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'windows-build.yml',
-              head_sha: tagSha,
               status: 'completed',
-              conclusion: 'success'
+              conclusion: 'success',
+              per_page: 50
             });
             
-            if (workflowRuns.data.workflow_runs.length === 0) {
-              throw new Error(`No successful build found for tag ${{ inputs.tag_name }} (commit: ${tagSha})`);
+            console.log(`Searching for artifact '${artifactName}' in ${workflowRuns.data.workflow_runs.length} recent successful builds...`);
+            
+            // Search through recent successful builds to find the artifact
+            let foundArtifact = null;
+            let foundRunId = null;
+            
+            for (const run of workflowRuns.data.workflow_runs) {
+              const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id
+              });
+              
+              const artifact = artifacts.data.artifacts.find(a => a.name === artifactName);
+              if (artifact) {
+                foundArtifact = artifact;
+                foundRunId = run.id;
+                console.log(`Found artifact '${artifactName}' in build run ${run.id} (commit: ${run.head_sha.substring(0,7)})`);
+                break;
+              }
             }
             
-            const runId = workflowRuns.data.workflow_runs[0].id;
-            console.log(`Found build run: ${runId}`);
-            
-            // Find the artifact in that run
-            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: runId
-            });
-            
-            const artifact = artifacts.data.artifacts.find(a => a.name === artifactName);
-            if (!artifact) {
-              throw new Error(`Artifact '${artifactName}' not found in build run ${runId}`);
+            if (!foundArtifact) {
+              throw new Error(`Artifact '${artifactName}' not found in any recent successful builds`);
             }
             
-            console.log(`Found artifact: ${artifact.name} (ID: ${artifact.id})`);
+            console.log(`Using artifact: ${foundArtifact.name} (ID: ${foundArtifact.id})`);
             
-            core.setOutput('artifact_id', artifact.id);
-            core.setOutput('run_id', runId);
-            core.setOutput('artifact_name', artifact.name);
+            core.setOutput('artifact_id', foundArtifact.id);
+            core.setOutput('run_id', foundRunId);
+            core.setOutput('artifact_name', foundArtifact.name);
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
