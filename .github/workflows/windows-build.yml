@@ -87,8 +87,17 @@ jobs:
         shell: pwsh
         run: |
           $distDir = "NodeEditor_Build\PyFlowGraph.dist"
-          Write-Host "Copying python_runtime to $distDir..."
-          Copy-Item -Path "python_runtime" -Destination $distDir -Recurse -Force
+          Write-Host "Copying python_runtime to $distDir as subdirectory..."
+          
+          # Ensure we copy python_runtime as a subdirectory, not replace the contents
+          if (Test-Path $distDir) {
+            Copy-Item -Path "python_runtime" -Destination "$distDir\python_runtime" -Recurse -Force
+            Write-Host "Python runtime copied successfully to $distDir\python_runtime"
+          } else {
+            Write-Error "Build directory not found: $distDir"
+            Get-ChildItem "NodeEditor_Build" -ErrorAction SilentlyContinue
+            exit 1
+          }
 
       - name: Prepare build artifact
         id: package
@@ -104,12 +113,20 @@ jobs:
           $build_dir = "NodeEditor_Build"
           $dist_dir = Join-Path $build_dir "PyFlowGraph.dist"
           
-          # Verify the directory exists
+          # Debug: Show current build directory structure
+          Write-Host "=== BUILD DIRECTORY STRUCTURE DEBUG ==="
+          Write-Host "Build directory contents:"
+          Get-ChildItem $build_dir -ErrorAction SilentlyContinue | Format-Table Name, Length, LastWriteTime
+          
+          # Verify the directory exists and show its contents
           if (-not (Test-Path $dist_dir)) {
             Write-Error "Build directory not found: $dist_dir"
-            Get-ChildItem $build_dir -ErrorAction SilentlyContinue
             exit 1
           }
+          
+          Write-Host "Contents of $dist_dir (before renaming):"
+          Get-ChildItem $dist_dir -ErrorAction SilentlyContinue | Format-Table Name, Length, LastWriteTime
+          Write-Host "========================================"
           
           $artifact_dir_name = "PyFlowGraph-Windows-$version"
           
@@ -118,6 +135,10 @@ jobs:
           
           $artifact_path = Join-Path $build_dir $artifact_dir_name
           Write-Host "Artifact prepared at: $artifact_path"
+          
+          # Debug: Show final artifact contents
+          Write-Host "Final artifact contents:"
+          Get-ChildItem $artifact_path -ErrorAction SilentlyContinue | Format-Table Name, Length, LastWriteTime
           
           echo "artifact_path=$artifact_path" >> $env:GITHUB_OUTPUT
           echo "artifact_name=$artifact_dir_name" >> $env:GITHUB_OUTPUT
