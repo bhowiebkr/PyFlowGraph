@@ -84,20 +84,31 @@ jobs:
           cd ..
 
       - name: Copy Python runtime after Nuitka build
+        id: copy_runtime
         shell: pwsh
         run: |
-          $distDir = "NodeEditor_Build\PyFlowGraph.dist"
-          Write-Host "Copying python_runtime to $distDir as subdirectory..."
+          # Debug: Check what Nuitka actually created
+          Write-Host "=== NUITKA OUTPUT DEBUG ==="
+          Write-Host "Contents of NodeEditor_Build:"
+          Get-ChildItem "NodeEditor_Build" -ErrorAction SilentlyContinue | Format-Table Name, Length, LastWriteTime
           
-          # Ensure we copy python_runtime as a subdirectory, not replace the contents
+          # Nuitka creates main.dist directory even with --output-filename
+          # The executable inside is renamed, but the directory stays main.dist
+          $distDir = "NodeEditor_Build\main.dist"
+          
           if (Test-Path $distDir) {
-            Copy-Item -Path "python_runtime" -Destination "$distDir\python_runtime" -Recurse -Force
-            Write-Host "Python runtime copied successfully to $distDir\python_runtime"
+            Write-Host "Found Nuitka output directory: $distDir"
           } else {
-            Write-Error "Build directory not found: $distDir"
-            Get-ChildItem "NodeEditor_Build" -ErrorAction SilentlyContinue
+            Write-Error "Expected Nuitka output directory not found: $distDir"
             exit 1
           }
+          
+          Write-Host "Copying python_runtime to $distDir as subdirectory..."
+          Copy-Item -Path "python_runtime" -Destination "$distDir\python_runtime" -Recurse -Force
+          Write-Host "Python runtime copied successfully to $distDir\python_runtime"
+          
+          # Store the actual dist directory for later steps
+          echo "actual_dist_dir=$distDir" >> $env:GITHUB_OUTPUT
 
       - name: Prepare build artifact
         id: package
@@ -111,7 +122,7 @@ jobs:
           }
           $version = $version -replace '[\/\\:*?"<>|]', '-'  # Replace invalid characters
           $build_dir = "NodeEditor_Build"
-          $dist_dir = Join-Path $build_dir "PyFlowGraph.dist"
+          $dist_dir = "${{ steps.copy_runtime.outputs.actual_dist_dir }}"
           
           # Debug: Show current build directory structure
           Write-Host "=== BUILD DIRECTORY STRUCTURE DEBUG ==="
