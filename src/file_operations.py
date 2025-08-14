@@ -5,7 +5,7 @@ import json
 import os
 from PySide6.QtWidgets import QFileDialog
 from PySide6.QtCore import QSettings
-from .flow_format import FlowFormatHandler, extract_title_from_filename
+from flow_format import FlowFormatHandler, extract_title_from_filename
 
 
 class FileOperationsManager:

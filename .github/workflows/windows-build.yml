@@ -65,21 +65,22 @@ jobs:
 
       - name: Build app with Nuitka
         run: |
+          cd src
           python -m nuitka `
             --standalone `
             --enable-plugin=pyside6 `
             --include-qt-plugins=platforms `
-            --output-dir=NodeEditor_Build `
-            --include-package=src `
+            --output-dir=../NodeEditor_Build `
             --nofollow-import-to=tkinter,unittest,setuptools,pip,wheel `
             --windows-disable-console `
             --remove-output `
             --lto=yes `
-            --include-data-dir=examples=examples `
+            --include-data-dir=../examples=examples `
             --include-data-dir=resources=resources `
-            --include-data-file=dark_theme.qss=dark_theme.qss `
+            --include-data-file=../dark_theme.qss=dark_theme.qss `
             --assume-yes-for-downloads `
-            src/main.py
+            main.py
+          cd ..
 
       - name: Copy Python runtime after Nuitka build
         shell: pwsh
