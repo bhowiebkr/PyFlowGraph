@@ -7,8 +7,8 @@ import json
 import os
 import sys
 from collections import deque
-from .node import Node
-from .reroute_node import RerouteNode
+from node import Node
+from reroute_node import RerouteNode
 
 
 class GraphExecutor:

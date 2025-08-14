@@ -7,16 +7,16 @@ from PySide6.QtWidgets import (QMainWindow, QTextEdit, QDockWidget, QInputDialog
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QPointF, QSettings
 
-from .node_graph import NodeGraph
-from .node_editor_view import NodeEditorView
-from .environment_manager import EnvironmentManagerDialog
-from .settings_dialog import SettingsDialog
+from node_graph import NodeGraph
+from node_editor_view import NodeEditorView
+from environment_manager import EnvironmentManagerDialog
+from settings_dialog import SettingsDialog
 
 # Import our new modular components
-from .ui_utils import create_fa_icon, create_execution_control_widget
-from .file_operations import FileOperationsManager
-from .execution_controller import ExecutionController
-from .view_state_manager import ViewStateManager
+from ui_utils import create_fa_icon, create_execution_control_widget
+from file_operations import FileOperationsManager
+from execution_controller import ExecutionController
+from view_state_manager import ViewStateManager
 
 
 class NodeEditorWindow(QMainWindow):

@@ -25,11 +25,17 @@ if not exist "%PYTHON_SCRIPT%" (
     exit /b 1
 )
 
+rem Change to src directory so Python can find modules
+cd src
+
 rem Execute the python script.
 rem Any arguments passed to run.bat will be passed to main.py
 rem For example: run.bat arg1 arg2
-echo Running %PYTHON_SCRIPT%...
-python "%PYTHON_SCRIPT%" %*
+echo Running main.py from src directory...
+python main.py %*
+
+rem Return to original directory
+cd ..
 
 rem Deactivate the virtual environment after the script finishes.
 call deactivate

@@ -5,7 +5,7 @@
 from PySide6.QtCore import Qt, QRect, QSize
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
 from PySide6.QtGui import QColor, QPainter, QFont, QKeyEvent, QTextFormat
-from .python_syntax_highlighter import PythonSyntaxHighlighter
+from python_syntax_highlighter import PythonSyntaxHighlighter
 
 class LineNumberArea(QWidget):
     """A widget that displays line numbers for a QPlainTextEdit."""

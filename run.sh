@@ -31,11 +31,17 @@ if [ ! -f "$PYTHON_SCRIPT" ]; then
     exit 1
 fi
 
+# Change to src directory so Python can find modules
+cd src
+
 # Execute the python script.
 # Any arguments passed to run.sh will be passed to main.py
 # For example: ./run.sh arg1 arg2
-echo "Running $PYTHON_SCRIPT..."
-python "$PYTHON_SCRIPT" "$@"
+echo "Running main.py from src directory..."
+python main.py "$@"
+
+# Return to original directory
+cd ..
 
 # The script will automatically deactivate the venv when it exits.
 # You can also add 'deactivate' here if you have cleanup commands to run after.
