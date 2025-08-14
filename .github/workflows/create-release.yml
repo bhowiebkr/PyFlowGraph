@@ -132,11 +132,11 @@ jobs:
           # Create release zip file from current directory contents
           echo "Creating release zip: $zip_file"
           if command -v zip >/dev/null 2>&1; then
-            # Exclude git and other unnecessary files
-            zip -r "$zip_file" . -x ".git/*" ".github/*" "src/*" "tests/*" "test_reports/*" "docs/*" "images/*" "pre-release/*" "*.md" "run.sh" "run_test_gui.bat" "*.txt"
+            # Exclude development files but keep examples/*.md and LICENSE.txt
+            zip -r "$zip_file" . -x ".git/*" ".github/*" "src/*" "tests/*" "test_reports/*" "docs/*" "images/*" "pre-release/*" ".gitignore" "README.md" "CLAUDE.md" "requirements.txt" "run.sh" "run.bat" "run_test_gui.bat" "*.log"
           else
             # Fallback for systems without zip command  
-            tar -czf "${zip_file%.zip}.tar.gz" --exclude='.git' --exclude='.github' --exclude='src' --exclude='tests' --exclude='test_reports' --exclude='docs' --exclude='images' --exclude='pre-release' --exclude='*.md' --exclude='run.sh' --exclude='run_test_gui.bat' --exclude='*.txt' .
+            tar -czf "${zip_file%.zip}.tar.gz" --exclude='.git' --exclude='.github' --exclude='src' --exclude='tests' --exclude='test_reports' --exclude='docs' --exclude='images' --exclude='pre-release' --exclude='.gitignore' --exclude='README.md' --exclude='CLAUDE.md' --exclude='requirements.txt' --exclude='run.sh' --exclude='run.bat' --exclude='run_test_gui.bat' --exclude='*.log' .
             zip_file="${zip_file%.zip}.tar.gz"
           fi
           
