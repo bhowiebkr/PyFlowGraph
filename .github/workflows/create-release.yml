@@ -55,18 +55,27 @@ jobs:
           script: |
             const artifactName = `PyFlowGraph-Windows-${{ inputs.tag_name }}`;
             
-            // Search for workflow runs that built this tag
+            // Get the commit SHA for the tag
+            const tagRef = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'tags/${{ inputs.tag_name }}'
+            });
+            const tagSha = tagRef.data.object.sha;
+            console.log(`Tag ${{ inputs.tag_name }} points to commit: ${tagSha}`);
+            
+            // Search for workflow runs that built this specific commit
             const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'windows-build.yml',
-              head_sha: context.sha,
+              head_sha: tagSha,
               status: 'completed',
               conclusion: 'success'
             });
             
             if (workflowRuns.data.workflow_runs.length === 0) {
-              throw new Error(`No successful build found for tag ${{ inputs.tag_name }}`);
+              throw new Error(`No successful build found for tag ${{ inputs.tag_name }} (commit: ${tagSha})`);
             }
             
             const runId = workflowRuns.data.workflow_runs[0].id;
