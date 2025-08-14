@@ -97,18 +97,37 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ steps.find_artifact.outputs.run_id }}
 
-      - name: Verify downloaded artifact
+      - name: Verify and prepare artifact for release
         id: verify
         run: |
-          zip_file="PyFlowGraph_Windows_${{ inputs.tag_name }}.zip"
-          if [ ! -f "$zip_file" ]; then
-            echo "ERROR: Expected zip file not found: $zip_file"
+          artifact_dir="PyFlowGraph-Windows-${{ inputs.tag_name }}"
+          zip_file="PyFlowGraph-Windows-${{ inputs.tag_name }}.zip"
+          
+          if [ ! -d "$artifact_dir" ]; then
+            echo "ERROR: Expected artifact directory not found: $artifact_dir"
             ls -la
             exit 1
           fi
           
+          # Check if PyFlowGraph.exe exists in the artifact
+          if [ ! -f "$artifact_dir/PyFlowGraph.exe" ]; then
+            echo "ERROR: PyFlowGraph.exe not found in $artifact_dir"
+            ls -la "$artifact_dir"
+            exit 1
+          fi
+          
+          # Create release zip file from the directory
+          echo "Creating release zip: $zip_file"
+          if command -v zip >/dev/null 2>&1; then
+            cd "$artifact_dir" && zip -r "../$zip_file" . && cd ..
+          else
+            # Fallback for systems without zip command
+            tar -czf "${zip_file%.zip}.tar.gz" -C "$artifact_dir" .
+            zip_file="${zip_file%.zip}.tar.gz"
+          fi
+          
           file_size=$(stat -f%z "$zip_file" 2>/dev/null || stat -c%s "$zip_file" 2>/dev/null)
-          echo "SUCCESS: Found artifact: $zip_file ($file_size bytes)"
+          echo "SUCCESS: Created release package: $zip_file ($file_size bytes)"
           echo "zip_file=$zip_file" >> $GITHUB_OUTPUT
 
       - name: Generate changelog

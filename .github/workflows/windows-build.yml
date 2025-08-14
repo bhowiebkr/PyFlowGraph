@@ -71,6 +71,7 @@ jobs:
             --enable-plugin=pyside6 `
             --include-qt-plugins=platforms `
             --output-dir=../NodeEditor_Build `
+            --output-filename=PyFlowGraph.exe `
             --nofollow-import-to=tkinter,unittest,setuptools,pip,wheel `
             --windows-disable-console `
             --remove-output `
@@ -85,7 +86,7 @@ jobs:
       - name: Copy Python runtime after Nuitka build
         shell: pwsh
         run: |
-          $distDir = "NodeEditor_Build\main.dist"
+          $distDir = "NodeEditor_Build\PyFlowGraph.dist"
           Write-Host "Copying python_runtime to $distDir..."
           Copy-Item -Path "python_runtime" -Destination $distDir -Recurse -Force
 
@@ -101,7 +102,7 @@ jobs:
           }
           $version = $version -replace '[\/\\:*?"<>|]', '-'  # Replace invalid characters
           $build_dir = "NodeEditor_Build"
-          $dist_dir = Join-Path $build_dir "main.dist"
+          $dist_dir = Join-Path $build_dir "PyFlowGraph.dist"
           
           # Verify the directory exists
           if (-not (Test-Path $dist_dir)) {
@@ -110,17 +111,16 @@ jobs:
             exit 1
           }
           
-          $new_dir_name = "PyFlowGraph $version"
-          $zip_file_name = "PyFlowGraph_Windows_$version.zip"
+          $artifact_dir_name = "PyFlowGraph-Windows-$version"
           
-          Write-Host "Renaming $dist_dir to $new_dir_name"
-          Rename-Item -Path $dist_dir -NewName $new_dir_name -Force
+          Write-Host "Renaming $dist_dir to $artifact_dir_name for artifact upload"
+          Rename-Item -Path $dist_dir -NewName $artifact_dir_name -Force
           
-          $archive_source = Join-Path $build_dir $new_dir_name
-          Write-Host "Creating archive from $archive_source"
-          Compress-Archive -Path "$archive_source\*" -DestinationPath $zip_file_name -Force
+          $artifact_path = Join-Path $build_dir $artifact_dir_name
+          Write-Host "Artifact prepared at: $artifact_path"
           
-          echo "zip_name=$zip_file_name" >> $env:GITHUB_OUTPUT
+          echo "artifact_path=$artifact_path" >> $env:GITHUB_OUTPUT
+          echo "artifact_name=$artifact_dir_name" >> $env:GITHUB_OUTPUT
           echo "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Upload build artifact
@@ -128,9 +128,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PyFlowGraph-Windows-${{ steps.package.outputs.version }}
-          path: ${{ steps.package.outputs.zip_name }}
+          path: ${{ steps.package.outputs.artifact_path }}
           retention-days: 90
-          compression-level: 0  # Already compressed
           
       - name: Build summary (Tag Build)
         if: startsWith(github.ref, 'refs/tags/')
@@ -138,7 +137,7 @@ jobs:
           echo "## Tag Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ steps.package.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Artifact:** ${{ steps.package.outputs.zip_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** ${{ steps.package.outputs.artifact_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "1. Download the artifact from this build to test locally" >> $GITHUB_STEP_SUMMARY
