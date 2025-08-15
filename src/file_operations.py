@@ -22,7 +22,7 @@ class FileOperationsManager:
         self.current_file_path = None
         self.current_graph_name = "untitled"
         self.current_requirements = []
-        self.use_default_environment = False
+        self.use_default_environment = True  # Default to True for new/untitled graphs
         
         # Reference to execution controller (set later)
         self.execution_controller = None
@@ -106,6 +106,9 @@ class FileOperationsManager:
                 self.current_requirements = data.get("requirements", [])
                 self.settings.setValue("last_file_path", file_path)
                 
+                # Handle environment selection for the loaded graph
+                self._handle_environment_selection(file_path)
+                
                 # Let the graph's built-in deferred sizing fix handle the rendering
                 # The original fix from v0.5.0 already handles proper timing for node sizing
                 pass
@@ -168,11 +171,21 @@ class FileOperationsManager:
             self.output_log.append(f"Error loading file {file_path}: {str(e)}")
             return None
     
-    def _handle_environment_selection(self, file_path):
-        """Handle environment selection for example graphs."""
-        # Check if this is from the examples directory
-        normalized_path = os.path.normpath(file_path)
-        if "examples" in normalized_path.split(os.sep):
+    def _handle_environment_selection(self, file_path=None):
+        """Handle environment selection for graphs."""
+        # For new/untitled graphs or example graphs, prompt for environment selection
+        should_prompt = False
+        
+        if file_path:
+            # Check if this is from the examples directory
+            normalized_path = os.path.normpath(file_path)
+            if "examples" in normalized_path.split(os.sep):
+                should_prompt = True
+        else:
+            # No file path means new/untitled graph
+            should_prompt = True
+            
+        if should_prompt:
             # Check if user has already made an environment choice for this graph
             settings_key = f"graph_env_choice/{self.current_graph_name}"
             saved_choice = self.settings.value(settings_key, None)
@@ -182,7 +195,7 @@ class FileOperationsManager:
                 self.output_log.append(f"Using saved environment preference: {saved_choice}")
                 self._apply_environment_selection(saved_choice)
             else:
-                # Show dialog for first-time loading of this example
+                # Show dialog for first-time loading
                 dialog = EnvironmentSelectionDialog(self.current_graph_name, self.parent_window)
                 if dialog.exec():
                     selected_option = dialog.get_selected_option()
@@ -231,6 +244,17 @@ class FileOperationsManager:
             self.output_log.append("Environment: venvs/default (ready to execute)")
         else:
             self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
+    
+    def ensure_environment_selected(self):
+        """Ensure environment is selected before execution. Called from execution controller."""
+        # Check if this is an untitled/new graph that hasn't had environment selected
+        if self.current_graph_name == "untitled" and not self.current_file_path:
+            settings_key = f"graph_env_choice/{self.current_graph_name}"
+            saved_choice = self.settings.value(settings_key, None)
+            
+            if not saved_choice:
+                # Prompt for environment selection
+                self._handle_environment_selection()
     
     def get_current_venv_path(self, venv_parent_dir):
         """Provides the full path to the venv for the current graph."""

@@ -421,7 +421,16 @@ class EnvironmentManagerDialog(QDialog):
     
     def _get_env_path(self, graph_name, env_choice):
         """Get the full path for an environment choice."""
-        venv_parent = self.settings.value("venv_parent_dir", os.path.join(os.getcwd(), "venvs"))
+        # Determine project root directory (same logic as node_editor_window.py)
+        if os.path.basename(os.getcwd()) == "src":
+            # Development mode - go up one level from src/
+            project_root = os.path.dirname(os.getcwd())
+        else:
+            # Compiled mode - use current directory
+            project_root = os.getcwd()
+        
+        default_venv_dir = os.path.join(project_root, "venvs")
+        venv_parent = self.settings.value("venv_parent_dir", default_venv_dir)
         
         if env_choice == "default":
             return os.path.join(venv_parent, "default")

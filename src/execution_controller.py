@@ -11,12 +11,13 @@ class ExecutionController:
     """Manages execution modes and controls for the node graph."""
     
     def __init__(self, graph, output_log, get_venv_path_callback, 
-                 main_exec_button: QPushButton, status_label: QLabel):
+                 main_exec_button: QPushButton, status_label: QLabel, file_ops=None):
         self.graph = graph
         self.output_log = output_log
         self.get_venv_path_callback = get_venv_path_callback
         self.main_exec_button = main_exec_button
         self.status_label = status_label
+        self.file_ops = file_ops
         
         # Execution systems
         self.executor = GraphExecutor(graph, output_log, get_venv_path_callback)
@@ -93,6 +94,10 @@ class ExecutionController:
     
     def _execute_batch_mode(self):
         """Execute graph in batch mode."""
+        # Ensure environment is selected before executing
+        if self.file_ops:
+            self.file_ops.ensure_environment_selected()
+            
         self.output_log.clear()
         self.output_log.append("▶️ === BATCH EXECUTION STARTED ===")
 
@@ -116,6 +121,10 @@ class ExecutionController:
 
     def _start_live_mode(self):
         """Start live interactive mode."""
+        # Ensure environment is selected before starting live mode
+        if self.file_ops:
+            self.file_ops.ensure_environment_selected()
+            
         self.output_log.clear()
         self.output_log.append("🔥 === LIVE MODE ACTIVATED ===")
         self.output_log.append("✨ Interactive execution enabled!")

@@ -35,7 +35,9 @@ class NodeEditorWindow(QMainWindow):
         self._setup_managers()
         
         # Load initial state
-        self.file_ops.load_last_file()
+        if self.file_ops.load_last_file():
+            # Restore view state for the loaded file
+            self.view_state.load_view_state()
 
     def _setup_core_components(self):
         """Initialize the core graph and view components."""
@@ -90,7 +92,8 @@ class NodeEditorWindow(QMainWindow):
             self.output_log, 
             self._get_current_venv_path,
             self.exec_widget.main_exec_button,
-            self.exec_widget.status_label
+            self.exec_widget.status_label,
+            self.file_ops
         )
         
         # Set execution controller reference in file operations
