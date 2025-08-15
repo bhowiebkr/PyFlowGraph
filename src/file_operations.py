@@ -6,12 +6,13 @@ import os
 from PySide6.QtWidgets import QFileDialog
 from PySide6.QtCore import QSettings
 from flow_format import FlowFormatHandler, extract_title_from_filename
+from environment_selection_dialog import EnvironmentSelectionDialog
 
 
 class FileOperationsManager:
     """Manages file operations for loading and saving graphs in multiple formats."""
     
-    def __init__(self, parent_window, graph, output_log):
+    def __init__(self, parent_window, graph, output_log, default_env_manager=None):
         self.parent_window = parent_window
         self.graph = graph
         self.output_log = output_log
@@ -21,10 +22,18 @@ class FileOperationsManager:
         self.current_file_path = None
         self.current_graph_name = "untitled"
         self.current_requirements = []
+        self.use_default_environment = False
+        
+        # Reference to execution controller (set later)
+        self.execution_controller = None
+        
+        # Reference to default environment manager
+        self.default_env_manager = default_env_manager
     
-    def get_current_venv_path(self, venv_parent_dir):
-        """Provides the full path to the venv for the current graph."""
-        return os.path.join(venv_parent_dir, self.current_graph_name)
+    def set_execution_controller(self, execution_controller):
+        """Set reference to execution controller for updating button state."""
+        self.execution_controller = execution_controller
+    
     
     def update_window_title(self):
         """Updates the window title to show the current graph name."""
@@ -88,6 +97,7 @@ class FileOperationsManager:
         if file_path and os.path.exists(file_path):
             self.current_file_path = file_path
             self.current_graph_name = os.path.splitext(os.path.basename(file_path))[0]
+            
             self.update_window_title()
             
             data = self._load_file(file_path)
@@ -101,7 +111,7 @@ class FileOperationsManager:
                 pass
                 
                 self.output_log.append(f"Graph loaded from {file_path}")
-                self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
+                self._show_environment_status()
                 return True
         
         return False
@@ -167,3 +177,73 @@ class FileOperationsManager:
         except Exception as e:
             self.output_log.append(f"Error loading file {file_path}: {str(e)}")
             return None
+    
+    def _handle_environment_selection(self, file_path):
+        """Handle environment selection for example graphs."""
+        # Check if this is from the examples directory
+        normalized_path = os.path.normpath(file_path)
+        if "examples" in normalized_path.split(os.sep):
+            # Check if user has already made an environment choice for this graph
+            settings_key = f"graph_env_choice/{self.current_graph_name}"
+            saved_choice = self.settings.value(settings_key, None)
+            
+            if saved_choice:
+                # Use saved environment choice
+                self.output_log.append(f"Using saved environment preference: {saved_choice}")
+                self._apply_environment_selection(saved_choice)
+            else:
+                # Show dialog for first-time loading of this example
+                dialog = EnvironmentSelectionDialog(self.current_graph_name, self.parent_window)
+                if dialog.exec():
+                    selected_option = dialog.get_selected_option()
+                    # Save the choice for future loads
+                    self.settings.setValue(settings_key, selected_option)
+                    self._apply_environment_selection(selected_option)
+                else:
+                    # User cancelled - default to default environment and save choice
+                    self.settings.setValue(settings_key, "default")
+                    self._apply_environment_selection("default")
+    
+    def _apply_environment_selection(self, option):
+        """Apply the selected environment option."""
+        if option == "default":
+            # Set current graph to use default environment
+            self.use_default_environment = True
+            self.output_log.append("Using default environment (venvs/default) for this graph.")
+            
+            # Ensure the default environment actually exists
+            if self.default_env_manager:
+                self.output_log.append("Ensuring default environment exists...")
+                success = self.default_env_manager.ensure_default_venv_exists(self.output_log)
+                if success:
+                    self.output_log.append("Default environment is ready!")
+                else:
+                    self.output_log.append("Warning: Could not create default environment")
+            else:
+                self.output_log.append("Warning: Default environment manager not available")
+                
+        elif option == "graph_specific":
+            # Use graph-specific environment (existing behavior)
+            self.use_default_environment = False
+            self.output_log.append(f"Will create/use graph-specific environment: venvs/{self.current_graph_name}")
+        elif option == "existing":
+            # Use existing graph-specific environment
+            self.use_default_environment = False
+            self.output_log.append(f"Using existing environment: venvs/{self.current_graph_name}")
+        
+        # Refresh execution controller state after environment selection
+        if self.execution_controller:
+            self.execution_controller.refresh_environment_state()
+    
+    def _show_environment_status(self):
+        """Show appropriate environment status message."""
+        if hasattr(self, 'use_default_environment') and self.use_default_environment:
+            self.output_log.append("Environment: venvs/default (ready to execute)")
+        else:
+            self.output_log.append("Dependencies loaded. Please verify the environment via the 'Run' menu.")
+    
+    def get_current_venv_path(self, venv_parent_dir):
+        """Provides the full path to the venv for the current graph."""
+        if hasattr(self, 'use_default_environment') and self.use_default_environment:
+            return os.path.join(venv_parent_dir, "default")
+        return os.path.join(venv_parent_dir, self.current_graph_name)
