@@ -20,6 +20,8 @@ class NodeGraph(QGraphicsScene):
         self.setSceneRect(-10000, -10000, 20000, 20000)
         self.nodes, self.connections = [], []
         self._drag_connection, self._drag_start_pin = None, None
+        self.graph_title = "Untitled Graph"
+        self.graph_description = ""
 
     def clear_graph(self):
         """Removes all nodes and connections from the scene."""
@@ -55,23 +57,41 @@ class NodeGraph(QGraphicsScene):
 
         clipboard_data = {"requirements": requirements, "nodes": nodes_data, "connections": connections_data}
 
-        QApplication.clipboard().setText(json.dumps(clipboard_data, indent=4))
-        print(f"Copied {len(nodes_data)} nodes to clipboard.")
+        # Convert to markdown format for clipboard
+        from flow_format import FlowFormatHandler
+        handler = FlowFormatHandler()
+        clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes from PyFlowGraph")
+        
+        QApplication.clipboard().setText(clipboard_markdown)
+        print(f"Copied {len(nodes_data)} nodes to clipboard as markdown.")
 
     def paste(self):
         """Pastes nodes and connections from the clipboard."""
         clipboard_text = QApplication.clipboard().text()
         try:
-            data = json.loads(clipboard_text)
+            # Try to parse as markdown first
+            from flow_format import FlowFormatHandler
+            handler = FlowFormatHandler()
+            data = handler.markdown_to_data(clipboard_text)
             self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
-        except (json.JSONDecodeError, TypeError):
-            print("Clipboard does not contain valid graph data.")
+        except Exception:
+            # Fallback: try to parse as JSON for backward compatibility
+            try:
+                data = json.loads(clipboard_text)
+                self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
+            except (json.JSONDecodeError, TypeError):
+                print("Clipboard does not contain valid graph data.")
 
     def serialize(self):
         """Serializes all nodes and their connections."""
         nodes_data = [node.serialize() for node in self.nodes]
         connections_data = [conn.serialize() for conn in self.connections if conn.serialize()]
-        return {"nodes": nodes_data, "connections": connections_data}
+        return {
+            "graph_title": self.graph_title,
+            "graph_description": self.graph_description,
+            "nodes": nodes_data, 
+            "connections": connections_data
+        }
 
     def deserialize(self, data, offset=QPointF(0, 0)):
         """Deserializes graph data, creating all nodes and applying custom properties."""
@@ -79,6 +99,9 @@ class NodeGraph(QGraphicsScene):
             return
         if offset == QPointF(0, 0):
             self.clear_graph()
+            # Load graph metadata only when loading a complete graph (not copying/pasting)
+            self.graph_title = data.get("graph_title", "Untitled Graph")
+            self.graph_description = data.get("graph_description", "")
 
         uuid_to_node_map = {}
         nodes_to_update = []
@@ -91,6 +114,7 @@ class NodeGraph(QGraphicsScene):
                 node = self.create_node("", pos=(new_pos.x(), new_pos.y()), is_reroute=True)
             else:
                 node = self.create_node(node_data["title"], pos=(new_pos.x(), new_pos.y()))
+                node.description = node_data.get("description", "")
                 node.set_code(node_data.get("code", ""))
                 node.set_gui_code(node_data.get("gui_code", ""))
                 node.set_gui_get_values_code(node_data.get("gui_get_values_code", ""))

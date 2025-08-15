@@ -5,13 +5,14 @@ import os
 from PySide6.QtWidgets import (QMainWindow, QTextEdit, QDockWidget, QInputDialog, 
                               QToolBar, QWidget, QHBoxLayout, QSizePolicy)
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt, QPointF, QSettings, QMetaObject, Slot
+from PySide6.QtCore import Qt, QPointF, QSettings
 
 from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
 from environment_manager import EnvironmentManagerDialog
 from settings_dialog import SettingsDialog
 from environment_selection_dialog import EnvironmentSelectionDialog
+from graph_properties_dialog import GraphPropertiesDialog
 
 # Import our new modular components
 from ui_utils import create_fa_icon, create_execution_control_widget
@@ -35,9 +36,6 @@ class NodeEditorWindow(QMainWindow):
         
         # Load initial state
         self.file_ops.load_last_file()
-        
-        # Defer environment check until after GUI is fully rendered
-        QMetaObject.invokeMethod(self, "check_environment_setup", Qt.QueuedConnection)
 
     def _setup_core_components(self):
         """Initialize the core graph and view components."""
@@ -119,6 +117,9 @@ class NodeEditorWindow(QMainWindow):
         self.action_settings = QAction("Settings...", self)
         self.action_settings.triggered.connect(self.on_settings)
 
+        self.action_graph_props = QAction("&Graph Properties...", self)
+        self.action_graph_props.triggered.connect(self.on_graph_properties)
+
         self.action_manage_env = QAction("&Manage Environment...", self)
         self.action_manage_env.triggered.connect(self.on_manage_env)
 
@@ -138,6 +139,8 @@ class NodeEditorWindow(QMainWindow):
         file_menu.addAction(self.action_load)
         file_menu.addAction(self.action_save)
         file_menu.addAction(self.action_save_as)
+        file_menu.addSeparator()
+        file_menu.addAction(self.action_graph_props)
         file_menu.addSeparator()
         file_menu.addAction(self.action_exit)
         
@@ -186,7 +189,9 @@ class NodeEditorWindow(QMainWindow):
     # File operation handlers
     def on_new_scene(self):
         """Create a new scene."""
-        self.view_state.save_view_state()
+        # Save view state for current file before creating new scene
+        if self.file_ops.current_file_path:
+            self.view_state.save_view_state(self.file_ops.current_file_path)
         self.file_ops.new_scene()
         self.view.resetTransform()
 
@@ -200,10 +205,15 @@ class NodeEditorWindow(QMainWindow):
 
     def on_load(self, file_path=None):
         """Load a graph from file."""
-        if not file_path:
-            self.view_state.save_view_state()
+        # Capture the current file path before it gets changed by file_ops.load()
+        old_file_path = self.file_ops.current_file_path
+        
+        # Always save view state for the OLD file before switching (if there is one)
+        if old_file_path:
+            self.view_state.save_view_state(old_file_path)
         
         if self.file_ops.load(file_path):
+            # Load view state for the NEW file after switching
             self.view_state.load_view_state()
 
     # Settings and environment handlers
@@ -213,6 +223,18 @@ class NodeEditorWindow(QMainWindow):
         if dialog.exec():
             self.venv_parent_dir = self.settings.value("venv_parent_dir")
             self.output_log.append(f"Default venv directory updated to: {self.venv_parent_dir}")
+
+    def on_graph_properties(self):
+        """Open the graph properties dialog."""
+        dialog = GraphPropertiesDialog(self.graph.graph_title, self.graph.graph_description, self)
+        if dialog.exec():
+            props = dialog.get_properties()
+            self.graph.graph_title = props["title"]
+            self.graph.graph_description = props["description"]
+            # Update window title if needed
+            self.file_ops.current_graph_name = props["title"]
+            self.file_ops.update_window_title()
+            self.output_log.append("Graph properties updated.")
 
     def _ensure_default_environment(self):
         """Ensure the default virtual environment exists."""
@@ -237,38 +259,6 @@ class NodeEditorWindow(QMainWindow):
                          "def node_function(input_1: str) -> Tuple[str, int]:\n" 
                          "    return 'hello', len(input_1)")
 
-    @Slot()
-    def check_environment_setup(self):
-        """Check if environment setup is needed after GUI is fully loaded."""
-        # Only run once and only if we have a current file
-        if not hasattr(self, '_environment_check_done'):
-            self._environment_check_done = True
-            
-            if self.file_ops.current_file_path:
-                # Check if this is from examples directory and needs environment setup
-                normalized_path = os.path.normpath(self.file_ops.current_file_path)
-                if "examples" in normalized_path.split(os.sep):
-                    # Check if user has already made an environment choice for this graph
-                    settings_key = f"graph_env_choice/{self.file_ops.current_graph_name}"
-                    saved_choice = self.settings.value(settings_key, None)
-                    
-                    if saved_choice:
-                        # Use saved environment choice silently
-                        self.output_log.append(f"Using saved environment preference: {saved_choice}")
-                        self.file_ops._apply_environment_selection(saved_choice)
-                    else:
-                        # Show dialog for first-time loading of this example
-                        self.output_log.append("Checking environment setup for loaded graph...")
-                        dialog = EnvironmentSelectionDialog(self.file_ops.current_graph_name, self)
-                        if dialog.exec():
-                            selected_option = dialog.get_selected_option()
-                            # Save the choice for future loads
-                            self.settings.setValue(settings_key, selected_option)
-                            self.file_ops._apply_environment_selection(selected_option)
-                        else:
-                            # User cancelled - default to default environment and save choice
-                            self.settings.setValue(settings_key, "default")
-                            self.file_ops._apply_environment_selection("default")
 
     def closeEvent(self, event):
         """Handle application close event."""
