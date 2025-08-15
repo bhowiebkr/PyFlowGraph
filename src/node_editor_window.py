@@ -3,7 +3,7 @@
 
 import os
 from PySide6.QtWidgets import (QMainWindow, QTextEdit, QDockWidget, QInputDialog, 
-                              QToolBar, QWidget, QHBoxLayout)
+                              QToolBar, QWidget, QHBoxLayout, QSizePolicy)
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QPointF, QSettings, QMetaObject, Slot
 
@@ -163,7 +163,12 @@ class NodeEditorWindow(QMainWindow):
         toolbar.addAction(self.action_save_as)
         toolbar.addSeparator()
 
-        # Create execution control widget
+        # Add spacer to push execution controls to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        toolbar.addWidget(spacer)
+
+        # Create execution control widget (right-aligned)
         self.exec_widget = create_execution_control_widget(
             self._on_mode_changed,
             self._on_main_button_clicked

@@ -128,15 +128,49 @@ def create_execution_control_widget(mode_changed_callback, button_clicked_callba
     batch_radio.setToolTip("Traditional one-shot execution of entire graph")
     batch_radio.setChecked(True)  # Default mode
     batch_radio.setStyleSheet("""
-        QRadioButton { color: #E0E0E0; font-weight: bold; }
-        QRadioButton::indicator::checked { background-color: #4CAF50; }
+        QRadioButton {
+            color: #E0E0E0;
+            font-weight: bold;
+            spacing: 8px;
+        }
+        QRadioButton::indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            border: 2px solid #666;
+            background-color: transparent;
+        }
+        QRadioButton::indicator:checked {
+            background-color: #4CAF50;
+            border: 2px solid #4CAF50;
+        }
+        QRadioButton::indicator:hover {
+            border: 2px solid #888;
+        }
     """)
 
     live_radio = QRadioButton("Live")
     live_radio.setToolTip("Interactive mode with event-driven execution")
     live_radio.setStyleSheet("""
-        QRadioButton { color: #E0E0E0; font-weight: bold; }
-        QRadioButton::indicator::checked { background-color: #FF9800; }
+        QRadioButton {
+            color: #E0E0E0;
+            font-weight: bold;
+            spacing: 8px;
+        }
+        QRadioButton::indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            border: 2px solid #666;
+            background-color: transparent;
+        }
+        QRadioButton::indicator:checked {
+            background-color: #FF9800;
+            border: 2px solid #FF9800;
+        }
+        QRadioButton::indicator:hover {
+            border: 2px solid #888;
+        }
     """)
 
     mode_button_group.addButton(batch_radio, 0)
