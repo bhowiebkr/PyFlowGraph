@@ -58,7 +58,7 @@ class FileOperationsManager:
                 self.parent_window, 
                 "Save Graph As...", 
                 "", 
-                "Flow Files (*.md);;JSON Files (*.json)"
+                "Flow Files (*.md)"
             )
             if not file_path:
                 return False
@@ -74,7 +74,7 @@ class FileOperationsManager:
             self.parent_window, 
             "Save Graph As...", 
             "", 
-            "Flow Files (*.md);;JSON Files (*.json)"
+            "Flow Files (*.md)"
         )
         if not file_path:
             return False
@@ -91,7 +91,7 @@ class FileOperationsManager:
                 self.parent_window, 
                 "Load Graph", 
                 "", 
-                "Flow Files (*.md);;JSON Files (*.json);;All Files (*.*)"
+                "Flow Files (*.md);;All Files (*.*)"
             )
 
         if file_path and os.path.exists(file_path):
@@ -133,23 +133,18 @@ class FileOperationsManager:
             return False
     
     def _save_file(self, file_path: str):
-        """Save the graph to either .md or .json format based on file extension."""
+        """Save the graph to .md format."""
         try:
             data = self.graph.serialize()
             data["requirements"] = self.current_requirements
             
-            if file_path.lower().endswith('.md'):
-                # Save as .md format
-                handler = FlowFormatHandler()
-                title = extract_title_from_filename(file_path)
-                description = f"Graph created with PyFlowGraph containing {len(data.get('nodes', []))} nodes."
-                content = handler.json_to_flow(data, title, description)
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(content)
-            else:
-                # Save as JSON format
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=4, ensure_ascii=False)
+            # Save as .md format
+            handler = FlowFormatHandler()
+            title = data.get("graph_title", extract_title_from_filename(file_path))
+            description = data.get("graph_description", f"Graph created with PyFlowGraph containing {len(data.get('nodes', []))} nodes.")
+            content = handler.data_to_markdown(data, title, description)
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
             
             self.settings.setValue("last_file_path", file_path)
             self.output_log.append(f"Graph saved to {file_path}")
@@ -160,18 +155,13 @@ class FileOperationsManager:
             return False
     
     def _load_file(self, file_path: str):
-        """Load a graph from either .md or .json format based on file extension."""
+        """Load a graph from .md format."""
         try:
-            if file_path.lower().endswith('.md'):
-                # Load .md format
-                handler = FlowFormatHandler()
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                data = handler.flow_to_json(content)
-            else:
-                # Load JSON format
-                with open(file_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
+            # Load .md format
+            handler = FlowFormatHandler()
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            data = handler.markdown_to_data(content)
             
             return data
         except Exception as e:
