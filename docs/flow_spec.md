@@ -506,7 +506,119 @@ PyFlowGraph/
 - Flexibility: Different graphs can use different package versions
 - Portability: Environments can be recreated from requirements
 
-### 3.10 Error Handling
+### 3.10 Subprocess Data Transfer
+
+PyFlowGraph executes each node in an isolated subprocess for security and stability. Understanding how data flows between these processes is crucial for working with the system.
+
+#### Data Transfer Mechanism
+
+**1. Input Serialization:**
+- Before node execution, all input values are collected from:
+  - Connected upstream nodes (stored in `pin_values` dictionary)
+  - GUI widget values (from `get_values()` function)
+- Input data is serialized to JSON format using `json.dumps()`
+- The JSON string is passed to the subprocess via stdin
+
+**2. Subprocess Execution:**
+```python
+# Runner script injected into subprocess
+import json, sys, io
+from contextlib import redirect_stdout
+
+def node_entry(func): return func  # Define decorator
+{node.code}  # User's node code
+
+# Read inputs from stdin
+input_str = sys.stdin.read()
+inputs = json.loads(input_str) if input_str else {}
+
+# Execute the @node_entry function
+stdout_capture = io.StringIO()
+with redirect_stdout(stdout_capture):
+    return_value = {node.function_name}(**inputs)
+
+# Package results with captured output
+final_output = {'result': return_value, 'stdout': printed_output}
+json.dump(final_output, sys.stdout)
+```
+
+**3. Output Deserialization:**
+- Subprocess returns data via stdout as JSON
+- Main process deserializes with `json.loads()`
+- Results are stored in `pin_values` dictionary for downstream nodes
+- GUI widgets are updated via `set_values()` function
+
+#### Data Type Constraints
+
+**JSON-Serializable Types Only:**
+
+Since data must pass through JSON serialization, only these Python types can transfer between nodes:
+
+| Python Type | JSON Type | Example |
+|------------|-----------|---------|
+| str | string | `"hello"` |
+| int, float | number | `42`, `3.14` |
+| bool | boolean | `true`, `false` |
+| None | null | `null` |
+| list | array | `[1, 2, 3]` |
+| dict | object | `{"key": "value"}` |
+| tuple* | array | `[1, 2]` (converts to list) |
+
+*Note: Tuples are converted to lists during serialization
+
+**Non-Transferable Types:**
+- Custom class instances (unless they have JSON serialization)
+- Functions, lambdas, or callable objects
+- File handles or network connections
+- NumPy arrays (must convert to lists)
+- Pandas DataFrames (must convert to dicts/lists)
+- Binary data (must encode to base64 string)
+
+#### Data Flow Example
+
+```python
+# Node A output
+@node_entry
+def process_data() -> Dict[str, List[int]]:
+    return {"values": [1, 2, 3], "count": 3}
+
+# Serialized and sent via JSON:
+# {"result": {"values": [1, 2, 3], "count": 3}, "stdout": ""}
+
+# Node B input
+@node_entry
+def receive_data(data: Dict[str, List[int]]) -> str:
+    # Receives the deserialized dictionary
+    return f"Received {data['count']} values"
+```
+
+#### Pin Value Storage
+
+The execution system maintains a `pin_values` dictionary that:
+- Maps pin objects to their current values
+- Persists during graph execution
+- Clears between batch executions
+- Maintains state in Live Mode
+
+#### Performance Considerations
+
+**Serialization Overhead:**
+- JSON conversion adds latency
+- Large data structures increase transfer time
+- Deeply nested objects require more processing
+
+**Best Practices:**
+- Keep data structures simple and flat when possible
+- Use basic types for better performance
+- Consider chunking very large datasets
+- Encode binary data efficiently (base64)
+
+**Memory Management:**
+- Each subprocess has independent memory
+- Data is duplicated, not shared
+- Large datasets consume memory in both processes
+
+### 3.11 Error Handling
 
 The system provides comprehensive error handling during graph execution:
 
@@ -527,6 +639,11 @@ The system provides comprehensive error handling during graph execution:
    - No entry point nodes found
    - Infinite loops detected (execution limit)
    - Circular dependencies
+
+4. **Serialization Errors**
+   - Non-JSON-serializable return values
+   - Circular references in data structures
+   - Encoding/decoding failures
 
 **Error Reporting:**
 - Errors are captured from subprocess stderr
