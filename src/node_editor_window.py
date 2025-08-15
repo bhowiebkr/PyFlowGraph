@@ -147,9 +147,9 @@ class NodeEditorWindow(QMainWindow):
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_settings)
         
-        # Run menu
-        run_menu = menu_bar.addMenu("&Run")
-        run_menu.addAction(self.action_manage_env)
+        # Environment menu
+        env_menu = menu_bar.addMenu("&Environment")
+        env_menu.addAction(self.action_manage_env)
 
     def _create_toolbar(self):
         """Create the main toolbar."""
