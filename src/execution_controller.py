@@ -26,8 +26,12 @@ class ExecutionController:
         self.live_mode = False
         self.live_active = False
         
+        # Environment state tracking
+        self.venv_is_valid = False
+        
         # Initialize UI
         self._update_ui_for_batch_mode()
+        self._check_environment_validity()
     
     def on_mode_changed(self, mode_id):
         """Handle radio button change between Batch (0) and Live (1) modes."""
@@ -128,3 +132,55 @@ class ExecutionController:
 
         self.output_log.append("⏸️ Live mode paused - node buttons are now inactive")
         self.output_log.append("Click 'Resume Live Mode' to reactivate")
+    
+    def _check_environment_validity(self):
+        """Check if current virtual environment is valid and update button state."""
+        import os
+        
+        try:
+            venv_path = self.get_venv_path_callback()
+            
+            # Check if venv exists and has Python executable
+            if not venv_path or not os.path.exists(venv_path):
+                self._set_environment_invalid("No virtual environment configured")
+                return
+            
+            # Check for Python executable
+            if os.name == 'nt':  # Windows
+                python_exe = os.path.join(venv_path, "Scripts", "python.exe")
+            else:  # Unix/Linux/Mac
+                python_exe = os.path.join(venv_path, "bin", "python")
+            
+            if not os.path.exists(python_exe):
+                self._set_environment_invalid("Virtual environment is invalid (missing Python)")
+                return
+            
+            # Environment is valid
+            self._set_environment_valid()
+            
+        except Exception as e:
+            self._set_environment_invalid(f"Environment check failed: {str(e)}")
+    
+    def _set_environment_valid(self):
+        """Enable execution when environment is valid."""
+        self.venv_is_valid = True
+        self.main_exec_button.setEnabled(True)
+        
+        # Restore appropriate button state
+        if self.live_mode:
+            self._update_ui_for_live_mode()
+        else:
+            self._update_ui_for_batch_mode()
+    
+    def _set_environment_invalid(self, reason):
+        """Disable execution when environment is invalid."""
+        self.venv_is_valid = False
+        self.main_exec_button.setEnabled(False)
+        self.main_exec_button.setText("🚫 No Environment")
+        self.main_exec_button.setStyleSheet("background-color: #888; color: #ccc; border: 1px solid #555;")
+        self.status_label.setText(f"Environment Issue: {reason}")
+        self.status_label.setStyleSheet("color: #f44336; font-weight: bold;")
+    
+    def refresh_environment_state(self):
+        """Public method to refresh environment state (called after environment selection)."""
+        self._check_environment_validity()
