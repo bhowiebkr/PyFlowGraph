@@ -41,6 +41,7 @@ class Node(QGraphicsItem):
         # --- Core Attributes ---
         self.uuid = str(uuid.uuid4())
         self.title = title
+        self.description = ""
         self.base_width = 250
         self.width = self.base_width
         self.height = 150
@@ -90,10 +91,11 @@ class Node(QGraphicsItem):
 
     def show_properties_dialog(self):
         parent_widget = self.scene().views()[0] if self.scene().views() else None
-        dialog = NodePropertiesDialog(self.title, self.color_title_bar, self.color_body, parent_widget)
+        dialog = NodePropertiesDialog(self.title, self.description, self.color_title_bar, self.color_body, parent_widget)
         if dialog.exec():
             props = dialog.get_properties()
             self.title = props["title"]
+            self.description = props["description"]
             self._title_item.setPlainText(self.title)
             self.color_title_bar = QColor(props["title_color"])
             self.color_body = QColor(props["body_color"])
@@ -369,6 +371,7 @@ class Node(QGraphicsItem):
         return {
             "uuid": self.uuid,
             "title": self.title,
+            "description": self.description,
             "pos": (self.pos().x(), self.pos().y()),
             "size": (self.width, self.height),
             "code": self.code,
