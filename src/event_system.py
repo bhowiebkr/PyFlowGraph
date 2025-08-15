@@ -82,6 +82,9 @@ class LiveGraphExecutor:
         self.live_mode = False
         self.graph_state = {}  # Persistent state between executions
         self.pin_values = {}  # Persistent pin values
+        
+        # Event setup optimization
+        self.events_setup = False  # Track if events are already configured
 
         # Connect event manager
         self.event_manager.event_triggered.connect(self.handle_event)
@@ -90,11 +93,15 @@ class LiveGraphExecutor:
         """Toggle between live mode and batch mode."""
         self.live_mode = enabled
         if enabled:
-            self.log.append("🔥 LIVE MODE ACTIVATED - Graph is now interactive!")
-            self._setup_node_events()
+            if not self.events_setup:
+                self.log.append("🔥 LIVE MODE ACTIVATED - Setting up interactive controls...")
+                self._setup_node_events()
+                self.events_setup = True
+            else:
+                self.log.append("🔥 LIVE MODE ACTIVATED - Graph is ready for interaction!")
         else:
             self.log.append("📦 BATCH MODE ACTIVATED - Traditional execution mode")
-            self._cleanup_node_events()
+            # Don't cleanup events - keep them for fast reactivation
             self.reset_graph_state()
 
     def _setup_node_events(self):
@@ -118,12 +125,11 @@ class LiveGraphExecutor:
                     # Use lambda with default parameter to capture node properly
                     widget.clicked.connect(lambda checked=False, n=node: self.trigger_node_execution(n))
                     connected_count += 1
-                    self.log.append(f"🔗 Connected '{widget_name}' button in '{node.title}'")
                 except Exception as e:
                     self.log.append(f"⚠️ Failed to connect button '{widget_name}': {e}")
 
-        if connected_count == 0:
-            self.log.append(f"ℹ️ No buttons found in '{node.title}'")
+        if connected_count > 0:
+            self.log.append(f"🔗 Connected {connected_count} interactive button(s) in '{node.title}'")
 
     def _cleanup_node_events(self):
         """Clean up all node event handlers."""
