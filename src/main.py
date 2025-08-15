@@ -48,13 +48,29 @@ if __name__ == "__main__":
     else:
         print("Warning: Font Awesome Solid font file not found at 'resources/Font Awesome 6 Free-Solid-900.otf'", file=sys.stderr)
 
-    # Load the dark theme stylesheet
-    try:
-        with open("dark_theme.qss", "r") as f:
-            style = f.read()
-            app.setStyleSheet(style)
-    except FileNotFoundError:
-        print("Warning: 'dark_theme.qss' not found. Using default style.", file=sys.stderr)
+    # Load the dark theme stylesheet with proper path resolution
+    def load_stylesheet(app):
+        """Load dark theme stylesheet with proper path resolution."""
+        qss_paths = [
+            "dark_theme.qss",           # For compiled version
+            "../dark_theme.qss",        # For development (run from src/)
+            os.path.join(os.path.dirname(__file__), "..", "dark_theme.qss")  # Absolute fallback
+        ]
+        
+        for qss_path in qss_paths:
+            if os.path.exists(qss_path):
+                try:
+                    with open(qss_path, "r") as f:
+                        app.setStyleSheet(f.read())
+                    print(f"Loaded dark theme from: {qss_path}")
+                    return True
+                except Exception as e:
+                    print(f"Failed to load {qss_path}: {e}", file=sys.stderr)
+        
+        print("Warning: 'dark_theme.qss' not found in any expected location. Using default style.", file=sys.stderr)
+        return False
+
+    load_stylesheet(app)
 
     # Create and show the main window
     window = NodeEditorWindow()
