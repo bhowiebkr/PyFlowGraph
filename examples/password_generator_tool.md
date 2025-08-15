@@ -90,6 +90,10 @@ def get_values(widgets):
         'include_symbols': widgets['symbols'].isChecked()
     }
 
+def set_values(widgets, outputs):
+    # Config node doesn't need to display outputs
+    pass
+
 def set_initial_state(widgets, state):
     widgets['length'].setValue(state.get('length', 12))
     widgets['uppercase'].setChecked(state.get('include_uppercase', True))
@@ -317,9 +321,6 @@ widgets['strength_display'].setMinimumHeight(120)
 widgets['strength_display'].setReadOnly(True)
 widgets['strength_display'].setPlainText('Generate a password to see strength analysis...')
 layout.addWidget(widgets['strength_display'])
-
-widgets['new_password_btn'] = QPushButton('Generate New Password', parent)
-layout.addWidget(widgets['new_password_btn'])
 ```
 
 ### GUI State Handler
@@ -339,6 +340,10 @@ def set_values(widgets, outputs):
             widgets['password_field'].setText(password)
     
     widgets['strength_display'].setPlainText(result)
+
+def set_initial_state(widgets, state):
+    # Output display node doesn't have saved state to restore
+    pass
 ```
 
 

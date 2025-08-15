@@ -393,7 +393,22 @@ class Node(QGraphicsItem):
         if isinstance(hint_node, ast.Name):
             return hint_node.id
         if isinstance(hint_node, ast.Subscript):
-            return f"{self._parse_type_hint(hint_node.value)}[{self._parse_type_hint(hint_node.slice)}]"
+            base_type = self._parse_type_hint(hint_node.value)
+            # Handle different slice types
+            if isinstance(hint_node.slice, ast.Name):
+                # Simple generic like List[Dict]
+                slice_type = hint_node.slice.id
+                return f"{base_type}[{slice_type}]"
+            elif isinstance(hint_node.slice, ast.Tuple):
+                # Multiple generic parameters like Dict[str, int]
+                slice_types = [self._parse_type_hint(elt) for elt in hint_node.slice.elts]
+                return f"{base_type}[{', '.join(slice_types)}]"
+            elif hasattr(hint_node.slice, 'value'):
+                # Handle other slice structures
+                return f"{base_type}[{self._parse_type_hint(hint_node.slice)}]"
+            else:
+                # Fallback for unknown slice types
+                return base_type
         return "any"
 
     def update_pins_from_code(self):
@@ -426,11 +441,17 @@ class Node(QGraphicsItem):
             # Parse data output pins from return annotation
             if main_func_def.returns:
                 return_annotation = main_func_def.returns
-                if isinstance(return_annotation, ast.Subscript) and isinstance(return_annotation.value, ast.Name) and return_annotation.value.id.lower() in ("tuple", "list"):
-                    output_types = [self._parse_type_hint(elt).lower() for elt in return_annotation.slice.elts]
-                    for i, type_name in enumerate(output_types):
-                        new_data_outputs[f"output_{i+1}"] = type_name
+                if isinstance(return_annotation, ast.Subscript) and isinstance(return_annotation.value, ast.Name) and return_annotation.value.id.lower() == "tuple":
+                    # Handle Tuple[str, int, bool] - multiple outputs
+                    if hasattr(return_annotation.slice, 'elts'):
+                        output_types = [self._parse_type_hint(elt).lower() for elt in return_annotation.slice.elts]
+                        for i, type_name in enumerate(output_types):
+                            new_data_outputs[f"output_{i+1}"] = type_name
+                    else:
+                        # Single tuple element like Tuple[str]
+                        new_data_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
                 else:
+                    # Handle single return types (including List[Dict], Dict[str, int], etc.)
                     new_data_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
         except (SyntaxError, AttributeError):
             return

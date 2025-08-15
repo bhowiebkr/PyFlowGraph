@@ -19,12 +19,12 @@ The node serves as a data source for testing downstream analytics components wit
   "uuid": "data-generator",
   "title": "Sample Data Generator",
   "pos": [
-    100.0,
-    200.0
+    -46.05000000000001,
+    220.70000000000005
   ],
   "size": [
     250,
-    190
+    265
   ],
   "colors": {
     "title": "#007bff",
@@ -32,7 +32,7 @@ The node serves as a data source for testing downstream analytics components wit
   },
   "gui_state": {
     "num_records": 100,
-    "data_type": "Sales"
+    "data_type": "Weather"
   }
 }
 ```
@@ -111,6 +111,10 @@ def get_values(widgets):
         'data_type': widgets['data_type'].currentText()
     }
 
+def set_values(widgets, outputs):
+    # Data generator doesn't need to display outputs
+    pass
+
 def set_initial_state(widgets, state):
     widgets['num_records'].setValue(state.get('num_records', 100))
     widgets['data_type'].setCurrentText(state.get('data_type', 'Sales'))
@@ -132,8 +136,8 @@ Returns three outputs: statistics dictionary with calculated metrics, total reco
   "uuid": "statistics-calculator",
   "title": "Statistics Calculator",
   "pos": [
-    450.0,
-    100.0
+    295.9000000000001,
+    123.0
   ],
   "size": [
     250,
@@ -212,8 +216,8 @@ Returns three outputs: trends dictionary containing monthly distributions, patte
   "uuid": "trend-analyzer",
   "title": "Trend Analyzer",
   "pos": [
-    450.0,
-    400.0
+    643.1999999999998,
+    324.1000000000001
   ],
   "size": [
     250,
@@ -302,12 +306,12 @@ Outputs a single formatted string suitable for display in QTextEdit widgets. The
   "uuid": "dashboard-display",
   "title": "Analytics Dashboard",
   "pos": [
-    850.0,
-    250.0
+    1017.9,
+    143.04999999999998
   ],
   "size": [
-    276,
-    589
+    270.1,
+    581.45
   ],
   "colors": {
     "title": "#6c757d",
@@ -394,12 +398,6 @@ widgets['dashboard_display'].setPlainText('Generate data and run analysis to see
 font = QFont('Courier New', 9)
 widgets['dashboard_display'].setFont(font)
 layout.addWidget(widgets['dashboard_display'])
-
-widgets['export_btn'] = QPushButton('Export Report', parent)
-layout.addWidget(widgets['export_btn'])
-
-widgets['refresh_btn'] = QPushButton('Refresh Analysis', parent)
-layout.addWidget(widgets['refresh_btn'])
 ```
 
 ### GUI State Handler
@@ -411,6 +409,10 @@ def get_values(widgets):
 def set_values(widgets, outputs):
     dashboard = outputs.get('output_1', 'No dashboard data')
     widgets['dashboard_display'].setPlainText(dashboard)
+
+def set_initial_state(widgets, state):
+    # Dashboard doesn't have saved state to restore
+    pass
 ```
 
 
@@ -419,7 +421,31 @@ def set_values(widgets, outputs):
 ```json
 [
   {
+    "start_node_uuid": "data-generator",
+    "start_pin_name": "exec_out",
+    "end_node_uuid": "statistics-calculator",
+    "end_pin_name": "exec_in"
+  },
+  {
+    "start_node_uuid": "data-generator",
+    "start_pin_name": "output_1",
+    "end_node_uuid": "statistics-calculator",
+    "end_pin_name": "data"
+  },
+  {
     "start_node_uuid": "statistics-calculator",
+    "start_pin_name": "exec_out",
+    "end_node_uuid": "trend-analyzer",
+    "end_pin_name": "exec_in"
+  },
+  {
+    "start_node_uuid": "data-generator",
+    "start_pin_name": "output_1",
+    "end_node_uuid": "trend-analyzer",
+    "end_pin_name": "data"
+  },
+  {
+    "start_node_uuid": "trend-analyzer",
     "start_pin_name": "exec_out",
     "end_node_uuid": "dashboard-display",
     "end_pin_name": "exec_in"
