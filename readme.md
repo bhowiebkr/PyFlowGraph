@@ -301,6 +301,10 @@ PyFlowGraph features advanced virtual environment management:
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
+---
+
+## Support
+
 <div align="center">
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Development-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/bryanhoward)
