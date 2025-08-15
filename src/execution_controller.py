@@ -63,7 +63,7 @@ class ExecutionController:
         """Update UI elements for batch mode."""
         self.live_executor.set_live_mode(False)
         self.live_active = False
-        self.main_exec_button.setText("▶️ Execute Graph")
+        self.main_exec_button.setText("Execute Graph")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "ready"))
         self.status_label.setText("Ready")
         self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
@@ -80,7 +80,7 @@ class ExecutionController:
         try:
             self.live_executor.set_live_mode(True)
             self.live_active = False
-            self.main_exec_button.setText("🔥 Start Live Mode")
+            self.main_exec_button.setText("Start Live Mode")
             self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "ready"))
             self.status_label.setText("Live Ready")
             self.status_label.setStyleSheet("color: #FF9800; font-weight: bold;")
@@ -97,7 +97,7 @@ class ExecutionController:
         self.output_log.append("▶️ === BATCH EXECUTION STARTED ===")
 
         # Update button state during execution
-        self.main_exec_button.setText("⏳ Executing...")
+        self.main_exec_button.setText("Executing...")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "executing"))
         self.status_label.setText("Executing")
         self.status_label.setStyleSheet("color: #607D8B; font-weight: bold;")
@@ -109,7 +109,7 @@ class ExecutionController:
             self.output_log.append(f"❌ === EXECUTION FAILED: {e} ===")
         finally:
             # Restore button state
-            self.main_exec_button.setText("▶️ Execute Graph")
+            self.main_exec_button.setText("Execute Graph")
             self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "ready"))
             self.status_label.setText("Ready")
             self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
@@ -126,7 +126,7 @@ class ExecutionController:
         self.live_executor.restart_graph()
 
         # Update button to pause state
-        self.main_exec_button.setText("⏸️ Pause Live Mode")
+        self.main_exec_button.setText("Pause Live Mode")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "active"))
         self.status_label.setText("Live Active")
         self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
@@ -136,7 +136,7 @@ class ExecutionController:
         self.live_active = False
         self.live_executor.set_live_mode(False)
 
-        self.main_exec_button.setText("🔥 Resume Live Mode")
+        self.main_exec_button.setText("Resume Live Mode")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "paused"))
         self.status_label.setText("Live Paused")
         self.status_label.setStyleSheet("color: #F44336; font-weight: bold;")
@@ -204,7 +204,7 @@ class ExecutionController:
         """Disable execution when environment is invalid."""
         self.venv_is_valid = False
         self.main_exec_button.setEnabled(False)
-        self.main_exec_button.setText("🚫 No Environment")
+        self.main_exec_button.setText("No Environment")
         self.main_exec_button.setStyleSheet("background-color: #888; color: #ccc; border: 1px solid #555;")
         self.status_label.setText(f"Environment Issue: {reason}")
         self.status_label.setStyleSheet("color: #f44336; font-weight: bold;")

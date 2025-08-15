@@ -36,7 +36,7 @@ class ButtonStyleManager:
                 return """
                     QPushButton {
                         background-color: #4CAF50;
-                        color: white;
+                        color: #000000;
                         border: none;
                         border-radius: 6px;
                         font-weight: bold;
@@ -44,9 +44,11 @@ class ButtonStyleManager:
                     }
                     QPushButton:hover {
                         background-color: #45a049;
+                        color: #000000;
                     }
                     QPushButton:pressed {
                         background-color: #3d8b40;
+                        color: #000000;
                     }
                 """
             else:  # executing
@@ -65,7 +67,7 @@ class ButtonStyleManager:
                 return """
                     QPushButton {
                         background-color: #FF9800;
-                        color: white;
+                        color: #000000;
                         border: none;
                         border-radius: 6px;
                         font-weight: bold;
@@ -73,16 +75,18 @@ class ButtonStyleManager:
                     }
                     QPushButton:hover {
                         background-color: #F57C00;
+                        color: #000000;
                     }
                     QPushButton:pressed {
                         background-color: #E65100;
+                        color: #000000;
                     }
                 """
             elif state == "active":
                 return """
                     QPushButton {
                         background-color: #4CAF50;
-                        color: white;
+                        color: #000000;
                         border: none;
                         border-radius: 6px;
                         font-weight: bold;
@@ -90,13 +94,14 @@ class ButtonStyleManager:
                     }
                     QPushButton:hover {
                         background-color: #45a049;
+                        color: #000000;
                     }
                 """
             else:  # paused
                 return """
                     QPushButton {
                         background-color: #F44336;
-                        color: white;
+                        color: #FFFFFF;
                         border: none;
                         border-radius: 6px;
                         font-weight: bold;
@@ -104,6 +109,7 @@ class ButtonStyleManager:
                     }
                     QPushButton:hover {
                         background-color: #da190b;
+                        color: #FFFFFF;
                     }
                 """
 
@@ -186,7 +192,7 @@ def create_execution_control_widget(mode_changed_callback, button_clicked_callba
     layout.addWidget(separator)
 
     # Main execution button - changes based on mode
-    main_exec_button = QPushButton("▶️ Execute Graph")
+    main_exec_button = QPushButton("Execute Graph")
     main_exec_button.setMinimumSize(140, 35)
     main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch"))
     main_exec_button.clicked.connect(button_clicked_callback)
