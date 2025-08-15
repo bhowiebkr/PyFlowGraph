@@ -1,7 +1,7 @@
 # node_properties_dialog.py
 # A dialog for editing the visual properties of a node, like its title and colors.
 
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QColorDialog, QDialogButtonBox
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QColorDialog, QDialogButtonBox, QTextEdit, QLabel
 from PySide6.QtGui import QColor, QPalette, QBrush
 
 
@@ -10,11 +10,13 @@ class NodePropertiesDialog(QDialog):
     A dialog for editing a node's properties, including title and colors.
     """
 
-    def __init__(self, node_title, title_color, body_color, parent=None):
+    def __init__(self, node_title, description, title_color, body_color, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Edit Node Properties")
+        self.setMinimumSize(500, 400)
 
         self.node_title = node_title
+        self.description = description
         self.title_color = QColor(title_color)
         self.body_color = QColor(body_color)
 
@@ -24,6 +26,15 @@ class NodePropertiesDialog(QDialog):
         # --- Title Editor ---
         self.title_edit = QLineEdit(self.node_title)
         form_layout.addRow("Title:", self.title_edit)
+
+        # --- Description Editor ---
+        desc_label = QLabel("Description:")
+        form_layout.addRow(desc_label)
+        
+        self.description_edit = QTextEdit(self.description)
+        self.description_edit.setMaximumHeight(150)
+        self.description_edit.setPlaceholderText("Enter a description for this node (markdown supported)...")
+        form_layout.addRow(self.description_edit)
 
         # --- Title Color Picker ---
         self.title_color_button = QPushButton()
@@ -63,4 +74,9 @@ class NodePropertiesDialog(QDialog):
 
     def get_properties(self):
         """Returns the edited properties."""
-        return {"title": self.title_edit.text(), "title_color": self.title_color.name(), "body_color": self.body_color.name()}
+        return {
+            "title": self.title_edit.text(), 
+            "description": self.description_edit.toPlainText(),
+            "title_color": self.title_color.name(), 
+            "body_color": self.body_color.name()
+        }

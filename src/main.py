@@ -52,21 +52,20 @@ if __name__ == "__main__":
     def load_stylesheet(app):
         """Load dark theme stylesheet with proper path resolution."""
         qss_paths = [
-            "dark_theme.qss",           # For compiled version
-            "../dark_theme.qss",        # For development (run from src/)
-            os.path.join(os.path.dirname(__file__), "..", "dark_theme.qss")  # Absolute fallback
+            "dark_theme.qss",  # For compiled version
+            "../dark_theme.qss",  # For development (run from src/)
+            os.path.join(os.path.dirname(__file__), "..", "dark_theme.qss"),  # Absolute fallback
         ]
-        
+
         for qss_path in qss_paths:
             if os.path.exists(qss_path):
                 try:
                     with open(qss_path, "r") as f:
                         app.setStyleSheet(f.read())
-                    print(f"Loaded dark theme from: {qss_path}")
                     return True
                 except Exception as e:
                     print(f"Failed to load {qss_path}: {e}", file=sys.stderr)
-        
+
         print("Warning: 'dark_theme.qss' not found in any expected location. Using default style.", file=sys.stderr)
         return False
 

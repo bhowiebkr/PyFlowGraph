@@ -26,7 +26,15 @@ class SettingsDialog(QDialog):
         path_layout = QHBoxLayout()
         path_layout.addWidget(QLabel("Default Venv Parent Directory:"))
 
-        default_path = os.path.join(os.getcwd(), "venvs")
+        # Determine project root directory for default path
+        if os.path.basename(os.getcwd()) == "src":
+            # Development mode - go up one level from src/
+            project_root = os.path.dirname(os.getcwd())
+        else:
+            # Compiled mode - use current directory
+            project_root = os.getcwd()
+        
+        default_path = os.path.join(project_root, "venvs")
         current_path = self.settings.value("venv_parent_dir", default_path)
         self.path_edit = QLineEdit(current_path)
 

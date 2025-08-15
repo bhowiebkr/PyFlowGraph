@@ -11,12 +11,13 @@ class ExecutionController:
     """Manages execution modes and controls for the node graph."""
     
     def __init__(self, graph, output_log, get_venv_path_callback, 
-                 main_exec_button: QPushButton, status_label: QLabel):
+                 main_exec_button: QPushButton, status_label: QLabel, file_ops=None):
         self.graph = graph
         self.output_log = output_log
         self.get_venv_path_callback = get_venv_path_callback
         self.main_exec_button = main_exec_button
         self.status_label = status_label
+        self.file_ops = file_ops
         
         # Execution systems
         self.executor = GraphExecutor(graph, output_log, get_venv_path_callback)
@@ -26,8 +27,16 @@ class ExecutionController:
         self.live_mode = False
         self.live_active = False
         
+        # Environment state tracking
+        self.venv_is_valid = False
+        self.last_venv_path = None  # Cache for environment validation
+        
+        # UI update throttling
+        self._ui_update_in_progress = False
+        
         # Initialize UI
         self._update_ui_for_batch_mode()
+        self._check_environment_validity()
     
     def on_mode_changed(self, mode_id):
         """Handle radio button change between Batch (0) and Live (1) modes."""
@@ -55,7 +64,7 @@ class ExecutionController:
         """Update UI elements for batch mode."""
         self.live_executor.set_live_mode(False)
         self.live_active = False
-        self.main_exec_button.setText("▶️ Execute Graph")
+        self.main_exec_button.setText("Execute Graph")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "ready"))
         self.status_label.setText("Ready")
         self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
@@ -65,24 +74,35 @@ class ExecutionController:
     
     def _update_ui_for_live_mode(self):
         """Update UI elements for live mode."""
-        self.live_executor.set_live_mode(True)
-        self.live_active = False
-        self.main_exec_button.setText("🔥 Start Live Mode")
-        self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "ready"))
-        self.status_label.setText("Live Ready")
-        self.status_label.setStyleSheet("color: #FF9800; font-weight: bold;")
+        if self._ui_update_in_progress:
+            return  # Prevent redundant updates
+        
+        self._ui_update_in_progress = True
+        try:
+            self.live_executor.set_live_mode(True)
+            self.live_active = False
+            self.main_exec_button.setText("Start Live Mode")
+            self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "ready"))
+            self.status_label.setText("Live Ready")
+            self.status_label.setStyleSheet("color: #FF9800; font-weight: bold;")
 
-        self.output_log.append("🎯 === LIVE MODE SELECTED ===")
-        self.output_log.append("📋 Click 'Start Live Mode' to activate interactive execution")
-        self.output_log.append("💡 Then use buttons inside nodes to control flow!")
+            self.output_log.append("🎯 === LIVE MODE SELECTED ===")
+            self.output_log.append("📋 Click 'Start Live Mode' to activate interactive execution")
+            self.output_log.append("💡 Then use buttons inside nodes to control flow!")
+        finally:
+            self._ui_update_in_progress = False
     
     def _execute_batch_mode(self):
         """Execute graph in batch mode."""
+        # Ensure environment is selected before executing
+        if self.file_ops:
+            self.file_ops.ensure_environment_selected()
+            
         self.output_log.clear()
         self.output_log.append("▶️ === BATCH EXECUTION STARTED ===")
 
         # Update button state during execution
-        self.main_exec_button.setText("⏳ Executing...")
+        self.main_exec_button.setText("Executing...")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "executing"))
         self.status_label.setText("Executing")
         self.status_label.setStyleSheet("color: #607D8B; font-weight: bold;")
@@ -94,13 +114,17 @@ class ExecutionController:
             self.output_log.append(f"❌ === EXECUTION FAILED: {e} ===")
         finally:
             # Restore button state
-            self.main_exec_button.setText("▶️ Execute Graph")
+            self.main_exec_button.setText("Execute Graph")
             self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "ready"))
             self.status_label.setText("Ready")
             self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
     def _start_live_mode(self):
         """Start live interactive mode."""
+        # Ensure environment is selected before starting live mode
+        if self.file_ops:
+            self.file_ops.ensure_environment_selected()
+            
         self.output_log.clear()
         self.output_log.append("🔥 === LIVE MODE ACTIVATED ===")
         self.output_log.append("✨ Interactive execution enabled!")
@@ -111,7 +135,7 @@ class ExecutionController:
         self.live_executor.restart_graph()
 
         # Update button to pause state
-        self.main_exec_button.setText("⏸️ Pause Live Mode")
+        self.main_exec_button.setText("Pause Live Mode")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "active"))
         self.status_label.setText("Live Active")
         self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
@@ -121,10 +145,79 @@ class ExecutionController:
         self.live_active = False
         self.live_executor.set_live_mode(False)
 
-        self.main_exec_button.setText("🔥 Resume Live Mode")
+        self.main_exec_button.setText("Resume Live Mode")
         self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "paused"))
         self.status_label.setText("Live Paused")
         self.status_label.setStyleSheet("color: #F44336; font-weight: bold;")
 
         self.output_log.append("⏸️ Live mode paused - node buttons are now inactive")
         self.output_log.append("Click 'Resume Live Mode' to reactivate")
+    
+    def _check_environment_validity(self):
+        """Check if current virtual environment is valid and update button state."""
+        import os
+        
+        try:
+            venv_path = self.get_venv_path_callback()
+            
+            # Use cached result if path hasn't changed
+            if venv_path == self.last_venv_path and hasattr(self, '_last_validity_result'):
+                if self._last_validity_result:
+                    self._set_environment_valid()
+                else:
+                    self._set_environment_invalid(self._last_invalid_reason)
+                return
+            
+            self.last_venv_path = venv_path
+            
+            # Check if venv exists and has Python executable
+            if not venv_path or not os.path.exists(venv_path):
+                self._last_validity_result = False
+                self._last_invalid_reason = "No virtual environment configured"
+                self._set_environment_invalid(self._last_invalid_reason)
+                return
+            
+            # Check for Python executable
+            if os.name == 'nt':  # Windows
+                python_exe = os.path.join(venv_path, "Scripts", "python.exe")
+            else:  # Unix/Linux/Mac
+                python_exe = os.path.join(venv_path, "bin", "python")
+            
+            if not os.path.exists(python_exe):
+                self._last_validity_result = False
+                self._last_invalid_reason = "Virtual environment is invalid (missing Python)"
+                self._set_environment_invalid(self._last_invalid_reason)
+                return
+            
+            # Environment is valid
+            self._last_validity_result = True
+            self._set_environment_valid()
+            
+        except Exception as e:
+            self._last_validity_result = False
+            self._last_invalid_reason = f"Environment check failed: {str(e)}"
+            self._set_environment_invalid(self._last_invalid_reason)
+    
+    def _set_environment_valid(self):
+        """Enable execution when environment is valid."""
+        self.venv_is_valid = True
+        self.main_exec_button.setEnabled(True)
+        
+        # Restore appropriate button state
+        if self.live_mode:
+            self._update_ui_for_live_mode()
+        else:
+            self._update_ui_for_batch_mode()
+    
+    def _set_environment_invalid(self, reason):
+        """Disable execution when environment is invalid."""
+        self.venv_is_valid = False
+        self.main_exec_button.setEnabled(False)
+        self.main_exec_button.setText("No Environment")
+        self.main_exec_button.setStyleSheet("background-color: #888; color: #ccc; border: 1px solid #555;")
+        self.status_label.setText(f"Environment Issue: {reason}")
+        self.status_label.setStyleSheet("color: #f44336; font-weight: bold;")
+    
+    def refresh_environment_state(self):
+        """Public method to refresh environment state (called after environment selection)."""
+        self._check_environment_validity()

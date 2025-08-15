@@ -14,8 +14,14 @@ GUI state management handles default values: length=12, uppercase=True, lowercas
 {
   "uuid": "config-input",
   "title": "Password Configuration",
-  "pos": [100, 200],
-  "size": [300, 250],
+  "pos": [
+    107.93499999999997,
+    173.55
+  ],
+  "size": [
+    296.7499999999999,
+    388
+  ],
   "colors": {
     "title": "#007bff",
     "body": "#0056b3"
@@ -84,6 +90,10 @@ def get_values(widgets):
         'include_symbols': widgets['symbols'].isChecked()
     }
 
+def set_values(widgets, outputs):
+    # Config node doesn't need to display outputs
+    pass
+
 def set_initial_state(widgets, state):
     widgets['length'].setValue(state.get('length', 12))
     widgets['uppercase'].setChecked(state.get('include_uppercase', True))
@@ -91,6 +101,7 @@ def set_initial_state(widgets, state):
     widgets['numbers'].setChecked(state.get('include_numbers', True))
     widgets['symbols'].setChecked(state.get('include_symbols', False))
 ```
+
 
 ## Node: Password Generator Engine (ID: password-generator)
 
@@ -104,8 +115,14 @@ Includes error handling for empty character sets, returning "Error: No character
 {
   "uuid": "password-generator",
   "title": "Password Generator Engine",
-  "pos": [500, 200],
-  "size": [280, 150],
+  "pos": [
+    481.4850000000001,
+    202.645
+  ],
+  "size": [
+    264.40499999999975,
+    218
+  ],
   "colors": {
     "title": "#28a745",
     "body": "#1e7e34"
@@ -141,6 +158,7 @@ def generate_password(length: int, include_uppercase: bool, include_lowercase: b
     return password
 ```
 
+
 ## Node: Password Strength Analyzer (ID: strength-analyzer)
 
 Analyzes password strength using regex pattern matching and point-based scoring system. Length scoring: 25 points for >=12 chars, 15 points for >=8 chars. Character variety scoring: 20 points each for uppercase (A-Z), lowercase (a-z), numbers (0-9), 15 points for symbols.
@@ -155,8 +173,14 @@ Feedback generation uses list accumulation for missing elements, joined with sem
 {
   "uuid": "strength-analyzer",
   "title": "Password Strength Analyzer",
-  "pos": [870, 150],
-  "size": [300, 200],
+  "pos": [
+    844.8725,
+    304.73249999999996
+  ],
+  "size": [
+    250,
+    168
+  ],
   "colors": {
     "title": "#fd7e14",
     "body": "#e8590c"
@@ -226,6 +250,7 @@ def analyze_strength(password: str) -> Tuple[str, int, str]:
     return strength, score, feedback_text
 ```
 
+
 ## Node: Password Output & Copy (ID: output-display)
 
 Formats password generation results into display string combining password, strength rating, score, and feedback. Uses string concatenation to create structured output: "Generated Password: {password}\nStrength: {strength} ({score}/100)\nFeedback: {feedback}".
@@ -240,8 +265,14 @@ Handles multiple input parameters (password, strength, score, feedback) and cons
 {
   "uuid": "output-display",
   "title": "Password Output & Copy",
-  "pos": [1250, 200],
-  "size": [350, 300],
+  "pos": [
+    1182.5525,
+    137.84249999999997
+  ],
+  "size": [
+    340.9674999999995,
+    513
+  ],
   "colors": {
     "title": "#6c757d",
     "body": "#545b62"
@@ -290,9 +321,6 @@ widgets['strength_display'].setMinimumHeight(120)
 widgets['strength_display'].setReadOnly(True)
 widgets['strength_display'].setPlainText('Generate a password to see strength analysis...')
 layout.addWidget(widgets['strength_display'])
-
-widgets['new_password_btn'] = QPushButton('Generate New Password', parent)
-layout.addWidget(widgets['new_password_btn'])
 ```
 
 ### GUI State Handler
@@ -312,7 +340,12 @@ def set_values(widgets, outputs):
             widgets['password_field'].setText(password)
     
     widgets['strength_display'].setPlainText(result)
+
+def set_initial_state(widgets, state):
+    # Output display node doesn't have saved state to restore
+    pass
 ```
+
 
 ## Connections
 

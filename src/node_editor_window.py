@@ -3,7 +3,7 @@
 
 import os
 from PySide6.QtWidgets import (QMainWindow, QTextEdit, QDockWidget, QInputDialog, 
-                              QToolBar, QWidget, QHBoxLayout)
+                              QToolBar, QWidget, QHBoxLayout, QSizePolicy)
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QPointF, QSettings
 
@@ -11,12 +11,15 @@ from node_graph import NodeGraph
 from node_editor_view import NodeEditorView
 from environment_manager import EnvironmentManagerDialog
 from settings_dialog import SettingsDialog
+from environment_selection_dialog import EnvironmentSelectionDialog
+from graph_properties_dialog import GraphPropertiesDialog
 
 # Import our new modular components
 from ui_utils import create_fa_icon, create_execution_control_widget
 from file_operations import FileOperationsManager
 from execution_controller import ExecutionController
 from view_state_manager import ViewStateManager
+from default_environment_manager import DefaultEnvironmentManager
 
 
 class NodeEditorWindow(QMainWindow):
@@ -32,12 +35,27 @@ class NodeEditorWindow(QMainWindow):
         self._setup_managers()
         
         # Load initial state
-        self.file_ops.load_last_file()
+        if self.file_ops.load_last_file():
+            # Restore view state for the loaded file
+            self.view_state.load_view_state()
 
     def _setup_core_components(self):
         """Initialize the core graph and view components."""
         self.settings = QSettings("PyFlowGraph", "NodeEditor")
-        self.venv_parent_dir = self.settings.value("venv_parent_dir", os.path.join(os.getcwd(), "venvs"))
+        
+        # Determine project root directory (parent of src/ for development, or app directory for compiled)
+        if os.path.basename(os.getcwd()) == "src":
+            # Development mode - go up one level from src/
+            project_root = os.path.dirname(os.getcwd())
+        else:
+            # Compiled mode - use current directory
+            project_root = os.getcwd()
+        
+        default_venv_dir = os.path.join(project_root, "venvs")
+        self.venv_parent_dir = self.settings.value("venv_parent_dir", default_venv_dir)
+        
+        # Initialize default environment manager
+        self.default_env_manager = DefaultEnvironmentManager(self.venv_parent_dir)
         
         # Core graph components
         self.graph = NodeGraph(self)
@@ -50,6 +68,9 @@ class NodeEditorWindow(QMainWindow):
         dock = QDockWidget("Output Log")
         dock.setWidget(self.output_log)
         self.addDockWidget(Qt.BottomDockWidgetArea, dock)
+        
+        # Ensure default virtual environment exists
+        self._ensure_default_environment()
 
     def _setup_ui(self):
         """Setup the user interface elements."""
@@ -60,7 +81,7 @@ class NodeEditorWindow(QMainWindow):
     def _setup_managers(self):
         """Initialize the manager components."""
         # File operations manager
-        self.file_ops = FileOperationsManager(self, self.graph, self.output_log)
+        self.file_ops = FileOperationsManager(self, self.graph, self.output_log, self.default_env_manager)
         
         # View state manager
         self.view_state = ViewStateManager(self.view, self.file_ops)
@@ -71,8 +92,12 @@ class NodeEditorWindow(QMainWindow):
             self.output_log, 
             self._get_current_venv_path,
             self.exec_widget.main_exec_button,
-            self.exec_widget.status_label
+            self.exec_widget.status_label,
+            self.file_ops
         )
+        
+        # Set execution controller reference in file operations
+        self.file_ops.set_execution_controller(self.execution_ctrl)
 
     def _get_current_venv_path(self):
         """Provides the full path to the venv for the current graph."""
@@ -95,6 +120,9 @@ class NodeEditorWindow(QMainWindow):
         self.action_settings = QAction("Settings...", self)
         self.action_settings.triggered.connect(self.on_settings)
 
+        self.action_graph_props = QAction("&Graph Properties...", self)
+        self.action_graph_props.triggered.connect(self.on_graph_properties)
+
         self.action_manage_env = QAction("&Manage Environment...", self)
         self.action_manage_env.triggered.connect(self.on_manage_env)
 
@@ -115,6 +143,8 @@ class NodeEditorWindow(QMainWindow):
         file_menu.addAction(self.action_save)
         file_menu.addAction(self.action_save_as)
         file_menu.addSeparator()
+        file_menu.addAction(self.action_graph_props)
+        file_menu.addSeparator()
         file_menu.addAction(self.action_exit)
         
         # Edit menu
@@ -123,9 +153,9 @@ class NodeEditorWindow(QMainWindow):
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_settings)
         
-        # Run menu
-        run_menu = menu_bar.addMenu("&Run")
-        run_menu.addAction(self.action_manage_env)
+        # Environment menu
+        env_menu = menu_bar.addMenu("&Environment")
+        env_menu.addAction(self.action_manage_env)
 
     def _create_toolbar(self):
         """Create the main toolbar."""
@@ -139,7 +169,12 @@ class NodeEditorWindow(QMainWindow):
         toolbar.addAction(self.action_save_as)
         toolbar.addSeparator()
 
-        # Create execution control widget
+        # Add spacer to push execution controls to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        toolbar.addWidget(spacer)
+
+        # Create execution control widget (right-aligned)
         self.exec_widget = create_execution_control_widget(
             self._on_mode_changed,
             self._on_main_button_clicked
@@ -157,7 +192,9 @@ class NodeEditorWindow(QMainWindow):
     # File operation handlers
     def on_new_scene(self):
         """Create a new scene."""
-        self.view_state.save_view_state()
+        # Save view state for current file before creating new scene
+        if self.file_ops.current_file_path:
+            self.view_state.save_view_state(self.file_ops.current_file_path)
         self.file_ops.new_scene()
         self.view.resetTransform()
 
@@ -171,10 +208,15 @@ class NodeEditorWindow(QMainWindow):
 
     def on_load(self, file_path=None):
         """Load a graph from file."""
-        if not file_path:
-            self.view_state.save_view_state()
+        # Capture the current file path before it gets changed by file_ops.load()
+        old_file_path = self.file_ops.current_file_path
+        
+        # Always save view state for the OLD file before switching (if there is one)
+        if old_file_path:
+            self.view_state.save_view_state(old_file_path)
         
         if self.file_ops.load(file_path):
+            # Load view state for the NEW file after switching
             self.view_state.load_view_state()
 
     # Settings and environment handlers
@@ -184,6 +226,22 @@ class NodeEditorWindow(QMainWindow):
         if dialog.exec():
             self.venv_parent_dir = self.settings.value("venv_parent_dir")
             self.output_log.append(f"Default venv directory updated to: {self.venv_parent_dir}")
+
+    def on_graph_properties(self):
+        """Open the graph properties dialog."""
+        dialog = GraphPropertiesDialog(self.graph.graph_title, self.graph.graph_description, self)
+        if dialog.exec():
+            props = dialog.get_properties()
+            self.graph.graph_title = props["title"]
+            self.graph.graph_description = props["description"]
+            # Update window title if needed
+            self.file_ops.current_graph_name = props["title"]
+            self.file_ops.update_window_title()
+            self.output_log.append("Graph properties updated.")
+
+    def _ensure_default_environment(self):
+        """Ensure the default virtual environment exists."""
+        self.default_env_manager.ensure_default_venv_exists(self.output_log)
 
     def on_manage_env(self):
         """Open the environment manager dialog."""
@@ -203,6 +261,7 @@ class NodeEditorWindow(QMainWindow):
             node.set_code("from typing import Tuple\n\n" "@node_entry\n" 
                          "def node_function(input_1: str) -> Tuple[str, int]:\n" 
                          "    return 'hello', len(input_1)")
+
 
     def closeEvent(self, event):
         """Handle application close event."""
