@@ -281,6 +281,10 @@ class DeleteNodeCommand(CommandBase):
             
             # Only apply regular node properties if it's not a RerouteNode
             if not self.node_state.get('is_reroute', False):
+                from debug_config import should_debug, DEBUG_UNDO_REDO
+                if should_debug(DEBUG_UNDO_REDO):
+                    print(f"DEBUG: Restoring regular node properties for '{self.node_state['title']}'")
+                    print(f"DEBUG: Original size: {self.node_state['width']}x{self.node_state['height']}")
                 # Restore size BEFORE updating pins (important for layout)
                 restored_node.width = self.node_state['width']
                 restored_node.height = self.node_state['height']
@@ -305,13 +309,31 @@ class DeleteNodeCommand(CommandBase):
                     else:
                         restored_node.color_title_text = self.node_state['color_title_text']
                 
-                # Update pins to match saved state
+                # Update pins to match saved state BEFORE setting size
+                if should_debug(DEBUG_UNDO_REDO):
+                    print(f"DEBUG: Updating pins from code")
                 restored_node.update_pins_from_code()
                 
-                # Apply the size again after pin updates (pins might change size)
-                restored_node.width = self.node_state['width']
-                restored_node.height = self.node_state['height']
+                # Calculate minimum size requirements for validation
+                min_width, min_height = restored_node.calculate_absolute_minimum_size()
+                
+                # Validate restored size against minimum requirements
+                original_width = self.node_state['width']
+                original_height = self.node_state['height']
+                corrected_width = max(original_width, min_width)
+                corrected_height = max(original_height, min_height)
+                
+                if should_debug(DEBUG_UNDO_REDO) and (corrected_width != original_width or corrected_height != original_height):
+                    print(f"DEBUG: Node restoration size corrected from "
+                          f"{original_width}x{original_height} to {corrected_width}x{corrected_height}")
+                
+                # Apply validated size
+                restored_node.width = corrected_width
+                restored_node.height = corrected_height
                 restored_node.base_width = self.node_state['base_width']
+                
+                if should_debug(DEBUG_UNDO_REDO):
+                    print(f"DEBUG: Node size set to {restored_node.width}x{restored_node.height}")
             
             # Force visual update with correct colors and size
             restored_node.update()
@@ -324,12 +346,15 @@ class DeleteNodeCommand(CommandBase):
             
             self.node_graph.addItem(restored_node)
             
-            # Restore GUI state if available
+            # Apply GUI state BEFORE final layout
             if self.node_state.get('gui_state'):
                 try:
+                    if should_debug(DEBUG_UNDO_REDO):
+                        print(f"DEBUG: Applying GUI state")
                     restored_node.apply_gui_state(self.node_state['gui_state'])
-                except Exception:
-                    pass  # GUI state restoration is optional
+                except Exception as e:
+                    if should_debug(DEBUG_UNDO_REDO):
+                        print(f"DEBUG: GUI state restoration failed: {e}")
             
             # Restore connections
             restored_connections = 0
@@ -367,16 +392,28 @@ class DeleteNodeCommand(CommandBase):
                     except (IndexError, AttributeError):
                         pass  # Connection restoration failed, but continue with other connections
             
-            # Final size enforcement and visual update (only for regular nodes)
+            # Final layout update sequence (only for regular nodes)
             if not self.node_state.get('is_reroute', False):
-                restored_node.width = self.node_state['width']
-                restored_node.height = self.node_state['height']
-                restored_node.fit_size_to_content()  # This should respect the set width/height
+                if should_debug(DEBUG_UNDO_REDO):
+                    print(f"DEBUG: Final layout update sequence")
+                
+                # Force layout update to ensure pins are positioned correctly
+                restored_node._update_layout()
+                
+                # Ensure size still meets minimum requirements after GUI state
+                restored_node.fit_size_to_content()
+                
+                if should_debug(DEBUG_UNDO_REDO):
+                    print(f"DEBUG: Final node size: {restored_node.width}x{restored_node.height}")
+                
+            # Final visual refresh
             restored_node.update()
             
             # Update node reference
             self.node = restored_node
             
+            if should_debug(DEBUG_UNDO_REDO):
+                print(f"DEBUG: Node restoration completed successfully")
             self._mark_undone()
             return True
             
