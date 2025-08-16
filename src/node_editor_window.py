@@ -33,6 +33,7 @@ class NodeEditorWindow(QMainWindow):
         self._setup_core_components()
         self._setup_ui()
         self._setup_managers()
+        self._setup_command_system()
         
         # Load initial state
         if self.file_ops.load_last_file():
@@ -117,6 +118,15 @@ class NodeEditorWindow(QMainWindow):
         self.action_load = QAction(create_fa_icon("\uf07c", "yellow"), "&Load Graph...", self)
         self.action_load.triggered.connect(self.on_load)
 
+        # Edit menu actions (Undo/Redo)
+        self.action_undo = QAction(create_fa_icon("\uf0e2", "lightgreen"), "&Undo", self)
+        self.action_undo.setShortcut("Ctrl+Z")
+        self.action_undo.triggered.connect(self.on_undo)
+        
+        self.action_redo = QAction(create_fa_icon("\uf01e", "lightgreen"), "&Redo", self)
+        self.action_redo.setShortcut("Ctrl+Y")
+        self.action_redo.triggered.connect(self.on_redo)
+
         self.action_settings = QAction("Settings...", self)
         self.action_settings.triggered.connect(self.on_settings)
 
@@ -149,6 +159,9 @@ class NodeEditorWindow(QMainWindow):
         
         # Edit menu
         edit_menu = menu_bar.addMenu("&Edit")
+        edit_menu.addAction(self.action_undo)
+        edit_menu.addAction(self.action_redo)
+        edit_menu.addSeparator()
         edit_menu.addAction(self.action_add_node)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_settings)
@@ -262,6 +275,59 @@ class NodeEditorWindow(QMainWindow):
                          "def node_function(input_1: str) -> Tuple[str, int]:\n" 
                          "    return 'hello', len(input_1)")
 
+
+    def _setup_command_system(self):
+        """Set up the command system connections."""
+        # Connect graph command signals to UI updates
+        self.graph.commandExecuted.connect(self._on_command_executed)
+        self.graph.commandUndone.connect(self._on_command_undone)
+        self.graph.commandRedone.connect(self._on_command_redone)
+        
+        # Initial UI state update
+        self._update_undo_redo_actions()
+    
+    def _on_command_executed(self, description):
+        """Handle command execution for UI feedback."""
+        self.statusBar().showMessage(f"Executed: {description}", 2000)
+        self._update_undo_redo_actions()
+    
+    def _on_command_undone(self, description):
+        """Handle command undo for UI feedback."""
+        self.statusBar().showMessage(f"Undone: {description}", 2000)
+        self._update_undo_redo_actions()
+    
+    def _on_command_redone(self, description):
+        """Handle command redo for UI feedback."""
+        self.statusBar().showMessage(f"Redone: {description}", 2000)
+        self._update_undo_redo_actions()
+    
+    def _update_undo_redo_actions(self):
+        """Update undo/redo action states and descriptions."""
+        can_undo = self.graph.can_undo()
+        can_redo = self.graph.can_redo()
+        
+        self.action_undo.setEnabled(can_undo)
+        self.action_redo.setEnabled(can_redo)
+        
+        if can_undo:
+            undo_desc = self.graph.get_undo_description()
+            self.action_undo.setText(f"&Undo {undo_desc}")
+        else:
+            self.action_undo.setText("&Undo")
+        
+        if can_redo:
+            redo_desc = self.graph.get_redo_description()
+            self.action_redo.setText(f"&Redo {redo_desc}")
+        else:
+            self.action_redo.setText("&Redo")
+    
+    def on_undo(self):
+        """Handle undo action."""
+        self.graph.undo_last_command()
+    
+    def on_redo(self):
+        """Handle redo action."""
+        self.graph.redo_last_command()
 
     def closeEvent(self, event):
         """Handle application close event."""

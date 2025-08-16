@@ -516,10 +516,16 @@ class Node(QGraphicsItem):
         return self.add_pin(name, direction, pin_type_str, "data")
 
     def remove_pin(self, pin_to_remove):
+        # Remove connections first
         if pin_to_remove.connections:
             for conn in list(pin_to_remove.connections):
-                self.scene().remove_connection(conn)
+                if self.scene():
+                    self.scene().remove_connection(conn, use_command=False)
+        
+        # Destroy the pin (this handles scene removal safely)
         pin_to_remove.destroy()
+        
+        # Remove from all pin lists
         if pin_to_remove in self.pins:
             self.pins.remove(pin_to_remove)
         if pin_to_remove in self.input_pins:

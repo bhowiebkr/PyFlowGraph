@@ -118,3 +118,6 @@ python_runtime
 # pre releases
 pre-release
 temp
+
+# BEMAD files
+.bmad-core/

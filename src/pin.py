@@ -53,9 +53,11 @@ class Pin(QGraphicsItem):
     def destroy(self):
         """Cleanly remove the pin and its label from the scene."""
         self.label.setParentItem(None)
-        self.node.scene().removeItem(self.label)
+        if self.node and self.node.scene():
+            self.node.scene().removeItem(self.label)
         self.setParentItem(None)
-        self.node.scene().removeItem(self)
+        if self.node and self.node.scene():
+            self.node.scene().removeItem(self)
 
     def update_label_pos(self):
         """Update the position of the pin's text label relative to the pin."""
@@ -87,7 +89,8 @@ class Pin(QGraphicsItem):
     def update_connections(self):
         for conn in self.connections:
             conn.update_path()
-        self.scene().update()
+        if self.scene():
+            self.scene().update()
 
     def can_connect_to(self, other_pin):
         """Checks for compatibility based on pin category and type."""
