@@ -431,17 +431,35 @@ class CreateRerouteNodeCommand(CommandBase):
                 # Regular Node - use pin list
                 input_pin = input_node.input_pins[self.original_connection_data['input_pin_index']]
             
-            # Remove reroute connections
-            if self.first_connection:
-                self._remove_connection_safely(self.first_connection)
-            if self.second_connection:
-                self._remove_connection_safely(self.second_connection)
+            # Find the CURRENT reroute node by UUID (it may have been recreated by DeleteNodeCommand.undo)
+            current_reroute_node = None
+            if self.reroute_node and hasattr(self.reroute_node, 'uuid'):
+                current_reroute_node = self._find_node_by_id(self.reroute_node.uuid)
             
-            # Remove reroute node
-            if self.reroute_node:
-                self.node_graph.removeItem(self.reroute_node)
-                if self.reroute_node in self.node_graph.nodes:
-                    self.node_graph.nodes.remove(self.reroute_node)
+            if not current_reroute_node:
+                # Fallback: find any RerouteNode
+                for node in self.node_graph.nodes:
+                    if hasattr(node, 'is_reroute') and node.is_reroute:
+                        current_reroute_node = node
+                        break
+            
+            # Remove connections to/from the reroute node
+            if current_reroute_node:
+                connections_to_remove = []
+                for connection in list(self.node_graph.connections):
+                    if (hasattr(connection, 'start_pin') and connection.start_pin.node == current_reroute_node or 
+                        hasattr(connection, 'end_pin') and connection.end_pin.node == current_reroute_node):
+                        connections_to_remove.append(connection)
+                
+                for connection in connections_to_remove:
+                    self._remove_connection_safely(connection)
+                
+                # Remove the current reroute node
+                if current_reroute_node.scene() == self.node_graph:
+                    self.node_graph.removeItem(current_reroute_node)
+                
+                if current_reroute_node in self.node_graph.nodes:
+                    self.node_graph.nodes.remove(current_reroute_node)
             
             # Recreate original connection
             from connection import Connection
