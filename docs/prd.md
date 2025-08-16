@@ -12,7 +12,7 @@
 
 ### Background Context
 
-PyFlowGraph is a universal node-based visual scripting editor built with Python and PySide6, following a "Code as Nodes" philosophy. Currently, it lacks two fundamental features that every professional node editor provides: Undo/Redo functionality and Node Grouping capabilities. Market analysis reveals that 100% of competitors have both features, and user feedback consistently cites these as deal-breakers for professional adoption. This PRD addresses these critical gaps to transform PyFlowGraph into a professional-grade tool capable of handling complex real-world workflows.
+PyFlowGraph is a universal node-based visual scripting editor built with Python and PySide6, following a "Code as Nodes" philosophy. Positioned as a workflow automation and integration platform, it enables users to build ETL pipelines, API integrations, data transformations, webhook handlers, and business process automation through visual programming. Currently, it lacks two fundamental features that every professional workflow automation tool provides: Undo/Redo functionality and Node Grouping capabilities. Market analysis reveals that 100% of competitors in the workflow automation space have both features, and user feedback consistently cites these as deal-breakers for professional adoption. This PRD addresses these critical gaps to transform PyFlowGraph into a professional-grade workflow automation platform capable of handling complex enterprise integration scenarios.
 
 ### Change Log
 
