@@ -1,0 +1,116 @@
+name: Bug Sync Automation
+
+on:
+  push:
+    paths:
+      - 'docs/bugs/**'
+    branches:
+      - main
+      - feature/*
+  issues:
+    types: [opened, edited, closed, labeled]
+
+jobs:
+  sync-bugs:
+    if: contains(github.event.issue.labels.*.name, 'bug') || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    permissions:
+      issues: write
+      contents: write
+      pull-requests: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install GitHub CLI
+      run: |
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        sudo apt update
+        sudo apt install gh
+        
+    - name: Configure GitHub CLI
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+        
+    - name: Sync new local bugs to GitHub
+      if: github.event_name == 'push'
+      run: |
+        # Check for new bug files in the push
+        git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep "^docs/bugs/BUG-.*\.md$" || exit 0
+        
+        # Run sync automation
+        python scripts/bug-sync-automation.py --sync-to-github
+        
+        # Commit any updates to bug files
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if git diff --quiet; then
+          echo "No changes to commit"
+        else
+          git add docs/bugs/
+          git commit -m "Auto-sync: Update bug files with GitHub issue references
+          
+          🤖 Generated with GitHub Actions"
+          git push
+        fi
+        
+    - name: Update local bug file when GitHub issue changes
+      if: github.event_name == 'issues'
+      run: |
+        # Extract bug ID from issue title
+        ISSUE_TITLE="${{ github.event.issue.title }}"
+        BUG_ID=$(echo "$ISSUE_TITLE" | grep -o "BUG-[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-[0-9]\+" || echo "")
+        
+        if [ -z "$BUG_ID" ]; then
+          echo "No bug ID found in issue title: $ISSUE_TITLE"
+          exit 0
+        fi
+        
+        # Find corresponding local bug file
+        BUG_FILE=$(find docs/bugs/ -name "$BUG_ID-*.md" | head -1)
+        
+        if [ -z "$BUG_FILE" ]; then
+          echo "No local bug file found for $BUG_ID"
+          exit 0
+        fi
+        
+        echo "Updating $BUG_FILE based on GitHub issue #${{ github.event.issue.number }}"
+        
+        # Update Last Sync date in the bug file
+        TODAY=$(date '+%Y-%m-%d')
+        sed -i "s/\*\*Last Sync\*\*:.*/\*\*Last Sync\*\*: $TODAY/" "$BUG_FILE"
+        
+        # If issue was closed, add comment about GitHub status
+        if [ "${{ github.event.action }}" = "closed" ]; then
+          echo "" >> "$BUG_FILE"
+          echo "**GitHub Update ($TODAY)**: Issue #${{ github.event.issue.number }} was closed on GitHub" >> "$BUG_FILE"
+        fi
+        
+        # Commit changes
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if git diff --quiet; then
+          echo "No changes to commit"
+        else
+          git add "$BUG_FILE"
+          git commit -m "Auto-sync: Update $BUG_ID from GitHub issue #${{ github.event.issue.number }}
+          
+          🤖 Generated with GitHub Actions"
+          git push
+        fi
+        
+    - name: Validate bug sync status
+      run: |
+        python scripts/bug-sync-automation.py --validate
