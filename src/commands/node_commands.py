@@ -274,9 +274,11 @@ class DeleteNodeCommand(CommandBase):
                 restored_node.uuid = self.node_state['id']
                 restored_node.description = self.node_state['description']
                 restored_node.setPos(self.node_state['position'])
-                restored_node.code = self.node_state['code']
-                restored_node.gui_code = self.node_state['gui_code']
-                restored_node.gui_get_values_code = self.node_state['gui_get_values_code']
+                # Set code which will trigger pin updates
+                restored_node.set_code(self.node_state['code'])
+                # Set GUI code which will trigger GUI rebuild  
+                restored_node.set_gui_code(self.node_state['gui_code'])
+                restored_node.set_gui_get_values_code(self.node_state['gui_get_values_code'])
                 restored_node.function_name = self.node_state['function_name']
             
             # Only apply regular node properties if it's not a RerouteNode
@@ -309,10 +311,9 @@ class DeleteNodeCommand(CommandBase):
                     else:
                         restored_node.color_title_text = self.node_state['color_title_text']
                 
-                # Update pins to match saved state BEFORE setting size
+                # Pins were already updated by set_code() above
                 if should_debug(DEBUG_UNDO_REDO):
-                    print(f"DEBUG: Updating pins from code")
-                restored_node.update_pins_from_code()
+                    print(f"DEBUG: Pins already updated by set_code()")
                 
                 # Calculate minimum size requirements for validation
                 min_width, min_height = restored_node.calculate_absolute_minimum_size()
@@ -346,15 +347,24 @@ class DeleteNodeCommand(CommandBase):
             
             self.node_graph.addItem(restored_node)
             
-            # Apply GUI state BEFORE final layout
-            if self.node_state.get('gui_state'):
+            # Apply GUI state AFTER GUI widgets are created
+            if self.node_state.get('gui_state') and not self.node_state.get('is_reroute', False):
                 try:
                     if should_debug(DEBUG_UNDO_REDO):
-                        print(f"DEBUG: Applying GUI state")
+                        print(f"DEBUG: Applying GUI state: {self.node_state['gui_state']}")
+                        print(f"DEBUG: GUI widgets available: {bool(restored_node.gui_widgets)}")
+                        print(f"DEBUG: GUI widgets count: {len(restored_node.gui_widgets) if restored_node.gui_widgets else 0}")
                     restored_node.apply_gui_state(self.node_state['gui_state'])
+                    if should_debug(DEBUG_UNDO_REDO):
+                        print(f"DEBUG: GUI state applied successfully")
                 except Exception as e:
                     if should_debug(DEBUG_UNDO_REDO):
                         print(f"DEBUG: GUI state restoration failed: {e}")
+            elif should_debug(DEBUG_UNDO_REDO):
+                if not self.node_state.get('gui_state'):
+                    print(f"DEBUG: No GUI state to restore")
+                elif self.node_state.get('is_reroute', False):
+                    print(f"DEBUG: Skipping GUI state for reroute node")
             
             # Restore connections
             restored_connections = 0
