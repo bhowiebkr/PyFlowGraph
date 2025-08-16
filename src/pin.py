@@ -53,18 +53,47 @@ class Pin(QGraphicsItem):
     def destroy(self):
         """Cleanly remove the pin and its label from the scene."""
         self.label.setParentItem(None)
-        self.node.scene().removeItem(self.label)
+        if self.node and self.node.scene():
+            self.node.scene().removeItem(self.label)
         self.setParentItem(None)
-        self.node.scene().removeItem(self)
+        if self.node and self.node.scene():
+            self.node.scene().removeItem(self)
 
     def update_label_pos(self):
         """Update the position of the pin's text label relative to the pin."""
+        from debug_config import should_debug, DEBUG_PINS
+        
+        if should_debug(DEBUG_PINS):
+            print(f"DEBUG: update_label_pos() called for pin '{self.name}' (direction: {self.direction})")
+        
         if self.direction == "output":
             label_x = -self.label.boundingRect().width() - self.label_margin
             self.label.setPos(label_x, -self.label.boundingRect().height() / 2)
         else:
             label_x = self.label_margin
             self.label.setPos(label_x, -self.label.boundingRect().height() / 2)
+        
+        # Enhanced visual update - trigger repaint for label
+        self.label.update()
+        
+        if should_debug(DEBUG_PINS):
+            print(f"DEBUG: Pin '{self.name}' label positioned at ({label_x}, {-self.label.boundingRect().height() / 2})")
+
+    def update_visual_state(self):
+        """Force complete visual refresh of pin and its components."""
+        from debug_config import should_debug, DEBUG_PINS
+        
+        if should_debug(DEBUG_PINS):
+            print(f"DEBUG: update_visual_state() called for pin '{self.name}'")
+        
+        # Update pin position and label
+        self.update_label_pos()
+        
+        # Trigger Qt repaint for pin itself
+        self.update()
+        
+        # Update all connections
+        self.update_connections()
 
     def boundingRect(self):
         return QRectF(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)
@@ -87,7 +116,8 @@ class Pin(QGraphicsItem):
     def update_connections(self):
         for conn in self.connections:
             conn.update_path()
-        self.scene().update()
+        if self.scene():
+            self.scene().update()
 
     def can_connect_to(self, other_pin):
         """Checks for compatibility based on pin category and type."""

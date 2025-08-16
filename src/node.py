@@ -205,18 +205,115 @@ class Node(QGraphicsItem):
 
         return title_height + pin_area_height + pin_margin_top + content_height + 1
 
+    def calculate_absolute_minimum_size(self):
+        """Calculate the absolute minimum size needed for this node's content.
+        
+        Returns:
+            tuple[int, int]: (min_width, min_height) required for proper layout
+        """
+        from debug_config import should_debug, DEBUG_LAYOUT
+        
+        if should_debug(DEBUG_LAYOUT):
+            print(f"DEBUG: calculate_absolute_minimum_size() called for node '{self.title}'")
+        
+        # Base measurements (matching existing constants)
+        title_height = 32
+        pin_spacing = 25
+        pin_margin_top = 15
+        node_padding = 10
+        resize_handle_size = 15
+        
+        # Calculate minimum width
+        title_width = 0
+        if hasattr(self, '_title_item') and self._title_item:
+            title_width = self._title_item.boundingRect().width() + 20  # Title + padding
+        
+        # Pin label widths (find longest on each side)
+        max_input_label_width = 0
+        if self.input_pins:
+            max_input_label_width = max([pin.label.boundingRect().width() 
+                                        for pin in self.input_pins])
+        
+        max_output_label_width = 0
+        if self.output_pins:
+            max_output_label_width = max([pin.label.boundingRect().width() 
+                                         for pin in self.output_pins])
+        
+        # Total pin label width with spacing for pin circles
+        pin_label_width = max_input_label_width + max_output_label_width + 40  # Labels + pin spacing
+        
+        # GUI content minimum width
+        gui_min_width = 0
+        if hasattr(self, 'content_container') and self.content_container:
+            self.content_container.layout().activate()
+            gui_min_width = self.content_container.minimumSizeHint().width()
+        
+        min_width = max(
+            self.base_width,  # Default base width
+            title_width,
+            pin_label_width,
+            gui_min_width + node_padding
+        )
+        
+        # Calculate minimum height
+        max_pins = max(len(self.input_pins), len(self.output_pins))
+        pin_area_height = (max_pins * pin_spacing) if max_pins > 0 else 0
+        
+        # GUI content minimum height
+        gui_min_height = 0
+        if hasattr(self, 'content_container') and self.content_container:
+            gui_min_height = self.content_container.minimumSizeHint().height()
+        
+        min_height = (title_height + 
+                      pin_margin_top + 
+                      pin_area_height + 
+                      gui_min_height + 
+                      resize_handle_size +
+                      node_padding)
+        
+        if should_debug(DEBUG_LAYOUT):
+            print(f"DEBUG: Minimum size calculated as {min_width}x{min_height}")
+            print(f"DEBUG: - Title width: {title_width}")
+            print(f"DEBUG: - Pin label width: {pin_label_width} (input: {max_input_label_width}, output: {max_output_label_width})")
+            print(f"DEBUG: - GUI min width: {gui_min_width}")
+            print(f"DEBUG: - Pin area height: {pin_area_height} (pins: {max_pins})")
+            print(f"DEBUG: - GUI min height: {gui_min_height}")
+        
+        return (min_width, min_height)
+
     def fit_size_to_content(self):
         """Calculates and applies the optimal size for the node."""
-        required_height = self._calculate_minimum_height()
-        content_width = self.content_container.sizeHint().width()
-        required_width = max(self.base_width, content_width + 10)
+        from debug_config import should_debug, DEBUG_LAYOUT
+        
+        if should_debug(DEBUG_LAYOUT):
+            print(f"DEBUG: fit_size_to_content() called for node '{self.title}'")
+            print(f"DEBUG: Current size before fit: {self.width}x{self.height}")
+        
+        # Use comprehensive minimum size calculation
+        min_width, min_height = self.calculate_absolute_minimum_size()
+        
+        # Ensure we don't go below minimum requirements
+        required_width = max(self.width, min_width)
+        required_height = max(self.height, min_height)
 
         if self.width != required_width or self.height != required_height:
+            if should_debug(DEBUG_LAYOUT):
+                print(f"DEBUG: Resizing from {self.width}x{self.height} to {required_width}x{required_height}")
+            
             self.width = required_width
             self.height = required_height
             self._update_layout()
+        elif DEBUG_LAYOUT:
+            print(f"DEBUG: No resize needed, size already meets minimum requirements")
 
     def _update_layout(self):
+        from debug_config import should_debug, DEBUG_LAYOUT
+        
+        if should_debug(DEBUG_LAYOUT):
+            print(f"DEBUG: _update_layout() called for node '{self.title}'")
+            print(f"DEBUG: Current size: {self.width}x{self.height}")
+            print(f"DEBUG: Pin counts - input: {len(self.input_pins)}, output: {len(self.output_pins)}")
+        
         self.prepareGeometryChange()
 
         title_height, pin_spacing, pin_margin_top = 32, 25, 15
@@ -235,26 +332,37 @@ class Node(QGraphicsItem):
 
         pin_start_y = title_height + pin_margin_top + (pin_spacing / 2)
         
+        if should_debug(DEBUG_LAYOUT):
+            print(f"DEBUG: Pin layout - start_y: {pin_start_y}, area_height: {pin_area_height}")
+        
         # Position input pins (execution first, then data)
         current_y = pin_start_y
-        for pin in input_exec_pins:
+        for i, pin in enumerate(input_exec_pins):
             pin.setPos(0, current_y)
             pin.update_label_pos()
+            if should_debug(DEBUG_LAYOUT):
+                print(f"DEBUG: Input exec pin {i} positioned at (0, {current_y})")
             current_y += pin_spacing
-        for pin in input_data_pins:
+        for i, pin in enumerate(input_data_pins):
             pin.setPos(0, current_y)
             pin.update_label_pos()
+            if should_debug(DEBUG_LAYOUT):
+                print(f"DEBUG: Input data pin {i} positioned at (0, {current_y})")
             current_y += pin_spacing
             
         # Position output pins (execution first, then data)
         current_y = pin_start_y
-        for pin in output_exec_pins:
+        for i, pin in enumerate(output_exec_pins):
             pin.setPos(self.width, current_y)
             pin.update_label_pos()
+            if should_debug(DEBUG_LAYOUT):
+                print(f"DEBUG: Output exec pin {i} positioned at ({self.width}, {current_y})")
             current_y += pin_spacing
-        for pin in output_data_pins:
+        for i, pin in enumerate(output_data_pins):
             pin.setPos(self.width, current_y)
             pin.update_label_pos()
+            if should_debug(DEBUG_LAYOUT):
+                print(f"DEBUG: Output data pin {i} positioned at ({self.width}, {current_y})")
             current_y += pin_spacing
 
         content_y = title_height + pin_area_height + pin_margin_top
@@ -266,8 +374,22 @@ class Node(QGraphicsItem):
             # Set min/max to allow it to expand/contract within the available space.
             self.proxy_widget.widget().setMinimumSize(self.width, content_height)
             self.proxy_widget.widget().setMaximumSize(self.width, content_height)
+            if should_debug(DEBUG_LAYOUT):
+                print(f"DEBUG: Proxy widget positioned at (0, {content_y}) with size {self.width}x{content_height}")
 
         self.edit_button_proxy.setPos(self.width - 35, 5)
+        
+        # Enhanced visual update chain
+        # Force pin visual updates
+        for pin in self.input_pins + self.output_pins:
+            pin.update()  # Trigger Qt repaint for each pin
+            pin.update_connections()  # Update connections after positioning
+        
+        # Trigger node visual refresh
+        self.update()
+        
+        if should_debug(DEBUG_LAYOUT):
+            print(f"DEBUG: _update_layout() completed for node '{self.title}'")
 
     # --- Painting ---
 
@@ -516,10 +638,16 @@ class Node(QGraphicsItem):
         return self.add_pin(name, direction, pin_type_str, "data")
 
     def remove_pin(self, pin_to_remove):
+        # Remove connections first
         if pin_to_remove.connections:
             for conn in list(pin_to_remove.connections):
-                self.scene().remove_connection(conn)
+                if self.scene():
+                    self.scene().remove_connection(conn, use_command=False)
+        
+        # Destroy the pin (this handles scene removal safely)
         pin_to_remove.destroy()
+        
+        # Remove from all pin lists
         if pin_to_remove in self.pins:
             self.pins.remove(pin_to_remove)
         if pin_to_remove in self.input_pins:

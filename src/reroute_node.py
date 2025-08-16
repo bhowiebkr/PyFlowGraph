@@ -26,6 +26,7 @@ class RerouteNode(QGraphicsItem):
         self.title = "Reroute"
         self.radius = 8
         self.pins = []
+        self.is_reroute = True  # Mark this as a reroute node for special handling
 
         self.input_pin = self.add_pin("input", "input", "any")
         self.output_pin = self.add_pin("output", "output", "any")
