@@ -240,7 +240,23 @@ class NodeGraph(QGraphicsScene):
                 node.set_gui_code(node_data.get("gui_code", ""))
                 node.set_gui_get_values_code(node_data.get("gui_get_values_code", ""))
                 if "size" in node_data:
-                    node.width, node.height = node_data["size"]
+                    # Apply size validation during loading
+                    loaded_width, loaded_height = node_data["size"]
+                    
+                    # Calculate minimum size requirements
+                    min_width, min_height = node.calculate_absolute_minimum_size()
+                    
+                    # Ensure loaded size meets minimum requirements
+                    corrected_width = max(loaded_width, min_width)
+                    corrected_height = max(loaded_height, min_height)
+                    
+                    # Debug logging for size corrections
+                    from debug_config import should_debug, DEBUG_FILE_LOADING
+                    if should_debug(DEBUG_FILE_LOADING) and (corrected_width != loaded_width or corrected_height != loaded_height):
+                        print(f"DEBUG: Node '{node_data['title']}' size corrected from "
+                              f"{loaded_width}x{loaded_height} to {corrected_width}x{corrected_height}")
+                    
+                    node.width, node.height = corrected_width, corrected_height
                 colors = node_data.get("colors", {})
                 if "title" in colors:
                     node.color_title_bar = QColor(colors["title"])
@@ -273,7 +289,25 @@ class NodeGraph(QGraphicsScene):
 
     def final_load_update(self, nodes_to_update):
         """A helper method called by a timer to run the final layout pass."""
+        from debug_config import should_debug, DEBUG_FILE_LOADING
+        
         for node in nodes_to_update:
+            # Re-validate minimum size now that GUI is fully constructed
+            min_width, min_height = node.calculate_absolute_minimum_size()
+            current_width, current_height = node.width, node.height
+            
+            # Check if current size is still too small after GUI construction
+            required_width = max(current_width, min_width)
+            required_height = max(current_height, min_height)
+            
+            if required_width != current_width or required_height != current_height:
+                if should_debug(DEBUG_FILE_LOADING):
+                    print(f"DEBUG: Final size validation - Node '{node.title}' needs resize from "
+                          f"{current_width}x{current_height} to {required_width}x{required_height}")
+                
+                node.width = required_width
+                node.height = required_height
+            
             # Force a complete layout rebuild like manual resize does
             node._update_layout()
             # Update all pin connections like manual resize does
