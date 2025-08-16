@@ -365,17 +365,48 @@ class CreateRerouteNodeCommand(CommandBase):
             self.reroute_node = RerouteNode()
             self.reroute_node.setPos(self.position)
             
-            # Store original connection pins
-            original_output_pin = self.original_connection.start_pin
-            original_input_pin = self.original_connection.end_pin
+            # Find the original pins (they should still exist)
+            output_node = self._find_node_by_id(self.original_connection_data['output_node_id'])
+            input_node = self._find_node_by_id(self.original_connection_data['input_node_id'])
             
-            # Remove original connection using proper methods
-            if hasattr(original_output_pin, 'remove_connection'):
-                original_output_pin.remove_connection(self.original_connection)
-            if hasattr(original_input_pin, 'remove_connection'):
-                original_input_pin.remove_connection(self.original_connection)
-            self.node_graph.removeItem(self.original_connection)
-            self.node_graph.connections.remove(self.original_connection)
+            if not output_node or not input_node:
+                return False
+            
+            # Get pins by index based on node type
+            if hasattr(output_node, 'is_reroute') and output_node.is_reroute:
+                # RerouteNode - use single output pin
+                original_output_pin = output_node.output_pin
+            else:
+                # Regular Node - use pin list
+                original_output_pin = output_node.output_pins[self.original_connection_data['output_pin_index']]
+            
+            if hasattr(input_node, 'is_reroute') and input_node.is_reroute:
+                # RerouteNode - use single input pin
+                original_input_pin = input_node.input_pin
+            else:
+                # Regular Node - use pin list
+                original_input_pin = input_node.input_pins[self.original_connection_data['input_pin_index']]
+            
+            # Find and remove the current connection between these pins (it may not be the original object)
+            connection_to_remove = None
+            for connection in list(self.node_graph.connections):
+                if (connection.start_pin == original_output_pin and 
+                    connection.end_pin == original_input_pin):
+                    connection_to_remove = connection
+                    break
+            
+            if connection_to_remove:
+                # Remove the current connection using proper methods
+                if hasattr(original_output_pin, 'remove_connection'):
+                    original_output_pin.remove_connection(connection_to_remove)
+                if hasattr(original_input_pin, 'remove_connection'):
+                    original_input_pin.remove_connection(connection_to_remove)
+                
+                # Remove from scene and connections list safely
+                if connection_to_remove.scene() == self.node_graph:
+                    self.node_graph.removeItem(connection_to_remove)
+                if connection_to_remove in self.node_graph.connections:
+                    self.node_graph.connections.remove(connection_to_remove)
             
             # Add reroute node to graph
             self.node_graph.addItem(self.reroute_node)
@@ -404,6 +435,8 @@ class CreateRerouteNodeCommand(CommandBase):
             
         except Exception as e:
             print(f"Failed to create reroute node: {e}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             return False
     
     def undo(self) -> bool:
