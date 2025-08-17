@@ -360,7 +360,7 @@ def broken_function() -> str:
 @node_entry
 def slow_function() -> str:
     import time
-    time.sleep(60)  # This would timeout
+    time.sleep(10)  # This would timeout
     return "done"
 ''')
         

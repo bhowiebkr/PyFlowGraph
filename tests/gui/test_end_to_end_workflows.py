@@ -203,12 +203,12 @@ def display_result(processed_data: list):
             self.assertTrue(conn.isVisible(), f"Connection should be visible")
         
         # Verify data flow setup
-        self.assertEqual(conn1.output_pin, input_data_pin)
-        self.assertEqual(conn1.input_pin, process_input_pin)
-        self.assertEqual(conn2.output_pin, process_output_pin)
-        self.assertEqual(conn2.input_pin, output_input_pin)
+        self.assertEqual(conn1.start_pin, input_data_pin)
+        self.assertEqual(conn1.end_pin, process_input_pin)
+        self.assertEqual(conn2.start_pin, process_output_pin)
+        self.assertEqual(conn2.end_pin, output_input_pin)
         
-        print("✓ Data processing pipeline workflow completed successfully!")
+        print("PASS Data processing pipeline workflow completed successfully!")
         
     def test_modify_existing_pipeline(self):
         """
@@ -296,7 +296,7 @@ def process_text(input_text: str) -> str:
         self.assertIsNotNone(conn1)
         self.assertIsNotNone(conn2)
         
-        print("✓ Pipeline modification workflow completed successfully!")
+        print("PASS Pipeline modification workflow completed successfully!")
 
 
 class TestFileOperationWorkflow(EndToEndWorkflowTestCase):
@@ -392,7 +392,7 @@ class TestFileOperationWorkflow(EndToEndWorkflowTestCase):
         
         # First, recreate nodes
         for node_data in original_graph_data["nodes"]:
-            if node_data.get("type") == "RerouteNode":
+            if node_data.get("is_reroute", False):
                 # Special handling for reroute nodes
                 reroute = RerouteNode()
                 reroute.setPos(node_data["pos"][0], node_data["pos"][1])
@@ -407,8 +407,9 @@ class TestFileOperationWorkflow(EndToEndWorkflowTestCase):
                     pos=(node_data["pos"][0], node_data["pos"][1])
                 )
                 node.uuid = node_data["uuid"]
-                node.set_code(node_data["code"])
-                node.width, node.height = node_data["size"]
+                node.set_code(node_data.get("code", ""))
+                if "size" in node_data:
+                    node.width, node.height = node_data["size"]
         
         QApplication.processEvents()
         
@@ -418,38 +419,41 @@ class TestFileOperationWorkflow(EndToEndWorkflowTestCase):
         # Then, recreate connections
         for conn_data in original_graph_data["connections"]:
             # Find the nodes by UUID
-            output_node = None
-            input_node = None
+            start_node = None
+            end_node = None
             
             for node in self.graph.nodes:
-                if node.uuid == conn_data["output_node_uuid"]:
-                    output_node = node
-                if node.uuid == conn_data["input_node_uuid"]:
-                    input_node = node
+                if node.uuid == conn_data["start_node_uuid"]:
+                    start_node = node
+                if node.uuid == conn_data["end_node_uuid"]:
+                    end_node = node
             
-            if output_node and input_node:
+            if start_node and end_node:
                 # Find the pins
-                output_pin = None
-                input_pin = None
+                start_pin = None
+                end_pin = None
                 
-                if hasattr(output_node, 'output_pins'):
-                    for pin in output_node.output_pins:
-                        if pin.name == conn_data["output_pin_name"]:
-                            output_pin = pin
+                # Find start pin (output pin)
+                if hasattr(start_node, 'output_pins'):
+                    for pin in start_node.output_pins:
+                        if pin.name == conn_data["start_pin_name"]:
+                            start_pin = pin
+                elif hasattr(start_node, 'output_pin'):  # RerouteNode
+                    if start_node.output_pin.name == conn_data["start_pin_name"]:
+                        start_pin = start_node.output_pin
+                
+                # Find end pin (input pin)
+                if hasattr(end_node, 'input_pins'):
+                    for pin in end_node.input_pins:
+                        if pin.name == conn_data["end_pin_name"]:
+                            end_pin = pin
                             break
-                elif hasattr(output_node, 'output_pin'):  # RerouteNode
-                    output_pin = output_node.output_pin
+                elif hasattr(end_node, 'input_pin'):  # RerouteNode
+                    if end_node.input_pin.name == conn_data["end_pin_name"]:
+                        end_pin = end_node.input_pin
                 
-                if hasattr(input_node, 'input_pins'):
-                    for pin in input_node.input_pins:
-                        if pin.name == conn_data["input_pin_name"]:
-                            input_pin = pin
-                            break
-                elif hasattr(input_node, 'input_pin'):  # RerouteNode
-                    input_pin = input_node.input_pin
-                
-                if output_pin and input_pin:
-                    connection = self.graph.create_connection(output_pin, input_pin)
+                if start_pin and end_pin:
+                    connection = self.graph.create_connection(start_pin, end_pin)
         
         QApplication.processEvents()
         
@@ -472,7 +476,7 @@ class TestFileOperationWorkflow(EndToEndWorkflowTestCase):
         for conn in self.graph.connections:
             self.assertTrue(conn.isVisible())
         
-        print("✓ Save and load workflow completed successfully!")
+        print("PASS Save and load workflow completed successfully!")
 
 
 class TestErrorRecoveryWorkflow(EndToEndWorkflowTestCase):
@@ -583,7 +587,7 @@ class TestErrorRecoveryWorkflow(EndToEndWorkflowTestCase):
             self.assertTrue(node.isVisible())
             self.assertIsNotNone(node.title)
         
-        print("✓ Complex undo/redo workflow completed successfully!")
+        print("PASS Complex undo/redo workflow completed successfully!")
     
     def test_invalid_connection_handling(self):
         """
@@ -660,7 +664,7 @@ def consume_int(number: int):
         self.assertEqual(len(self.graph.nodes), 3)
         self.assertGreaterEqual(len(self.graph.connections), 1)
         
-        print("✓ Invalid connection handling workflow completed successfully!")
+        print("PASS Invalid connection handling workflow completed successfully!")
 
 
 def run_end_to_end_workflows():
@@ -708,11 +712,11 @@ def run_end_to_end_workflows():
     print("=" * 60)
     
     if result.wasSuccessful():
-        print("✓ All workflow tests PASSED")
-        print("✓ All major user workflows are working correctly!")
+        print("PASS All workflow tests PASSED")
+        print("PASS All major user workflows are working correctly!")
     else:
-        print("✗ Some workflow tests FAILED")
-        print("✗ There are workflow issues that will impact users:")
+        print("X Some workflow tests FAILED")
+        print("X There are workflow issues that will impact users:")
         
         if result.failures:
             print(f"  - {len(result.failures)} workflow failures")

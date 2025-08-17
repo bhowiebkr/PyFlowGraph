@@ -142,9 +142,12 @@ class CreateConnectionCommand(CommandBase):
         
         # Check pin compatibility (basic type checking)
         if hasattr(self.output_pin, 'pin_type') and hasattr(self.input_pin, 'pin_type'):
-            if (self.output_pin.pin_type != self.input_pin.pin_type and 
-                self.output_pin.pin_type != 'Any' and 
-                self.input_pin.pin_type != 'Any'):
+            # Allow 'any' or 'Any' type to connect to anything
+            output_type = self.output_pin.pin_type.lower()
+            input_type = self.input_pin.pin_type.lower()
+            if (output_type != input_type and 
+                output_type != 'any' and 
+                input_type != 'any'):
                 return False
         
         return True

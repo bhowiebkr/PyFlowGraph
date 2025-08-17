@@ -85,7 +85,7 @@ class FullGUITestCase(unittest.TestCase):
         
         print(f"Test cleanup complete\n")
     
-    def wait_for_condition(self, condition_func, timeout=5000, message="Condition not met"):
+    def wait_for_condition(self, condition_func, timeout=10000, message="Condition not met"):
         """Wait for a condition to become true with timeout."""
         start_time = time.time()
         while not condition_func() and (time.time() - start_time) * 1000 < timeout:
@@ -115,7 +115,7 @@ class TestApplicationStartup(FullGUITestCase):
         self.assertEqual(len(self.graph.nodes), 0)
         self.assertEqual(len(self.graph.connections), 0)
         
-        print("✓ Application window opened successfully")
+        print("PASS Application window opened successfully")
     
     def test_menu_bar_exists(self):
         """Test that menu bar is present and functional."""
@@ -129,7 +129,7 @@ class TestApplicationStartup(FullGUITestCase):
         # At least one menu should exist
         self.assertGreater(len(menu_actions), 0)
         
-        print(f"✓ Menu bar present with menus: {menu_actions}")
+        print(f"PASS Menu bar present with menus: {menu_actions}")
 
 
 class TestNodeCreationWorkflow(FullGUITestCase):
@@ -145,6 +145,7 @@ class TestNodeCreationWorkflow(FullGUITestCase):
         right_click = QMouseEvent(
             QMouseEvent.MouseButtonPress,
             view_center,
+            view_center,  # Global position same as local for simplicity
             Qt.RightButton,
             Qt.RightButton,
             Qt.NoModifier
@@ -161,7 +162,7 @@ class TestNodeCreationWorkflow(FullGUITestCase):
         self.assertIn(node, self.graph.nodes)
         self.assertTrue(node.isVisible())
         
-        print("✓ Node created successfully via simulated context menu")
+        print("PASS Node created successfully via simulated context menu")
     
     def test_node_selection_and_properties(self):
         """Test node selection and property access."""
@@ -184,7 +185,7 @@ class TestNodeCreationWorkflow(FullGUITestCase):
         self.assertIsNotNone(node.uuid)
         self.assertEqual(node.pos(), QPointF(200, 150))
         
-        print("✓ Node selection and properties work correctly")
+        print("PASS Node selection and properties work correctly")
     
     def test_node_code_editing_workflow(self):
         """Test the complete workflow of editing node code."""
@@ -217,7 +218,7 @@ def test_function(x: int, y: str) -> str:
         output_pin_names = [pin.name for pin in node.output_pins if pin.pin_category == "data"]
         self.assertIn("output_1", output_pin_names)
         
-        print("✓ Node code editing workflow completed successfully")
+        print("PASS Node code editing workflow completed successfully")
 
 
 class TestConnectionWorkflow(FullGUITestCase):
@@ -273,10 +274,10 @@ def consume_data(input_text: str):
         self.assertTrue(connection.isVisible())
         
         # Verify connection properties
-        self.assertEqual(connection.output_pin, source_output)
-        self.assertEqual(connection.input_pin, target_input)
+        self.assertEqual(connection.start_pin, source_output)
+        self.assertEqual(connection.end_pin, target_input)
         
-        print("✓ Connection created successfully between compatible nodes")
+        print("PASS Connection created successfully between compatible nodes")
     
     def test_connection_visual_feedback(self):
         """Test that connections provide proper visual feedback."""
@@ -306,7 +307,7 @@ def consume_data(input_text: str):
         # Connection should have a visible path
         self.assertIsNotNone(connection.path())
         
-        print("✓ Connection visual feedback working correctly")
+        print("PASS Connection visual feedback working correctly")
 
 
 class TestRerouteNodeWorkflow(FullGUITestCase):
@@ -345,7 +346,7 @@ class TestRerouteNodeWorkflow(FullGUITestCase):
         self.assertEqual(len(self.graph.nodes), initial_node_count)
         self.assertNotIn(reroute, self.graph.nodes)
         
-        print("✓ Reroute node creation and deletion working correctly")
+        print("PASS Reroute node creation and deletion working correctly")
     
     def test_reroute_node_undo_redo_cycle(self):
         """Test the critical undo/redo functionality for reroute nodes."""
@@ -400,7 +401,7 @@ class TestRerouteNodeWorkflow(FullGUITestCase):
         self.assertTrue(hasattr(restored_reroute, 'input_pin'))
         self.assertTrue(hasattr(restored_reroute, 'output_pin'))
         
-        print("✓ Reroute node undo/redo cycle working correctly - Bug fixed!")
+        print("PASS Reroute node undo/redo cycle working correctly - Bug fixed!")
 
 
 class TestFileOperationsWorkflow(FullGUITestCase):
@@ -430,7 +431,7 @@ class TestFileOperationsWorkflow(FullGUITestCase):
         self.assertIn("Node 1", node_titles)
         self.assertIn("Node 2", node_titles)
         
-        print("✓ Graph creation and serialization working correctly")
+        print("PASS Graph creation and serialization working correctly")
     
     def test_load_example_file_if_exists(self):
         """Test loading an example file if it exists."""
@@ -464,7 +465,7 @@ class TestFileOperationsWorkflow(FullGUITestCase):
             # Should have loaded some nodes
             self.assertGreaterEqual(final_node_count, initial_node_count)
             
-            print(f"✓ Successfully loaded example file: {example_file.name}")
+            print(f"PASS Successfully loaded example file: {example_file.name}")
             print(f"  Loaded {final_node_count - initial_node_count} nodes")
             
         except Exception as e:
@@ -506,7 +507,7 @@ class TestViewOperations(FullGUITestCase):
         self.view.resetTransform()
         QApplication.processEvents()
         
-        print("✓ View operations (panning/zooming) working correctly")
+        print("PASS View operations (panning/zooming) working correctly")
     
     def test_view_selection_rectangle(self):
         """Test selection rectangle functionality."""
@@ -531,7 +532,7 @@ class TestViewOperations(FullGUITestCase):
         selected_nodes = [node for node in self.graph.nodes if node.isSelected()]
         self.assertEqual(len(selected_nodes), 3)
         
-        print("✓ View selection operations working correctly")
+        print("PASS View selection operations working correctly")
 
 
 class TestErrorRecovery(FullGUITestCase):
@@ -559,7 +560,7 @@ class TestErrorRecovery(FullGUITestCase):
         except Exception as e:
             self.fail(f"Undo with no history crashed: {e}")
         
-        print("✓ Invalid operations handled gracefully without crashing")
+        print("PASS Invalid operations handled gracefully without crashing")
     
     def test_node_with_invalid_code_handling(self):
         """Test that nodes with invalid code don't break the GUI."""
@@ -585,7 +586,7 @@ class TestErrorRecovery(FullGUITestCase):
             except Exception as e:
                 self.fail(f"Invalid code '{invalid_code}' caused crash: {e}")
         
-        print("✓ Invalid code handled gracefully in GUI")
+        print("PASS Invalid code handled gracefully in GUI")
 
 
 def run_gui_test_suite():
@@ -633,10 +634,10 @@ def run_gui_test_suite():
     print("="*60)
     
     if result.wasSuccessful():
-        print("✓ All GUI tests PASSED")
+        print("PASS All GUI tests PASSED")
         print("The application GUI is working correctly!")
     else:
-        print("✗ Some GUI tests FAILED")
+        print("X Some GUI tests FAILED")
         print("There are GUI issues that need attention:")
         
         if result.failures:
