@@ -12,6 +12,7 @@ if project_root not in sys.path:
 from PySide6.QtWidgets import QPushButton, QLabel
 from .graph_executor import GraphExecutor
 from core.event_system import LiveGraphExecutor
+from ui.utils.ui_utils import ButtonStyleManager
 
 
 class ExecutionController:
@@ -69,7 +70,6 @@ class ExecutionController:
     
     def _update_ui_for_batch_mode(self):
         """Update UI elements for batch mode."""
-        from ui.utils.ui_utils import ButtonStyleManager
         self.live_executor.set_live_mode(False)
         self.live_active = False
         self.main_exec_button.setText("Execute Graph")
