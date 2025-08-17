@@ -13,9 +13,9 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent
 
-from src.ui.editor.node_editor_window import NodeEditorWindow
-from src.core.node import Node
-from src.core.reroute_node import RerouteNode
+from ui.editor.node_editor_window import NodeEditorWindow
+from core.node import Node
+from core.reroute_node import RerouteNode
 
 def test_user_scenario():
     """Test the exact user scenario: delete reroute, undo it."""
@@ -84,24 +84,24 @@ def test_user_scenario():
             print(f"  Has output_pins: {hasattr(restored_node, 'output_pins')}")
             
             if isinstance(restored_node, RerouteNode):
-                print(f"  ✅ SUCCESS: RerouteNode correctly restored as RerouteNode!")
+                print(f"  [PASS] SUCCESS: RerouteNode correctly restored as RerouteNode!")
                 return True
             else:
-                print(f"  ❌ FAIL: RerouteNode was restored as regular Node!")
+                print(f"  [FAIL] FAIL: RerouteNode was restored as regular Node!")
                 return False
         else:
-            print(f"  ❌ FAIL: No node with title 'Reroute' found!")
+            print(f"  [FAIL] FAIL: No node with title 'Reroute' found!")
             return False
     else:
-        print(f"  ❌ FAIL: No nodes restored!")
+        print(f"  [FAIL] FAIL: No nodes restored!")
         return False
 
 if __name__ == "__main__":
     success = test_user_scenario()
     if success:
-        print("\n✅ Test passed - User issue has been FIXED!")
+        print("\n[PASS] Test passed - User issue has been FIXED!")
         print("RerouteNodes now correctly restore as RerouteNodes, not regular Nodes")
     else:
-        print("\n❌ Test failed - User issue still exists")
+        print("\n[FAIL] Test failed - User issue still exists")
     
     sys.exit(0 if success else 1)

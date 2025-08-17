@@ -5,7 +5,15 @@ Provides undoable commands for all connection-related operations including
 creation, deletion, and reroute node operations.
 """
 
+import sys
+import os
 from typing import Dict, Any, Optional
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from .command_base import CommandBase
 
 
@@ -61,7 +69,7 @@ class CreateConnectionCommand(CommandBase):
         """Create the connection and add to graph."""
         try:
             # Import here to avoid circular imports
-            from connection import Connection
+            from core.connection import Connection
             
             # Validate connection is still possible
             if not self._validate_connection():
@@ -262,7 +270,7 @@ class DeleteConnectionCommand(CommandBase):
                 return False
             
             # Recreate connection
-            from connection import Connection
+            from core.connection import Connection
             restored_connection = Connection(output_pin, input_pin)
             
             # Restore color if available
@@ -358,8 +366,8 @@ class CreateRerouteNodeCommand(CommandBase):
         """Create reroute node and split connection."""
         try:
             # Import here to avoid circular imports
-            from reroute_node import RerouteNode
-            from connection import Connection
+            from core.reroute_node import RerouteNode
+            from core.connection import Connection
             
             # Create reroute node
             self.reroute_node = RerouteNode()
@@ -495,7 +503,7 @@ class CreateRerouteNodeCommand(CommandBase):
                     self.node_graph.nodes.remove(current_reroute_node)
             
             # Recreate original connection
-            from connection import Connection
+            from core.connection import Connection
             restored_connection = Connection(output_pin, input_pin)
             self.node_graph.addItem(restored_connection)
             self.node_graph.connections.append(restored_connection)
