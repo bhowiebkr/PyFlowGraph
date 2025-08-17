@@ -447,14 +447,14 @@ class TestRunnerMainWindow(QMainWindow):
 
     def discover_tests(self):
         """Discover all test files in the tests directory."""
-        tests_dir = Path(__file__).parent.parent / "tests"
+        tests_dir = Path(__file__).parent.parent.parent / "tests"
 
         if not tests_dir.exists():
             self.statusBar().showMessage("Tests directory not found")
             return
 
         test_files = []
-        for file_path in tests_dir.glob("test_*.py"):
+        for file_path in tests_dir.rglob("test_*.py"):
             if file_path.is_file():
                 test_files.append(str(file_path))
 
