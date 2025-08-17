@@ -186,14 +186,14 @@ class TestConnectionSystem(unittest.TestCase):
         serialized = connection.serialize()
         
         # Test required fields
-        self.assertIn("start_pin_uuid", serialized)
-        self.assertIn("end_pin_uuid", serialized)
+        self.assertIn("start_pin_name", serialized)
+        self.assertIn("end_pin_name", serialized)
         self.assertIn("start_node_uuid", serialized)
         self.assertIn("end_node_uuid", serialized)
         
-        # Test UUIDs match pins and nodes
-        self.assertEqual(serialized["start_pin_uuid"], self.output_pin.uuid)
-        self.assertEqual(serialized["end_pin_uuid"], self.input_pin.uuid)
+        # Test pin names and node UUIDs match
+        self.assertEqual(serialized["start_pin_name"], self.output_pin.name)
+        self.assertEqual(serialized["end_pin_name"], self.input_pin.name)
         self.assertEqual(serialized["start_node_uuid"], self.node1.uuid)
         self.assertEqual(serialized["end_node_uuid"], self.node2.uuid)
     
@@ -206,7 +206,7 @@ class TestConnectionSystem(unittest.TestCase):
         self.assertIn(connection, self.input_pin.connections)
         
         # Test destruction
-        connection.destroy()
+        connection.remove()
         
         # Connection should be removed from pins
         self.assertNotIn(connection, self.output_pin.connections)
@@ -280,13 +280,14 @@ class TestConnectionSystem(unittest.TestCase):
         connection.setSelected(True)
         self.assertTrue(connection.isSelected())
         
-        # Selection should affect pen width
-        selected_pen = connection.pen()
-        connection.setSelected(False)
-        normal_pen = connection.pen()
+        # Selection should affect pen width (check internal pen objects)
+        normal_pen = connection._pen
+        selected_pen = connection._pen_selected
         
         # Different pen properties for selection
         self.assertNotEqual(selected_pen.width(), normal_pen.width())
+        self.assertEqual(normal_pen.width(), 3)
+        self.assertEqual(selected_pen.width(), 4)
     
     def test_connection_temporary_mode(self):
         """Test temporary connection creation during dragging."""
