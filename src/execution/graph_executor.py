@@ -6,9 +6,14 @@ import subprocess
 import json
 import os
 import sys
-from collections import deque
-from node import Node
-from reroute_node import RerouteNode
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from core.node import Node
+from core.reroute_node import RerouteNode
 
 
 class GraphExecutor:

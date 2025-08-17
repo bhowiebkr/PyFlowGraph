@@ -25,8 +25,8 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor
 
-from node import Node
-from node_graph import NodeGraph
+from src.core.node import Node
+from src.core.node_graph import NodeGraph
 
 
 class TestNodeSystem(unittest.TestCase):

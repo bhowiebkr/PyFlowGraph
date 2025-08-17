@@ -16,14 +16,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 
-from commands import (
+from src.commands import (
     CommandBase, CompositeCommand, CommandHistory,
     CreateNodeCommand, DeleteNodeCommand, MoveNodeCommand,
     PropertyChangeCommand, CodeChangeCommand,
     CreateConnectionCommand, DeleteConnectionCommand
 )
-from node_graph import NodeGraph
-from node import Node
+from src.core.node_graph import NodeGraph
+from src.core.node import Node
 
 
 class MockCommand(CommandBase):

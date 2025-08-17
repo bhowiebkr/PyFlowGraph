@@ -25,11 +25,11 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor, QPainterPath
 
-from connection import Connection
-from pin import Pin
-from node import Node
-from reroute_node import RerouteNode
-from node_graph import NodeGraph
+from src.core.connection import Connection
+from src.core.pin import Pin
+from src.core.node import Node
+from src.core.reroute_node import RerouteNode
+from src.core.node_graph import NodeGraph
 
 
 class TestConnectionSystem(unittest.TestCase):

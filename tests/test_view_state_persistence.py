@@ -13,7 +13,7 @@ from PySide6.QtGui import QTransform
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from node_editor_window import NodeEditorWindow
+from src.ui.editor.node_editor_window import NodeEditorWindow
 
 
 class TestViewStatePersistence(unittest.TestCase):

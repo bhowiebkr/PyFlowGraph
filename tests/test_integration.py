@@ -21,9 +21,9 @@ sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication
 
-from node_graph import NodeGraph
-from node import Node
-from flow_format import load_flow_file
+from src.core.node_graph import NodeGraph
+from src.core.node import Node
+from src.data.flow_format import load_flow_file
 
 
 class TestIntegration(unittest.TestCase):

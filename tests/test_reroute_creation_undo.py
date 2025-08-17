@@ -14,9 +14,9 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QKeyEvent
 
-from node_editor_window import NodeEditorWindow
-from node import Node
-from reroute_node import RerouteNode
+from src.ui.editor.node_editor_window import NodeEditorWindow
+from src.core.node import Node
+from src.core.reroute_node import RerouteNode
 
 def test_reroute_creation_undo_sequence():
     """Test the user's reported issue: create reroute -> delete -> undo delete -> undo create."""

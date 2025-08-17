@@ -5,9 +5,15 @@
 import sys
 import os
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import qInstallMessageHandler, QtMsgType
+from PySide6.QtCore import qInstallMessageHandler
 from PySide6.QtGui import QFontDatabase
-from node_editor_window import NodeEditorWindow
+
+# Add project root to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from ui.editor.node_editor_window import NodeEditorWindow
 
 
 def custom_message_handler(mode, context, message):
@@ -33,7 +39,7 @@ if __name__ == "__main__":
         if font_id == -1:
             print("Warning: Failed to load Font Awesome Regular font.", file=sys.stderr)
         else:
-            families = QFontDatabase.applicationFontFamilies(font_id)
+            pass  # Font loaded successfully
     else:
         print("Warning: Font Awesome Regular font file not found at 'resources/Font Awesome 7 Free-Regular-400.otf'", file=sys.stderr)
 
@@ -44,7 +50,7 @@ if __name__ == "__main__":
         if font_id == -1:
             print("Warning: Failed to load Font Awesome Solid font.", file=sys.stderr)
         else:
-            families = QFontDatabase.applicationFontFamilies(font_id)
+            pass  # Font loaded successfully
     else:
         print("Warning: Font Awesome Solid font file not found at 'resources/Font Awesome 6 Free-Solid-900.otf'", file=sys.stderr)
 

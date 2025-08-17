@@ -12,7 +12,7 @@ import os
 # Add src directory to path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from commands import CommandBase, CompositeCommand, CommandHistory
+from src.commands import CommandBase, CompositeCommand, CommandHistory
 
 
 class MockCommand(CommandBase):

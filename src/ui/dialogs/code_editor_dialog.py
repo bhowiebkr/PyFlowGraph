@@ -2,9 +2,17 @@
 # A dedicated dialog window that now uses a QTabWidget to host
 # separate editors for execution code, GUI layout, and GUI logic.
 
+import sys
+import os
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox, QTabWidget
 from PySide6.QtGui import QFont
-from python_code_editor import PythonCodeEditor
+from ui.code_editing.python_code_editor import PythonCodeEditor
 
 
 class CodeEditorDialog(QDialog):

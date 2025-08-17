@@ -3,11 +3,19 @@
 # Now uses the dynamic color generation system.
 
 import uuid
+import sys
+import os
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import QRectF, QPointF
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QRadialGradient, QKeyEvent, QPainterPath
-from pin import Pin
-from color_utils import generate_color_from_string
+from .pin import Pin
+from utils.color_utils import generate_color_from_string
 
 
 class RerouteNode(QGraphicsItem):

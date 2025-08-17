@@ -283,7 +283,7 @@ class DeleteNodeCommand(CommandBase):
             
             # Only apply regular node properties if it's not a RerouteNode
             if not self.node_state.get('is_reroute', False):
-                from debug_config import should_debug, DEBUG_UNDO_REDO
+                from utils.debug_config import should_debug, DEBUG_UNDO_REDO
                 if should_debug(DEBUG_UNDO_REDO):
                     print(f"DEBUG: Restoring regular node properties for '{self.node_state['title']}'")
                     print(f"DEBUG: Original size: {self.node_state['width']}x{self.node_state['height']}")

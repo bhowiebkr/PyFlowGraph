@@ -2,24 +2,30 @@
 # The main application window - refactored for better maintainability
 
 import os
+import sys
 from PySide6.QtWidgets import (QMainWindow, QTextEdit, QDockWidget, QInputDialog, 
                               QToolBar, QWidget, QHBoxLayout, QSizePolicy)
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QPointF, QSettings
 
-from node_graph import NodeGraph
-from node_editor_view import NodeEditorView
-from environment_manager import EnvironmentManagerDialog
-from settings_dialog import SettingsDialog
-from environment_selection_dialog import EnvironmentSelectionDialog
-from graph_properties_dialog import GraphPropertiesDialog
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from core.node_graph import NodeGraph
+from .node_editor_view import NodeEditorView
+from execution.environment_manager import EnvironmentManagerDialog
+from ui.dialogs.settings_dialog import SettingsDialog
+from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
+from ui.dialogs.graph_properties_dialog import GraphPropertiesDialog
 
 # Import our new modular components
-from ui_utils import create_fa_icon, create_execution_control_widget
-from file_operations import FileOperationsManager
-from execution_controller import ExecutionController
-from view_state_manager import ViewStateManager
-from default_environment_manager import DefaultEnvironmentManager
+from ui.utils.ui_utils import create_fa_icon, create_execution_control_widget
+from data.file_operations import FileOperationsManager
+from execution.execution_controller import ExecutionController
+from .view_state_manager import ViewStateManager
+from execution.default_environment_manager import DefaultEnvironmentManager
 
 
 class NodeEditorWindow(QMainWindow):

@@ -3,10 +3,17 @@
 
 import json
 import os
+import sys
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from PySide6.QtWidgets import QFileDialog
 from PySide6.QtCore import QSettings
-from flow_format import FlowFormatHandler, extract_title_from_filename
-from environment_selection_dialog import EnvironmentSelectionDialog
+from .flow_format import FlowFormatHandler, extract_title_from_filename
+from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
 
 
 class FileOperationsManager:

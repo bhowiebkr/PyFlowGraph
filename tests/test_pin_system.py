@@ -25,10 +25,10 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor
 
-from pin import Pin
-from node import Node
-from node_graph import NodeGraph
-from color_utils import generate_color_from_string
+from src.core.pin import Pin
+from src.core.node import Node
+from src.core.node_graph import NodeGraph
+from src.utils.color_utils import generate_color_from_string
 
 
 class TestPinSystem(unittest.TestCase):
