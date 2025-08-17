@@ -19,7 +19,7 @@ if not exist "venv\Scripts\activate.bat" (
 
 :: Activate virtual environment and run test GUI
 call venv\Scripts\activate.bat
-python src\test_runner_gui.py
+python src\testing\test_runner_gui.py
 
 :: Deactivate environment
 call venv\Scripts\deactivate.bat

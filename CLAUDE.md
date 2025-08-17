@@ -54,11 +54,26 @@ PyFlowGraph/
 
 ## Development Notes
 
+- **WINDOWS-ONLY CODEBASE**: This project runs exclusively on Windows
 - PySide6 Qt-based GUI with Font Awesome icons
 - Isolated subprocess execution for security
 - No Claude attribution in commits or code comments
 - **NEVER use emojis in any code, tests, or temporary files - causes encoding issues**
 - Clean, professional, technical documentation only
+
+## Windows Platform Requirements
+
+**CRITICAL**: This is a Windows-only codebase. Claude Code MUST use Windows-compatible commands:
+
+- **Shell Commands**: Use `cmd`, `powershell`, or Windows batch commands only
+- **File Operations**: Use Windows paths with backslashes `\` or forward slashes `/`
+- **Batch Files**: Execute `.bat` files directly (e.g., `run.bat`, `run_test_gui.bat`)
+- **Python Execution**: Use `python` command (not `python3`)
+- **Path Separators**: Use Windows-style paths `E:\HOME\PyFlowGraph\`
+
+**FORBIDDEN Linux Commands**:
+- Do NOT use: `ls`, `grep`, `find`, `chmod`, `./script.sh`, `/usr/bin/bash`
+- Use instead: `dir`, `findstr`, `where`, `attrib`, `script.bat`, `cmd.exe`
 
 ## Code Standards
 
@@ -80,3 +95,10 @@ NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 NEVER use emojis in any code, tests, or temporary files - causes Windows encoding errors.
+
+**WINDOWS-ONLY PLATFORM REQUIREMENTS**:
+- NEVER use Linux commands: `ls`, `grep`, `find`, `chmod`, `/usr/bin/bash`, `./script.sh`
+- ALWAYS use Windows commands: `dir`, `findstr`, `where`, `attrib`, `cmd.exe`, `script.bat`
+- Execute batch files directly: `run.bat`, `run_test_gui.bat` (not `./run.bat`)
+- Use Windows paths: `E:\HOME\PyFlowGraph\` or forward slashes for compatibility
+- Use `python` command (not `python3`)
