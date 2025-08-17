@@ -95,6 +95,27 @@ Desktop.ini
 *.pyc
 *.pyo
 
+# Python development
+.python-version
+.envrc
+*.pyd
+*.pdb
+
+# Backup files
+*~
+*.bak
+*.swp
+*.swo
+
+# Qt/PySide6 specific
+*.qmlc
+*.jsc
+*.ui.h
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+qrc_*.py
+
 # Local test databases
 *.sqlite3
 
@@ -105,7 +126,9 @@ Desktop.ini
 generated_readme.md
 
 # Other venv's 
-*venv*
+venv*/
+.venv*/
+*venv/
 
 # python runtime if it exists. when debugging the compiled code with the runtime it was necessary to hack things to run that runtime within the python version of the code
 python_runtime
@@ -121,3 +144,14 @@ temp
 
 # BEMAD files
 .bmad-core/
+
+npm-global/
+
+# Node.js (if used)
+node_modules/
+package-lock.json
+yarn.lock
+
+# PyFlowGraph specific
+examples/*.backup
+temp_graphs/
