@@ -33,7 +33,7 @@ class TestGUINodeDeletion:
         
         # Load the problematic file to reproduce the issue
         try:
-            from file_operations import load_file
+            from data.file_operations import load_file
             load_file(self.window, "examples/file_organizer_automation.md")
             print("Loaded file_organizer_automation.md for testing")
         except Exception as e:

@@ -178,7 +178,7 @@ class NodeGraph(QGraphicsScene):
         clipboard_data = {"requirements": requirements, "nodes": nodes_data, "connections": connections_data}
 
         # Convert to markdown format for clipboard
-        from flow_format import FlowFormatHandler
+        from data.flow_format import FlowFormatHandler
         handler = FlowFormatHandler()
         clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes from PyFlowGraph")
         
@@ -190,7 +190,7 @@ class NodeGraph(QGraphicsScene):
         clipboard_text = QApplication.clipboard().text()
         try:
             # Try to parse as markdown first
-            from flow_format import FlowFormatHandler
+            from data.flow_format import FlowFormatHandler
             handler = FlowFormatHandler()
             data = handler.markdown_to_data(clipboard_text)
             self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
