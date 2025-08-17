@@ -22,8 +22,8 @@ from commands import (
     PropertyChangeCommand, CodeChangeCommand,
     CreateConnectionCommand, DeleteConnectionCommand
 )
-from node_graph import NodeGraph
-from node import Node
+from core.node_graph import NodeGraph
+from core.node import Node
 
 
 class MockCommand(CommandBase):

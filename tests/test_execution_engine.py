@@ -26,10 +26,10 @@ sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication, QTextEdit
 
-from graph_executor import GraphExecutor
-from node_graph import NodeGraph
-from node import Node
-from reroute_node import RerouteNode
+from execution.graph_executor import GraphExecutor
+from core.node_graph import NodeGraph
+from core.node import Node
+from core.reroute_node import RerouteNode
 
 
 class TestExecutionEngine(unittest.TestCase):
@@ -360,7 +360,7 @@ def broken_function() -> str:
 @node_entry
 def slow_function() -> str:
     import time
-    time.sleep(60)  # This would timeout
+    time.sleep(10)  # This would timeout
     return "done"
 ''')
         

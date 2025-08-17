@@ -4,12 +4,18 @@
 
 import uuid
 import ast
+import sys
+import os
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QVBoxLayout, QWidget, QStyle, QApplication
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal
-from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont, QLinearGradient, QPainterPath, QContextMenuEvent, QMouseEvent
-from pin import Pin
-from code_editor_dialog import CodeEditorDialog
-from node_properties_dialog import NodePropertiesDialog
+from PySide6.QtGui import QPainter, QColor, QPen, QFont, QLinearGradient, QPainterPath, QMouseEvent
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from .pin import Pin
 
 
 class ResizableWidgetContainer(QWidget):
@@ -90,6 +96,7 @@ class Node(QGraphicsItem):
                 conn.setSelected(selected)
 
     def show_properties_dialog(self):
+        from ui.dialogs.node_properties_dialog import NodePropertiesDialog
         parent_widget = self.scene().views()[0] if self.scene().views() else None
         dialog = NodePropertiesDialog(self.title, self.description, self.color_title_bar, self.color_body, parent_widget)
         if dialog.exec():
@@ -211,7 +218,7 @@ class Node(QGraphicsItem):
         Returns:
             tuple[int, int]: (min_width, min_height) required for proper layout
         """
-        from debug_config import should_debug, DEBUG_LAYOUT
+        from utils.debug_config import should_debug, DEBUG_LAYOUT
         
         if should_debug(DEBUG_LAYOUT):
             print(f"DEBUG: calculate_absolute_minimum_size() called for node '{self.title}'")
@@ -283,7 +290,7 @@ class Node(QGraphicsItem):
 
     def fit_size_to_content(self):
         """Calculates and applies the optimal size for the node."""
-        from debug_config import should_debug, DEBUG_LAYOUT
+        from utils.debug_config import should_debug, DEBUG_LAYOUT
         
         if should_debug(DEBUG_LAYOUT):
             print(f"DEBUG: fit_size_to_content() called for node '{self.title}'")
@@ -307,7 +314,7 @@ class Node(QGraphicsItem):
             print(f"DEBUG: No resize needed, size already meets minimum requirements")
 
     def _update_layout(self):
-        from debug_config import should_debug, DEBUG_LAYOUT
+        from utils.debug_config import should_debug, DEBUG_LAYOUT
         
         if should_debug(DEBUG_LAYOUT):
             print(f"DEBUG: _update_layout() called for node '{self.title}'")
@@ -433,6 +440,7 @@ class Node(QGraphicsItem):
     # --- Logic & Data Handling ---
 
     def open_unified_editor(self):
+        from ui.dialogs.code_editor_dialog import CodeEditorDialog
         parent_widget = self.scene().views()[0] if self.scene().views() else None
         dialog = CodeEditorDialog(self.code, self.gui_code, self.gui_get_values_code, parent_widget)
         if dialog.exec():
@@ -494,8 +502,8 @@ class Node(QGraphicsItem):
             "uuid": self.uuid,
             "title": self.title,
             "description": self.description,
-            "pos": (self.pos().x(), self.pos().y()),
-            "size": (self.width, self.height),
+            "pos": [self.pos().x(), self.pos().y()],
+            "size": [self.width, self.height],
             "code": self.code,
             "gui_code": self.gui_code,
             "gui_get_values_code": self.gui_get_values_code,

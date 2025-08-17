@@ -1,10 +1,18 @@
 # execution_controller.py
 # Execution controller for managing batch and live mode execution
 
+import sys
+import os
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from PySide6.QtWidgets import QPushButton, QLabel
-from graph_executor import GraphExecutor
-from event_system import LiveGraphExecutor
-from ui_utils import ButtonStyleManager
+from .graph_executor import GraphExecutor
+from core.event_system import LiveGraphExecutor
+from ui.utils.ui_utils import ButtonStyleManager
 
 
 class ExecutionController:

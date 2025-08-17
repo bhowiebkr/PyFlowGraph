@@ -13,9 +13,9 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent
 
-from node_editor_window import NodeEditorWindow
-from node import Node
-from reroute_node import RerouteNode
+from ui.editor.node_editor_window import NodeEditorWindow
+from core.node import Node
+from core.reroute_node import RerouteNode
 
 def test_reroute_node_deletion():
     """Test deletion of RerouteNode objects."""

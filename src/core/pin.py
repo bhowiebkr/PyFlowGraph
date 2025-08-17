@@ -6,7 +6,10 @@ import uuid
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont
-from color_utils import generate_color_from_string
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from utils.color_utils import generate_color_from_string
 
 
 class Pin(QGraphicsItem):
@@ -61,7 +64,7 @@ class Pin(QGraphicsItem):
 
     def update_label_pos(self):
         """Update the position of the pin's text label relative to the pin."""
-        from debug_config import should_debug, DEBUG_PINS
+        from utils.debug_config import should_debug, DEBUG_PINS
         
         if should_debug(DEBUG_PINS):
             print(f"DEBUG: update_label_pos() called for pin '{self.name}' (direction: {self.direction})")
@@ -81,7 +84,7 @@ class Pin(QGraphicsItem):
 
     def update_visual_state(self):
         """Force complete visual refresh of pin and its components."""
-        from debug_config import should_debug, DEBUG_PINS
+        from utils.debug_config import should_debug, DEBUG_PINS
         
         if should_debug(DEBUG_PINS):
             print(f"DEBUG: update_visual_state() called for pin '{self.name}'")

@@ -5,7 +5,15 @@ Provides undoable commands for all connection-related operations including
 creation, deletion, and reroute node operations.
 """
 
+import sys
+import os
 from typing import Dict, Any, Optional
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from .command_base import CommandBase
 
 
@@ -61,7 +69,7 @@ class CreateConnectionCommand(CommandBase):
         """Create the connection and add to graph."""
         try:
             # Import here to avoid circular imports
-            from connection import Connection
+            from core.connection import Connection
             
             # Validate connection is still possible
             if not self._validate_connection():
@@ -85,11 +93,7 @@ class CreateConnectionCommand(CommandBase):
             self.node_graph.addItem(self.created_connection)
             self.node_graph.connections.append(self.created_connection)
             
-            # Update pin connection references using proper methods
-            if hasattr(self.output_pin, 'add_connection'):
-                self.output_pin.add_connection(self.created_connection)
-            if hasattr(self.input_pin, 'add_connection'):
-                self.input_pin.add_connection(self.created_connection)
+            # Note: Pin connections are already added in Connection constructor
             
             self._mark_executed()
             return True
@@ -134,9 +138,12 @@ class CreateConnectionCommand(CommandBase):
         
         # Check pin compatibility (basic type checking)
         if hasattr(self.output_pin, 'pin_type') and hasattr(self.input_pin, 'pin_type'):
-            if (self.output_pin.pin_type != self.input_pin.pin_type and 
-                self.output_pin.pin_type != 'Any' and 
-                self.input_pin.pin_type != 'Any'):
+            # Allow 'any' or 'Any' type to connect to anything
+            output_type = self.output_pin.pin_type.lower()
+            input_type = self.input_pin.pin_type.lower()
+            if (output_type != input_type and 
+                output_type != 'any' and 
+                input_type != 'any'):
                 return False
         
         return True
@@ -262,7 +269,7 @@ class DeleteConnectionCommand(CommandBase):
                 return False
             
             # Recreate connection
-            from connection import Connection
+            from core.connection import Connection
             restored_connection = Connection(output_pin, input_pin)
             
             # Restore color if available
@@ -358,8 +365,8 @@ class CreateRerouteNodeCommand(CommandBase):
         """Create reroute node and split connection."""
         try:
             # Import here to avoid circular imports
-            from reroute_node import RerouteNode
-            from connection import Connection
+            from core.reroute_node import RerouteNode
+            from core.connection import Connection
             
             # Create reroute node
             self.reroute_node = RerouteNode()
@@ -495,7 +502,7 @@ class CreateRerouteNodeCommand(CommandBase):
                     self.node_graph.nodes.remove(current_reroute_node)
             
             # Recreate original connection
-            from connection import Connection
+            from core.connection import Connection
             restored_connection = Connection(output_pin, input_pin)
             self.node_graph.addItem(restored_connection)
             self.node_graph.connections.append(restored_connection)

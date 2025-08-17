@@ -4,13 +4,21 @@
 
 import uuid
 import json
+import os
+import sys
 from PySide6.QtWidgets import QGraphicsScene, QApplication
 from PySide6.QtCore import Qt, QPointF, QTimer, Signal
 from PySide6.QtGui import QKeyEvent, QColor
-from node import Node
-from reroute_node import RerouteNode
-from connection import Connection
-from pin import Pin
+from .node import Node
+from .reroute_node import RerouteNode
+from .connection import Connection
+from .pin import Pin
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from commands import (
     CommandHistory, CreateNodeCommand, DeleteNodeCommand, MoveNodeCommand,
     CreateConnectionCommand, DeleteConnectionCommand, CreateRerouteNodeCommand,
@@ -170,7 +178,7 @@ class NodeGraph(QGraphicsScene):
         clipboard_data = {"requirements": requirements, "nodes": nodes_data, "connections": connections_data}
 
         # Convert to markdown format for clipboard
-        from flow_format import FlowFormatHandler
+        from data.flow_format import FlowFormatHandler
         handler = FlowFormatHandler()
         clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes from PyFlowGraph")
         
@@ -182,7 +190,7 @@ class NodeGraph(QGraphicsScene):
         clipboard_text = QApplication.clipboard().text()
         try:
             # Try to parse as markdown first
-            from flow_format import FlowFormatHandler
+            from data.flow_format import FlowFormatHandler
             handler = FlowFormatHandler()
             data = handler.markdown_to_data(clipboard_text)
             self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
@@ -251,7 +259,7 @@ class NodeGraph(QGraphicsScene):
                     corrected_height = max(loaded_height, min_height)
                     
                     # Debug logging for size corrections
-                    from debug_config import should_debug, DEBUG_FILE_LOADING
+                    from utils.debug_config import should_debug, DEBUG_FILE_LOADING
                     if should_debug(DEBUG_FILE_LOADING) and (corrected_width != loaded_width or corrected_height != loaded_height):
                         print(f"DEBUG: Node '{node_data['title']}' size corrected from "
                               f"{loaded_width}x{loaded_height} to {corrected_width}x{corrected_height}")
@@ -289,7 +297,7 @@ class NodeGraph(QGraphicsScene):
 
     def final_load_update(self, nodes_to_update):
         """A helper method called by a timer to run the final layout pass."""
-        from debug_config import should_debug, DEBUG_FILE_LOADING
+        from utils.debug_config import should_debug, DEBUG_FILE_LOADING
         
         for node in nodes_to_update:
             # Re-validate minimum size now that GUI is fully constructed

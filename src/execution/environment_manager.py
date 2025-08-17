@@ -14,6 +14,11 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPu
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QAction, QGuiApplication
 
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 
 class ClickableLabel(QLineEdit):
     """A read-only QLineEdit styled as a label that supports right-click to copy."""
@@ -572,7 +577,7 @@ class EnvironmentManagerDialog(QDialog):
         key = data["key"]
         
         # Simple dialog to change environment choice
-        from environment_selection_dialog import EnvironmentSelectionDialog
+        from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
         
         dialog = EnvironmentSelectionDialog(graph_name, self)
         

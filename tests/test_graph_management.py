@@ -27,11 +27,11 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QKeyEvent
 
-from node_graph import NodeGraph
-from node import Node
-from reroute_node import RerouteNode
-from connection import Connection
-from pin import Pin
+from core.node_graph import NodeGraph
+from core.node import Node
+from core.reroute_node import RerouteNode
+from core.connection import Connection
+from core.pin import Pin
 
 
 class TestGraphManagement(unittest.TestCase):

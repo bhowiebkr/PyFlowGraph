@@ -2,9 +2,16 @@
 # The QGraphicsView responsible for rendering the scene and handling user interactions.
 # Now with an improved, more refined background grid and panning logic.
 
+import sys
+import os
 from PySide6.QtWidgets import QGraphicsView, QMenu
 from PySide6.QtCore import Qt, QPoint, QTimer, QLineF
 from PySide6.QtGui import QPainter, QPen, QColor, QMouseEvent, QContextMenuEvent, QKeyEvent, QCursor
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 
 class NodeEditorView(QGraphicsView):
@@ -50,7 +57,7 @@ class NodeEditorView(QGraphicsView):
         item_at_pos = self.scene().itemAt(scene_pos, self.transform())
         
         # Find the top-level node if we clicked on a child item
-        from node import Node
+        from core.node import Node
         node = None
         if item_at_pos:
             current_item = item_at_pos

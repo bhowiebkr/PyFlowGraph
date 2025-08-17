@@ -6,8 +6,16 @@ creation, deletion, movement, and property changes.
 """
 
 import uuid
+import sys
+import os
 from typing import Dict, Any, List, Optional
 from PySide6.QtCore import QPointF
+
+# Add project root to path for cross-package imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from .command_base import CommandBase, CompositeCommand
 
 
@@ -40,7 +48,7 @@ class CreateNodeCommand(CommandBase):
         """Create the node and add to graph."""
         try:
             # Import here to avoid circular imports
-            from node import Node
+            from core.node import Node
             
             # Create the node
             self.created_node = Node(self.title)
@@ -257,13 +265,13 @@ class DeleteNodeCommand(CommandBase):
         try:
             
             # Import here to avoid circular imports
-            from node import Node
+            from core.node import Node
             from PySide6.QtGui import QColor
             
             # Recreate node with preserved state - check if it was a RerouteNode
             if self.node_state.get('is_reroute', False):
                 # Recreate as RerouteNode
-                from reroute_node import RerouteNode
+                from core.reroute_node import RerouteNode
                 restored_node = RerouteNode()
                 restored_node.uuid = self.node_state['id']
                 restored_node.setPos(self.node_state['position'])
@@ -283,7 +291,7 @@ class DeleteNodeCommand(CommandBase):
             
             # Only apply regular node properties if it's not a RerouteNode
             if not self.node_state.get('is_reroute', False):
-                from debug_config import should_debug, DEBUG_UNDO_REDO
+                from utils.debug_config import should_debug, DEBUG_UNDO_REDO
                 if should_debug(DEBUG_UNDO_REDO):
                     print(f"DEBUG: Restoring regular node properties for '{self.node_state['title']}'")
                     print(f"DEBUG: Original size: {self.node_state['width']}x{self.node_state['height']}")
@@ -393,7 +401,7 @@ class DeleteNodeCommand(CommandBase):
                             input_pin = input_node.input_pins[conn_data['input_pin_index']]
                         
                         # Recreate connection
-                        from connection import Connection
+                        from core.connection import Connection
                         new_connection = Connection(output_pin, input_pin)
                         self.node_graph.addItem(new_connection)
                         self.node_graph.connections.append(new_connection)

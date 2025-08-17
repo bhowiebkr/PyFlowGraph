@@ -156,7 +156,14 @@ class LiveGraphExecutor:
 
     def _execute_node_flow_live(self, node):
         """Execute a node in live mode with state persistence."""
-        from graph_executor import GraphExecutor
+        # Add project root to path for cross-package imports
+        import sys
+        import os
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        
+        from execution.graph_executor import GraphExecutor
 
         # Create a temporary executor for this execution
         temp_executor = GraphExecutor(self.graph, self.log, self.get_venv_path)
