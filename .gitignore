@@ -121,3 +121,5 @@ temp
 
 # BEMAD files
 .bmad-core/
+
+npm-global/
