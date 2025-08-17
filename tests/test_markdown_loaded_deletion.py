@@ -149,18 +149,18 @@ def test_function_b(input_val: str):
                     print(f"  Orphaned: {getattr(node, 'title', 'Unknown')} (ID: {id(node)})")
             if node_still_exists:
                 print(f"Node deletion failed - node still exists!")
-            return False
+            assert False, "Node deletion issues found"
         else:
             print("No orphaned nodes found - deletion successful")
-            return True
-    
-    return False
+            # Test passed - no return needed
+    else:
+        assert False, "No nodes to test deletion"
 
 if __name__ == "__main__":
-    success = test_markdown_loaded_node_deletion()
-    if success:
+    try:
+        test_markdown_loaded_node_deletion()
         print("\nTest passed - Markdown-loaded node deletion works correctly")
-    else:
+        sys.exit(0)
+    except AssertionError:
         print("\nTest failed - Markdown-loaded nodes have deletion issues")
-    
-    sys.exit(0 if success else 1)
+        sys.exit(1)

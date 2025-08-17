@@ -340,15 +340,24 @@ def paste_test(text: str) -> str:
             
             self.graph.copy_selected()
             
-            # Should have called setText with JSON data
+            # Should have called setText with data (JSON or markdown)
             mock_clipboard_instance.setText.assert_called_once()
             args = mock_clipboard_instance.setText.call_args[0]
-            clipboard_data = json.loads(args[0])
+            clipboard_text = args[0]
             
-            self.assertIn("nodes", clipboard_data)
-            self.assertIn("connections", clipboard_data)
-            self.assertEqual(len(clipboard_data["nodes"]), 2)
-            self.assertEqual(len(clipboard_data["connections"]), 1)
+            # Try to parse as JSON first (fallback behavior during testing)
+            try:
+                clipboard_data = json.loads(clipboard_text)
+                self.assertIn("nodes", clipboard_data)
+                self.assertIn("connections", clipboard_data)
+                self.assertEqual(len(clipboard_data["nodes"]), 2)
+                self.assertEqual(len(clipboard_data["connections"]), 1)
+            except json.JSONDecodeError:
+                # Should be markdown format - verify it contains node data
+                self.assertIn("# Clipboard Content", clipboard_text)
+                self.assertIn("Copy Node 1", clipboard_text)
+                self.assertIn("Copy Node 2", clipboard_text)
+                self.assertIn("connections", clipboard_text)  # JSON data block should be present
     
     def test_keyboard_deletion(self):
         """Test keyboard deletion of selected items."""

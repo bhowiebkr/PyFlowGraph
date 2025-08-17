@@ -268,3 +268,18 @@ class FileOperationsManager:
         if hasattr(self, 'use_default_environment') and self.use_default_environment:
             return os.path.join(venv_parent_dir, "default")
         return os.path.join(venv_parent_dir, self.current_graph_name)
+
+
+def load_file(window, file_path):
+    """Convenience function to load a file using the window's file operations manager.
+    
+    Args:
+        window: The main window object with file_operations_manager
+        file_path: Path to the file to load
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if hasattr(window, 'file_operations_manager'):
+        return window.file_operations_manager.load(file_path)
+    return False
