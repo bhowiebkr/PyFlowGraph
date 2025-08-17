@@ -106,7 +106,7 @@ def target_function(input_val: str):
     
     if reroute_still_exists:
         print("FAIL: RerouteNode deletion failed!")
-        return False
+        assert False, "RerouteNode deletion failed"
     
     # Step 2: Undo the deletion
     print(f"\nStep 2: Undoing deletion...")
@@ -129,7 +129,7 @@ def target_function(input_val: str):
     
     if not reroute_restored:
         print("FAIL: RerouteNode was not restored correctly!")
-        return False
+        assert False, "RerouteNode was not restored correctly"
     
     print(f"SUCCESS: RerouteNode restored as {type(restored_reroute).__name__}")
     
@@ -152,13 +152,12 @@ def target_function(input_val: str):
         # This might be expected if connection restoration has issues
     
     print("SUCCESS: RerouteNode deletion and undo works correctly!")
-    return True
 
 if __name__ == "__main__":
-    success = test_reroute_with_connections()
-    if success:
+    try:
+        test_reroute_with_connections()
         print("\nTest passed - RerouteNode with connections works correctly")
-    else:
+        sys.exit(0)
+    except AssertionError:
         print("\nTest failed - RerouteNode with connections has issues")
-    
-    sys.exit(0 if success else 1)
+        sys.exit(1)

@@ -163,18 +163,32 @@ class CompositeCommand(CommandBase):
     def undo(self) -> bool:
         """Undo all executed commands in reverse order."""
         if not self._executed:
+            print(f"DEBUG: CompositeCommand.undo() - not executed, cannot undo")
             return False
         
+        print(f"DEBUG: CompositeCommand.undo() - undoing {len(self.executed_commands)} commands")
         success = True
-        for command in reversed(self.executed_commands):
-            if not command.undo():
-                success = False
-            else:
+        
+        for i, command in enumerate(reversed(self.executed_commands)):
+            print(f"DEBUG: Undoing command {i+1}/{len(self.executed_commands)}: {command.get_description()}")
+            undo_result = command.undo()
+            print(f"DEBUG: Command {i+1} undo returned: {undo_result}")
+            
+            if undo_result:
                 command._mark_undone()
+                print(f"DEBUG: Command {i+1} undone successfully")
+            else:
+                print(f"DEBUG: Command {i+1} undo FAILED")
+                success = False
+                # Continue with other commands even if one fails
         
         if success:
             self._mark_undone()
+            print(f"DEBUG: All commands undone successfully, composite marked as undone")
+        else:
+            print(f"DEBUG: Some commands failed to undo, but composite operation attempted")
         
+        print(f"DEBUG: CompositeCommand.undo() returning: {success}")
         return success
     
     def get_memory_usage(self) -> int:

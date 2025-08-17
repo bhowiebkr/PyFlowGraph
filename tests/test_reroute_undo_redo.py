@@ -84,7 +84,7 @@ def test_function_2(input_val: str):
     
     if reroute_still_exists or reroute_still_in_scene:
         print("FAIL: RerouteNode deletion failed!")
-        return False
+        assert False, "RerouteNode deletion failed"
     
     # Step 2: Undo the deletion
     print(f"\nStep 2: Undoing deletion (Ctrl+Z)...")
@@ -108,7 +108,7 @@ def test_function_2(input_val: str):
     
     if not reroute_restored:
         print("FAIL: RerouteNode was not restored as RerouteNode!")
-        return False
+        assert False, "RerouteNode was not restored as RerouteNode"
     
     # Step 3: Redo the deletion
     print(f"\nStep 3: Redoing deletion (Ctrl+Y)...")
@@ -128,7 +128,7 @@ def test_function_2(input_val: str):
     
     if reroute_still_exists or reroute_still_in_scene:
         print("FAIL: RerouteNode redo deletion failed!")
-        return False
+        assert False, "RerouteNode redo deletion failed"
     
     # Step 4: Undo again to test multiple cycles
     print(f"\nStep 4: Undoing again...")
@@ -148,16 +148,15 @@ def test_function_2(input_val: str):
     
     if not reroute_restored_again:
         print("FAIL: RerouteNode was not restored correctly on second undo!")
-        return False
+        assert False, "RerouteNode was not restored correctly on second undo"
     
     print("SUCCESS: RerouteNode deletion and undo/redo works correctly!")
-    return True
 
 if __name__ == "__main__":
-    success = test_reroute_undo_redo()
-    if success:
+    try:
+        test_reroute_undo_redo()
         print("\nTest passed - RerouteNode undo/redo works correctly")
-    else:
+        sys.exit(0)
+    except AssertionError:
         print("\nTest failed - RerouteNode undo/redo has issues")
-    
-    sys.exit(0 if success else 1)
+        sys.exit(1)
