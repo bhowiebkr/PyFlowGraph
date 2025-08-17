@@ -46,7 +46,9 @@ class TestPinSystem(unittest.TestCase):
         """Set up test fixtures before each test."""
         self.graph = NodeGraph()
         self.node = Node("Test Node")
+        self.node2 = Node("Test Node 2")
         self.graph.addItem(self.node)
+        self.graph.addItem(self.node2)
     
     def tearDown(self):
         """Clean up after each test."""
@@ -228,7 +230,7 @@ class TestPinSystem(unittest.TestCase):
         )
         
         str_pin2 = Pin(
-            node=self.node,
+            node=self.node2,
             name="str2",
             direction="input",
             pin_type_str="str",
@@ -240,7 +242,7 @@ class TestPinSystem(unittest.TestCase):
         
         # Different types should not be compatible
         int_pin = Pin(
-            node=self.node,
+            node=self.node2,
             name="int_pin",
             direction="input",
             pin_type_str="int",
@@ -251,7 +253,7 @@ class TestPinSystem(unittest.TestCase):
         
         # Execution pins should only connect to execution pins
         exec_pin = Pin(
-            node=self.node,
+            node=self.node2,
             name="exec_pin",
             direction="input",
             pin_type_str="exec",
@@ -272,7 +274,7 @@ class TestPinSystem(unittest.TestCase):
         )
         
         input_pin = Pin(
-            node=self.node,
+            node=self.node2,
             name="input",
             direction="input",
             pin_type_str="str",
@@ -282,12 +284,12 @@ class TestPinSystem(unittest.TestCase):
         # Output to input should be valid
         self.assertTrue(output_pin.can_connect_to(input_pin))
         
-        # Input to output should be invalid
-        self.assertFalse(input_pin.can_connect_to(output_pin))
+        # Input to output should also be valid (bidirectional connection initiation)
+        self.assertTrue(input_pin.can_connect_to(output_pin))
         
         # Same direction should be invalid
         output_pin2 = Pin(
-            node=self.node,
+            node=self.node2,
             name="output2",
             direction="output",
             pin_type_str="str",
