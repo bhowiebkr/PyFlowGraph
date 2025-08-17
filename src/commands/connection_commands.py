@@ -93,11 +93,7 @@ class CreateConnectionCommand(CommandBase):
             self.node_graph.addItem(self.created_connection)
             self.node_graph.connections.append(self.created_connection)
             
-            # Update pin connection references using proper methods
-            if hasattr(self.output_pin, 'add_connection'):
-                self.output_pin.add_connection(self.created_connection)
-            if hasattr(self.input_pin, 'add_connection'):
-                self.input_pin.add_connection(self.created_connection)
+            # Note: Pin connections are already added in Connection constructor
             
             self._mark_executed()
             return True
