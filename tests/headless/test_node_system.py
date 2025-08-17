@@ -101,6 +101,7 @@ class TestNodeSystem(unittest.TestCase):
         
         # Test setting basic code
         test_code = '''
+@node_entry
 def test_function(x: int) -> str:
     return str(x * 2)
 '''
@@ -194,8 +195,8 @@ def serialize_test(input_val: str) -> str:
         # Verify serialized data
         self.assertEqual(serialized["title"], "Serialize Test")
         self.assertEqual(serialized["uuid"], node.uuid)
-        self.assertEqual(serialized["pos"], [100, 200])
-        self.assertEqual(serialized["size"], [300, 180])
+        self.assertEqual(serialized["pos"], (100, 200))
+        self.assertEqual(serialized["size"], (300, 180))
         self.assertEqual(serialized["code"], test_code)
         self.assertIn("colors", serialized)
     
