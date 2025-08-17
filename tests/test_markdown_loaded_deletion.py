@@ -13,10 +13,10 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent
 
-from src.ui.editor.node_editor_window import NodeEditorWindow
-from src.core.node import Node
-from src.core.reroute_node import RerouteNode
-from src.data.flow_format import FlowFormatHandler
+from ui.editor.node_editor_window import NodeEditorWindow
+from core.node import Node
+from core.reroute_node import RerouteNode
+from data.flow_format import FlowFormatHandler
 
 def test_markdown_loaded_node_deletion():
     """Test deletion of nodes loaded from markdown."""

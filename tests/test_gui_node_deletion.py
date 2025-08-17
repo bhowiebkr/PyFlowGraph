@@ -14,10 +14,10 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeyEvent
 
-from src.ui.editor.node_editor_window import NodeEditorWindow
-from src.core.node import Node
-from src.core.reroute_node import RerouteNode
-from src.core.connection import Connection
+from ui.editor.node_editor_window import NodeEditorWindow
+from core.node import Node
+from core.reroute_node import RerouteNode
+from core.connection import Connection
 
 class TestGUINodeDeletion:
     """Test node deletion with actual GUI interactions."""

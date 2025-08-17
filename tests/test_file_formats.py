@@ -21,8 +21,8 @@ import tempfile
 src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
 sys.path.insert(0, src_path)
 
-from src.data.flow_format import FlowFormatHandler, load_flow_file
-from src.data.file_operations import FileOperationsManager
+from data.flow_format import FlowFormatHandler, load_flow_file
+from data.file_operations import FileOperationsManager
 
 
 class TestFileFormats(unittest.TestCase):
