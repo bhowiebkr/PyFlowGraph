@@ -21,8 +21,13 @@ import tempfile
 src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
 sys.path.insert(0, src_path)
 
-from data.flow_format import FlowFormatHandler, load_flow_file
-from data.file_operations import FileOperationsManager
+# Import directly to avoid circular dependency through data.__init__
+sys.path.insert(0, os.path.join(src_path, 'data'))
+import flow_format
+FlowFormatHandler = flow_format.FlowFormatHandler
+load_flow_file = flow_format.load_flow_file
+# Skip FileOperationsManager import to avoid circular dependency
+# from data.file_operations import FileOperationsManager
 
 
 class TestFileFormats(unittest.TestCase):
@@ -48,7 +53,7 @@ class TestFileFormats(unittest.TestCase):
             "connections": []
         }
         
-        markdown = self.handler.json_to_flow(test_data, "Test Graph")
+        markdown = self.handler.data_to_markdown(test_data, "Test Graph")
         
         self.assertIn("# Test Graph", markdown)
         self.assertIn("## Node: Test Node", markdown)
@@ -91,7 +96,7 @@ def test() -> str:
 ```
 '''
         
-        data = self.handler.flow_to_json(markdown_content)
+        data = self.handler.markdown_to_data(markdown_content)
         
         self.assertIn("nodes", data)
         self.assertEqual(len(data["nodes"]), 1)

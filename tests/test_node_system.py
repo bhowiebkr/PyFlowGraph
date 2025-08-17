@@ -101,6 +101,7 @@ class TestNodeSystem(unittest.TestCase):
         
         # Test setting basic code
         test_code = '''
+@node_entry
 def test_function(x: int) -> str:
     return str(x * 2)
 '''
