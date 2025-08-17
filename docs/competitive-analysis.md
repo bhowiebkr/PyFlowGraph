@@ -2,6 +2,37 @@
 
 This document analyzes PyFlowGraph's position in the workflow automation and integration platform market, identifying key differentiators and gaps compared to established automation tools.
 
+## Direct Competitors
+
+### Competitor A (AI-Focused Visual Workflows)
+**Category**: AI-powered creative workflow platform with visual node-based interface
+
+#### Competitive Overlap
+- Visual, drag-and-drop workflow creation
+- Node-based programming paradigm  
+- "No-code" positioning for non-technical users
+- Workflow collaboration and sharing capabilities
+- Target audience includes creative professionals and engineers
+
+#### Competitor A Advantages
+- **AI-First Platform**: Specialized for AI/ML creative workflows with multi-model support
+- **Cloud-Native Architecture**: Built-in scaling, collaboration, and infrastructure management
+- **Enterprise Adoption**: Trusted by major cloud providers and VFX studios with proven production use
+- **Creative Industry Focus**: Optimized for image generation, VFX, and design workflows
+- **Production Maturity**: Established platform with freemium model and enterprise features
+
+#### PyFlowGraph Differentiators vs Competitor A
+- **Full Programming Power**: "Code as Nodes" philosophy provides unlimited Python ecosystem access
+- **Self-Hosted Control**: No vendor lock-in, complete data sovereignty, security compliance
+- **Universal Automation**: Not limited to AI/creative workflows - covers ETL, DevOps, integrations
+- **Developer-Centric**: Built for technical users who need programmatic flexibility beyond AI operations
+- **Open Architecture**: Markdown-based workflows enable version control, diff viewing, collaborative development
+- **Cost Structure**: One-time purchase vs subscription SaaS model
+- **Extensibility**: Any Python library becomes a workflow component vs platform-limited operations
+
+#### Strategic Positioning
+This competitor validates the market demand for visual workflow tools but focuses on AI-creative workflows. PyFlowGraph should position as the "developer's choice" for general-purpose automation requiring full programming capabilities.
+
 ## Unique Differentiators
 
 ### PyFlowGraph Advantages
