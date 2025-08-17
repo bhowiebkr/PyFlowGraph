@@ -65,9 +65,14 @@ class Connection(QGraphicsPathItem):
         if self.start_pin: self.start_pin.remove_connection(self)
         if self.end_pin: self.end_pin.remove_connection(self)
 
+    def destroy(self):
+        """Destroy the connection by removing it from connected pins."""
+        self.remove()
+
     def serialize(self):
-        """Serializes the connection, now handling any node type with a UUID."""
-        if not self.start_pin or not self.end_pin: return None
+        """Serializes the connection, including pin UUIDs as expected by tests."""
+        if not self.start_pin or not self.end_pin: 
+            return None
         
         # Check if both connected nodes have a UUID attribute. Both Node and RerouteNode do.
         if not hasattr(self.start_pin.node, 'uuid') or not hasattr(self.end_pin.node, 'uuid'):
@@ -75,7 +80,9 @@ class Connection(QGraphicsPathItem):
 
         return {
             "start_node_uuid": self.start_pin.node.uuid,
+            "start_pin_uuid": self.start_pin.uuid,
             "start_pin_name": self.start_pin.name,
             "end_node_uuid": self.end_pin.node.uuid,
+            "end_pin_uuid": self.end_pin.uuid,
             "end_pin_name": self.end_pin.name,
         }
