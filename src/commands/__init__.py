@@ -9,7 +9,8 @@ from .command_base import CommandBase, CompositeCommand
 from .command_history import CommandHistory
 from .node_commands import (
     CreateNodeCommand, DeleteNodeCommand, MoveNodeCommand, 
-    PropertyChangeCommand, CodeChangeCommand
+    PropertyChangeCommand, CodeChangeCommand, PasteNodesCommand,
+    MoveMultipleCommand, DeleteMultipleCommand
 )
 from .connection_commands import (
     CreateConnectionCommand, DeleteConnectionCommand, CreateRerouteNodeCommand
@@ -18,6 +19,7 @@ from .connection_commands import (
 __all__ = [
     'CommandBase', 'CompositeCommand', 'CommandHistory',
     'CreateNodeCommand', 'DeleteNodeCommand', 'MoveNodeCommand',
-    'PropertyChangeCommand', 'CodeChangeCommand',
+    'PropertyChangeCommand', 'CodeChangeCommand', 'PasteNodesCommand',
+    'MoveMultipleCommand', 'DeleteMultipleCommand',
     'CreateConnectionCommand', 'DeleteConnectionCommand', 'CreateRerouteNodeCommand'
 ]
