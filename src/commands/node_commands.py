@@ -48,7 +48,7 @@ class CreateNodeCommand(CommandBase):
         """Create the node and add to graph."""
         try:
             # Import here to avoid circular imports
-            from src.core.node import Node
+            from core.node import Node
             
             # Create the node
             self.created_node = Node(self.title)
@@ -264,7 +264,7 @@ class DeleteNodeCommand(CommandBase):
         
         try:
             # Import here to avoid circular imports
-            from src.core.node import Node
+            from core.node import Node
             from PySide6.QtGui import QColor
             
             # Import debug config safely
@@ -277,7 +277,7 @@ class DeleteNodeCommand(CommandBase):
             # Recreate node with preserved state - check if it was a RerouteNode
             if self.node_state.get('is_reroute', False):
                 # Recreate as RerouteNode
-                from src.core.reroute_node import RerouteNode
+                from core.reroute_node import RerouteNode
                 restored_node = RerouteNode()
                 restored_node.uuid = self.node_state['id']
                 restored_node.setPos(self.node_state['position'])
@@ -379,41 +379,106 @@ class DeleteNodeCommand(CommandBase):
                 elif self.node_state.get('is_reroute', False):
                     print(f"DEBUG: Skipping GUI state for reroute node")
             
-            # Restore connections
+            # Restore connections with improved error handling
             restored_connections = 0
+            failed_connections = 0
             for conn_data in self.affected_connections:
-                # Find nodes by ID
-                output_node = self._find_node_by_id(conn_data['output_node_id'])
-                input_node = self._find_node_by_id(conn_data['input_node_id'])
-                
-                if output_node and input_node:
-                    # Get pins by index based on node type
-                    try:
-                        # Handle output pin
-                        if hasattr(output_node, 'is_reroute') and output_node.is_reroute:
-                            # RerouteNode - use single output pin
-                            output_pin = output_node.output_pin
+                try:
+                    # Find nodes by ID
+                    output_node = self._find_node_by_id(conn_data['output_node_id'])
+                    input_node = self._find_node_by_id(conn_data['input_node_id'])
+                    
+                    if not output_node or not input_node:
+                        if debug_enabled:
+                            print(f"DEBUG: Connection restoration failed - nodes not found (output: {output_node is not None}, input: {input_node is not None})")
+                        failed_connections += 1
+                        continue
+                    
+                    # Get pins by index based on node type with proper validation
+                    output_pin = None
+                    input_pin = None
+                    
+                    # Handle output pin
+                    if hasattr(output_node, 'is_reroute') and output_node.is_reroute:
+                        # RerouteNode - use single output pin
+                        output_pin = output_node.output_pin
+                    else:
+                        # Regular Node - validate pin index and list
+                        output_pin_index = conn_data['output_pin_index']
+                        if (hasattr(output_node, 'output_pins') and 
+                            output_node.output_pins and 
+                            0 <= output_pin_index < len(output_node.output_pins)):
+                            output_pin = output_node.output_pins[output_pin_index]
                         else:
-                            # Regular Node - use pin list
-                            output_pin = output_node.output_pins[conn_data['output_pin_index']]
-                        
-                        # Handle input pin
-                        if hasattr(input_node, 'is_reroute') and input_node.is_reroute:
-                            # RerouteNode - use single input pin
-                            input_pin = input_node.input_pin
+                            if debug_enabled:
+                                print(f"DEBUG: Output pin index {output_pin_index} out of range or no output pins on node {output_node.title}")
+                                print(f"DEBUG: Node has {len(output_node.output_pins) if hasattr(output_node, 'output_pins') and output_node.output_pins else 0} output pins")
+                            failed_connections += 1
+                            continue
+                    
+                    # Handle input pin
+                    if hasattr(input_node, 'is_reroute') and input_node.is_reroute:
+                        # RerouteNode - use single input pin
+                        input_pin = input_node.input_pin
+                    else:
+                        # Regular Node - validate pin index and list
+                        input_pin_index = conn_data['input_pin_index']
+                        if (hasattr(input_node, 'input_pins') and 
+                            input_node.input_pins and 
+                            0 <= input_pin_index < len(input_node.input_pins)):
+                            input_pin = input_node.input_pins[input_pin_index]
                         else:
-                            # Regular Node - use pin list
-                            input_pin = input_node.input_pins[conn_data['input_pin_index']]
+                            if debug_enabled:
+                                print(f"DEBUG: Input pin index {input_pin_index} out of range or no input pins on node {input_node.title}")
+                                print(f"DEBUG: Node has {len(input_node.input_pins) if hasattr(input_node, 'input_pins') and input_node.input_pins else 0} input pins")
+                            failed_connections += 1
+                            continue
+                    
+                    # Validate pins exist
+                    if not output_pin or not input_pin:
+                        if debug_enabled:
+                            print(f"DEBUG: Connection restoration failed - pins not found (output: {output_pin is not None}, input: {input_pin is not None})")
+                        failed_connections += 1
+                        continue
+                    
+                    # Check if connection already exists to avoid duplicates
+                    connection_exists = False
+                    for existing_conn in self.node_graph.connections:
+                        if (hasattr(existing_conn, 'start_pin') and existing_conn.start_pin == output_pin and
+                            hasattr(existing_conn, 'end_pin') and existing_conn.end_pin == input_pin):
+                            connection_exists = True
+                            break
+                    
+                    if connection_exists:
+                        if debug_enabled:
+                            print(f"DEBUG: Connection already exists, skipping restoration")
+                        continue
+                    
+                    # Recreate connection
+                    from core.connection import Connection
+                    new_connection = Connection(output_pin, input_pin)
+                    self.node_graph.addItem(new_connection)
+                    self.node_graph.connections.append(new_connection)
+                    
+                    # Update pin connection references
+                    if hasattr(output_pin, 'add_connection'):
+                        output_pin.add_connection(new_connection)
+                    if hasattr(input_pin, 'add_connection'):
+                        input_pin.add_connection(new_connection)
+                    
+                    restored_connections += 1
+                    
+                    if debug_enabled:
+                        print(f"DEBUG: Connection restored successfully between {output_node.title}.{output_pin.name} and {input_node.title}.{input_pin.name}")
                         
-                        # Recreate connection
-                        from src.core.connection import Connection
-                        new_connection = Connection(output_pin, input_pin)
-                        self.node_graph.addItem(new_connection)
-                        self.node_graph.connections.append(new_connection)
-                        restored_connections += 1
-                        
-                    except (IndexError, AttributeError):
-                        pass  # Connection restoration failed, but continue with other connections
+                except Exception as e:
+                    if debug_enabled:
+                        print(f"DEBUG: Connection restoration failed with exception: {e}")
+                    failed_connections += 1
+                    continue
+            
+            if debug_enabled:
+                print(f"DEBUG: Connection restoration summary: {restored_connections} restored, {failed_connections} failed")
             
             # Final layout update sequence (only for regular nodes)
             if not self.node_state.get('is_reroute', False):
@@ -819,9 +884,9 @@ class DeleteMultipleCommand(CompositeCommand):
             selected_items: List of items (nodes and connections) to delete
         """
         # Import here to avoid circular imports
-        from src.core.node import Node
-        from src.core.reroute_node import RerouteNode
-        from src.core.connection import Connection
+        from core.node import Node
+        from core.reroute_node import RerouteNode
+        from core.connection import Connection
         
         # Create individual delete commands
         commands = []
