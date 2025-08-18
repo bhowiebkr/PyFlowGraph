@@ -6,6 +6,7 @@ This test runs with actual Qt widgets and scene interactions.
 
 import sys
 import os
+import pytest
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
@@ -19,6 +20,7 @@ from core.node import Node
 from core.reroute_node import RerouteNode
 from core.connection import Connection
 
+@pytest.mark.gui
 class TestGUINodeDeletion:
     """Test node deletion with actual GUI interactions."""
     

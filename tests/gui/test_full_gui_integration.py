@@ -15,6 +15,7 @@ import os
 import unittest
 import time
 from pathlib import Path
+import pytest
 
 # Add src directory to path
 src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src')
@@ -31,6 +32,7 @@ from core.reroute_node import RerouteNode
 from core.connection import Connection
 
 
+@pytest.mark.gui
 class FullGUITestCase(unittest.TestCase):
     """Base class for full GUI integration tests."""
     
