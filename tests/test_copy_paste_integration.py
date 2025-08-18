@@ -37,7 +37,7 @@ class TestCopyPasteIntegration(unittest.TestCase):
         self.mock_graph.command_history = Mock()
         self.mock_graph.command_history.execute_command = Mock(return_value=True)
     
-    @patch('src.commands.node_commands.Node')
+    @patch('src.core.node.Node')
     def test_paste_single_node_workflow(self, mock_node_class):
         """Test pasting a single node creates proper commands."""
         # Setup mock node
@@ -69,7 +69,7 @@ class TestCopyPasteIntegration(unittest.TestCase):
         self.assertIn('original-uuid', paste_cmd.uuid_mapping)
         self.assertNotEqual(paste_cmd.uuid_mapping['original-uuid'], 'original-uuid')
     
-    @patch('src.commands.node_commands.Node')
+    @patch('src.core.node.Node')
     def test_paste_multiple_nodes_with_connections(self, mock_node_class):
         """Test pasting multiple nodes with connections preserves relationships."""
         # Setup mock nodes
@@ -122,7 +122,7 @@ class TestCopyPasteIntegration(unittest.TestCase):
         self.assertIn('input-uuid', paste_cmd.uuid_mapping)
         self.assertIn('output-uuid', paste_cmd.uuid_mapping)
     
-    @patch('src.commands.node_commands.Node')
+    @patch('src.core.node.Node')
     def test_paste_nodes_positioning(self, mock_node_class):
         """Test that pasted nodes are positioned correctly with offsets."""
         mock_node_class.return_value = Mock()

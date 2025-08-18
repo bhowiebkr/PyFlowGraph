@@ -225,7 +225,7 @@ def analyze_strength(password: str) -> Tuple[str, int, str]:
     else:
         feedback.append("Add numbers")
         
-    if re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]', password):
+    if re.search(r'[!@#$%^&*()_+=\[\]{}|;:,.<>?-]', password):
         score += 15
     else:
         feedback.append("Add symbols for extra security")

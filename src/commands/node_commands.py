@@ -48,7 +48,7 @@ class CreateNodeCommand(CommandBase):
         """Create the node and add to graph."""
         try:
             # Import here to avoid circular imports
-            from core.node import Node
+            from src.core.node import Node
             
             # Create the node
             self.created_node = Node(self.title)
@@ -264,7 +264,7 @@ class DeleteNodeCommand(CommandBase):
         
         try:
             # Import here to avoid circular imports
-            from core.node import Node
+            from src.core.node import Node
             from PySide6.QtGui import QColor
             
             # Import debug config safely
@@ -277,7 +277,7 @@ class DeleteNodeCommand(CommandBase):
             # Recreate node with preserved state - check if it was a RerouteNode
             if self.node_state.get('is_reroute', False):
                 # Recreate as RerouteNode
-                from core.reroute_node import RerouteNode
+                from src.core.reroute_node import RerouteNode
                 restored_node = RerouteNode()
                 restored_node.uuid = self.node_state['id']
                 restored_node.setPos(self.node_state['position'])
@@ -406,7 +406,7 @@ class DeleteNodeCommand(CommandBase):
                             input_pin = input_node.input_pins[conn_data['input_pin_index']]
                         
                         # Recreate connection
-                        from core.connection import Connection
+                        from src.core.connection import Connection
                         new_connection = Connection(output_pin, input_pin)
                         self.node_graph.addItem(new_connection)
                         self.node_graph.connections.append(new_connection)
@@ -819,9 +819,9 @@ class DeleteMultipleCommand(CompositeCommand):
             selected_items: List of items (nodes and connections) to delete
         """
         # Import here to avoid circular imports
-        from core.node import Node
-        from core.reroute_node import RerouteNode
-        from core.connection import Connection
+        from src.core.node import Node
+        from src.core.reroute_node import RerouteNode
+        from src.core.connection import Connection
         
         # Create individual delete commands
         commands = []
