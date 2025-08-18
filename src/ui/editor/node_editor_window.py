@@ -21,7 +21,7 @@ from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
 from ui.dialogs.graph_properties_dialog import GraphPropertiesDialog
 
 # Import our new modular components
-from ui.utils.ui_utils import create_fa_icon, create_execution_control_widget
+from ui.utils.ui_utils import create_fa_icon, create_execution_control_widget, ButtonStyleManager
 from data.file_operations import FileOperationsManager
 from execution.execution_controller import ExecutionController
 from .view_state_manager import ViewStateManager
@@ -100,6 +100,7 @@ class NodeEditorWindow(QMainWindow):
             self._get_current_venv_path,
             self.exec_widget.main_exec_button,
             self.exec_widget.status_label,
+            ButtonStyleManager.get_button_style,
             self.file_ops
         )
         

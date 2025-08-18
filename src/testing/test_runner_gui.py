@@ -569,6 +569,16 @@ class TestRunnerMainWindow(QMainWindow):
             if file_path == self.currently_selected_test:
                 self.output_widget.set_test_output(file_path, result)
 
+        # Print failed tests to terminal
+        if status in ["failed", "error"]:
+            test_name = Path(file_path).name
+            print(f"\nFAILED: {test_name}")
+            print(f"Duration: {duration:.2f}s")
+            if output:
+                print("Output:")
+                print(output)
+            print("-" * 60)
+
         # Update progress
         current_value = self.progress_bar.value()
         self.progress_bar.setValue(current_value + 1)
@@ -591,6 +601,7 @@ class TestRunnerMainWindow(QMainWindow):
         total_tests = 0
         passed_tests = 0
         failed_tests = 0
+        failed_test_names = []
 
         for result in self.test_tree.test_results.values():
             if result.status in ["passed", "failed", "error"]:
@@ -599,6 +610,22 @@ class TestRunnerMainWindow(QMainWindow):
                     passed_tests += 1
                 else:
                     failed_tests += 1
+                    failed_test_names.append(Path(result.name).name)
+
+        # Print summary to terminal
+        print(f"\n{'='*60}")
+        print(f"TEST SUMMARY")
+        print(f"{'='*60}")
+        print(f"Total tests: {total_tests}")
+        print(f"Passed: {passed_tests}")
+        print(f"Failed: {failed_tests}")
+        
+        if failed_test_names:
+            print(f"\nFailed tests:")
+            for test_name in failed_test_names:
+                print(f"  - {test_name}")
+        
+        print(f"{'='*60}")
 
         # Update status message
         self.statusBar().showMessage(f"Tests completed: {passed_tests} passed, {failed_tests} failed, {total_tests} total")

@@ -12,20 +12,19 @@ if project_root not in sys.path:
 from PySide6.QtWidgets import QPushButton, QLabel
 from .graph_executor import GraphExecutor
 from core.event_system import LiveGraphExecutor
-from ui.utils.ui_utils import ButtonStyleManager
-
-
 class ExecutionController:
     """Manages execution modes and controls for the node graph."""
     
     def __init__(self, graph, output_log, get_venv_path_callback, 
-                 main_exec_button: QPushButton, status_label: QLabel, file_ops=None):
+                 main_exec_button: QPushButton, status_label: QLabel, 
+                 button_style_callback=None, file_ops=None):
         self.graph = graph
         self.output_log = output_log
         self.get_venv_path_callback = get_venv_path_callback
         self.main_exec_button = main_exec_button
         self.status_label = status_label
         self.file_ops = file_ops
+        self.button_style_callback = button_style_callback
         
         # Execution systems
         self.executor = GraphExecutor(graph, output_log, get_venv_path_callback)
@@ -73,7 +72,8 @@ class ExecutionController:
         self.live_executor.set_live_mode(False)
         self.live_active = False
         self.main_exec_button.setText("Execute Graph")
-        self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "ready"))
+        if self.button_style_callback:
+            self.main_exec_button.setStyleSheet(self.button_style_callback("batch", "ready"))
         self.status_label.setText("Ready")
         self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
@@ -90,7 +90,8 @@ class ExecutionController:
             self.live_executor.set_live_mode(True)
             self.live_active = False
             self.main_exec_button.setText("Start Live Mode")
-            self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "ready"))
+            if self.button_style_callback:
+                self.main_exec_button.setStyleSheet(self.button_style_callback("live", "ready"))
             self.status_label.setText("Live Ready")
             self.status_label.setStyleSheet("color: #FF9800; font-weight: bold;")
 
@@ -111,7 +112,8 @@ class ExecutionController:
 
         # Update button state during execution
         self.main_exec_button.setText("Executing...")
-        self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "executing"))
+        if self.button_style_callback:
+            self.main_exec_button.setStyleSheet(self.button_style_callback("batch", "executing"))
         self.status_label.setText("Executing")
         self.status_label.setStyleSheet("color: #607D8B; font-weight: bold;")
 
@@ -123,7 +125,8 @@ class ExecutionController:
         finally:
             # Restore button state
             self.main_exec_button.setText("Execute Graph")
-            self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("batch", "ready"))
+            if self.button_style_callback:
+                self.main_exec_button.setStyleSheet(self.button_style_callback("batch", "ready"))
             self.status_label.setText("Ready")
             self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
@@ -144,7 +147,8 @@ class ExecutionController:
 
         # Update button to pause state
         self.main_exec_button.setText("Pause Live Mode")
-        self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "active"))
+        if self.button_style_callback:
+            self.main_exec_button.setStyleSheet(self.button_style_callback("live", "active"))
         self.status_label.setText("Live Active")
         self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
@@ -154,7 +158,8 @@ class ExecutionController:
         self.live_executor.set_live_mode(False)
 
         self.main_exec_button.setText("Resume Live Mode")
-        self.main_exec_button.setStyleSheet(ButtonStyleManager.get_button_style("live", "paused"))
+        if self.button_style_callback:
+            self.main_exec_button.setStyleSheet(self.button_style_callback("live", "paused"))
         self.status_label.setText("Live Paused")
         self.status_label.setStyleSheet("color: #F44336; font-weight: bold;")
 

@@ -52,6 +52,8 @@ PyFlowGraph/
 **GUI Runner**: `run_test_gui.bat` - Professional PySide6 interface with real-time status
 **Coverage**: Core components, command system, integration scenarios
 
+**Test Timeout Requirements**: All tests MUST complete within 10 seconds maximum. Tests that run longer indicate performance issues or infinite loops and must be fixed to complete faster, not given longer timeouts.
+
 ## Development Notes
 
 - **WINDOWS-ONLY CODEBASE**: This project runs exclusively on Windows
@@ -77,7 +79,7 @@ PyFlowGraph/
 
 ## Code Standards
 
-**NO EMOJIS RULE**: Absolutely no emoji characters in:
+**NO UNICODE CHARACTERS RULE**: Absolutely no Unicode characters (including emojis, symbols, special characters) in:
 
 - Source code (`.py` files)
 - Test files (all tests in `tests/` directory)
@@ -86,7 +88,9 @@ PyFlowGraph/
 - Variable names, function names, or any identifiers
 - Console output or logging messages
 
-**Reason**: Emojis cause Unicode encoding errors on Windows console (cp1252 codec) and create test failures. Use ASCII text alternatives like "PASS"/"FAIL", "OK"/"ERROR", etc.
+**Reason**: Unicode characters cause encoding errors on Windows console (cp1252 codec) and create test failures. Use ASCII text alternatives like "PASS"/"FAIL", "OK"/"ERROR", "->", "=>", etc.
+
+**Forbidden Characters**: ✅❌⚠️📊💡🔄⏳🚨ℹ️🎯 and any character outside ASCII range (0x00-0x7F)
 
 # important-instruction-reminders
 
