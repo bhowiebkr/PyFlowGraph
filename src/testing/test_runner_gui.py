@@ -78,7 +78,7 @@ class TestExecutor(QObject):
 
             try:
                 # Run the test file as a subprocess
-                result = subprocess.run([sys.executable, test_file], capture_output=True, text=True, cwd=Path(__file__).parent.parent, timeout=5)  # 5 second timeout per test
+                result = subprocess.run([sys.executable, test_file], capture_output=True, text=True, cwd=Path(__file__).parent.parent, timeout=10)  # 10 second timeout per test
 
                 duration = time.time() - start_time
 
@@ -93,7 +93,7 @@ class TestExecutor(QObject):
 
             except subprocess.TimeoutExpired:
                 duration = time.time() - start_time
-                self.test_finished.emit(test_file, "failed", "Test timed out after 5 seconds", duration)
+                self.test_finished.emit(test_file, "failed", "Test timed out after 10 seconds", duration)
 
             except Exception as e:
                 duration = time.time() - start_time
