@@ -433,7 +433,7 @@ class TestLiveModeExecution(ExecuteGraphTestCase):
         print("PASS Live mode pause/resume cycle working correctly - Bug fixed!")
     
     def test_pause_resume_node_execution_bug(self):
-        """Test the specific bug: pause → resume → node button execution fails."""
+        """Test the specific bug: pause  resume  node button execution fails."""
         # This reproduces the exact user scenario that was failing
         
         # Switch to live mode and start
