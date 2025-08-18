@@ -163,7 +163,7 @@ class NodeGraph(QGraphicsScene):
         """Copies selected nodes, their connections, and the graph's requirements to the clipboard."""
         selected_nodes = [item for item in self.selectedItems() if isinstance(item, (Node, RerouteNode))]
         if not selected_nodes:
-            return
+            return {"requirements": [], "nodes": [], "connections": []}
 
         nodes_data = [node.serialize() for node in selected_nodes]
         connections_data = []
@@ -192,6 +192,8 @@ class NodeGraph(QGraphicsScene):
             import json
             QApplication.clipboard().setText(json.dumps(clipboard_data, indent=2))
         print(f"Copied {len(nodes_data)} nodes to clipboard as markdown.")
+        
+        return clipboard_data
 
     def paste(self):
         """Pastes nodes and connections from the clipboard."""
@@ -499,7 +501,11 @@ class NodeGraph(QGraphicsScene):
         if use_command:
             # Use command pattern
             command = CreateRerouteNodeCommand(self, connection, position)
-            return self.execute_command(command)
+            success = self.execute_command(command)
+            if success:
+                return command.reroute_node  # Return the created node
+            else:
+                return None
         else:
             # Direct creation (for internal use)
             start_pin, end_pin = connection.start_pin, connection.end_pin
