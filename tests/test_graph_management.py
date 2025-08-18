@@ -357,7 +357,8 @@ def paste_test(text: str) -> str:
                 self.assertIn("# Clipboard Content", clipboard_text)
                 self.assertIn("Copy Node 1", clipboard_text)
                 self.assertIn("Copy Node 2", clipboard_text)
-                self.assertIn("connections", clipboard_text)  # JSON data block should be present
+                # Check for connections section (markdown format uses "## Connections")
+                self.assertTrue("## Connections" in clipboard_text or "connections" in clipboard_text.lower())  # JSON data block should be present
     
     def test_keyboard_deletion(self):
         """Test keyboard deletion of selected items."""

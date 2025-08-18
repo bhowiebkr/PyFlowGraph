@@ -56,16 +56,34 @@ class EndToEndWorkflowTestCase(unittest.TestCase):
         self.window.resize(1400, 900)
         self.window.raise_()
         
-        # Clear any existing content
+        # Clear any existing content completely
         self.graph.clear_graph()
         
         # Clear command history to ensure clean state
         if hasattr(self.graph, 'command_history'):
             self.graph.command_history.clear()
         
-        # Process events and wait for stability
+        # Clear any selections that might interfere
+        if hasattr(self.graph, 'clearSelection'):
+            self.graph.clearSelection()
+        
+        # Reset view state
+        if hasattr(self.view, 'resetTransform'):
+            self.view.resetTransform()
+        
+        # Ensure all pending events are processed
         QApplication.processEvents()
         QTest.qWait(200)
+        
+        # Verify clean state
+        if len(self.graph.nodes) != 0 or len(self.graph.connections) != 0:
+            print(f"WARNING: Graph not properly cleared - nodes: {len(self.graph.nodes)}, connections: {len(self.graph.connections)}")
+            # Force clear again
+            self.graph.nodes.clear()
+            self.graph.connections.clear()
+            for item in list(self.graph.items()):
+                self.graph.removeItem(item)
+            QApplication.processEvents()
         
         print(f"Workflow environment ready")
     
