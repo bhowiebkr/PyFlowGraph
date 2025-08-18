@@ -87,6 +87,7 @@ venv.bak/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+nul
 
 # Other
 *.log
@@ -144,6 +145,7 @@ temp
 
 # BEMAD files
 .bmad-core/
+.bmad-*
 
 npm-global/
 
