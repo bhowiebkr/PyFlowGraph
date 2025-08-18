@@ -22,7 +22,8 @@ from core.connection import Connection
 class TestGUINodeDeletion:
     """Test node deletion with actual GUI interactions."""
     
-    def __init__(self):
+    def setup_method(self):
+        """Setup method called before each test."""
         self.app = QApplication.instance()
         if self.app is None:
             self.app = QApplication(sys.argv)
@@ -186,9 +187,7 @@ def consume_data(final_text: str):
                 
                 orphaned = self.analyze_graph_state(f"After deleting node {i+1}")
                 
-                if orphaned:
-                    print("ISSUE FOUND: Orphaned nodes detected!")
-                    return False
+                assert not orphaned, f"Orphaned nodes detected after deleting node {i+1}"
         
         # Also create test graph
         node1, node2, node3 = self.create_test_graph()
@@ -205,10 +204,7 @@ def consume_data(final_text: str):
         self.app.processEvents()
         
         orphaned = self.analyze_graph_state("After deleting middle node")
-        
-        if orphaned:
-            print("ISSUE FOUND: Orphaned nodes detected!")
-            return False
+        assert not orphaned, "Orphaned nodes detected after deleting middle node"
         
         # Test 2: Delete another node
         print(f"\n--- TEST 2: Deleting node ({node1.title}) ---")
@@ -219,10 +215,7 @@ def consume_data(final_text: str):
         self.app.processEvents()
         
         orphaned = self.analyze_graph_state("After deleting first node")
-        
-        if orphaned:
-            print("ISSUE FOUND: Orphaned nodes detected!")
-            return False
+        assert not orphaned, "Orphaned nodes detected after deleting first node"
         
         # Test 3: Delete final node
         print(f"\n--- TEST 3: Deleting final node ({node3.title}) ---")
@@ -233,37 +226,21 @@ def consume_data(final_text: str):
         self.app.processEvents()
         
         orphaned = self.analyze_graph_state("After deleting final node")
-        
-        if orphaned:
-            print("ISSUE FOUND: Orphaned nodes detected!")
-            return False
+        assert not orphaned, "Orphaned nodes detected after deleting final node"
         
         print("\n--- TEST COMPLETED SUCCESSFULLY ---")
-        return True
     
-    def run_tests(self):
-        """Run all GUI deletion tests."""
+    def test_gui_node_deletion(self):
+        """Test GUI node deletion sequence."""
         try:
-            success = self.test_node_deletion_sequence()
-            
-            if success:
-                print("\nALL TESTS PASSED - No orphaned nodes detected")
-            else:
-                print("\nTESTS FAILED - Orphaned nodes found (this is the 'black node' bug)")
-            
-            return success
+            self.test_node_deletion_sequence()
+            print("\nALL TESTS PASSED - No orphaned nodes detected")
             
         except Exception as e:
             print(f"\nTEST CRASHED: {e}")
             import traceback
             traceback.print_exc()
-            return False
-        
-        finally:
-            # Keep window open for manual inspection
-            print("\nWindow will stay open for 5 seconds for visual inspection...")
-            QTimer.singleShot(5000, self.app.quit)
-            self.app.exec()
+            raise
 
 def main():
     """Run the GUI-based node deletion test."""
@@ -271,14 +248,9 @@ def main():
     print("This test will open a PyFlowGraph window and test node deletion.")
     
     tester = TestGUINodeDeletion()
-    success = tester.run_tests()
-    
-    if success:
-        print("Test completed successfully!")
-        sys.exit(0)
-    else:
-        print("Test failed - node deletion issues detected!")
-        sys.exit(1)
+    tester.setup_method()
+    tester.test_gui_node_deletion()
+    print("Test completed successfully!")
 
 if __name__ == "__main__":
     main()
