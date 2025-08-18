@@ -22,19 +22,21 @@ from unittest.mock import patch, MagicMock
 src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
 sys.path.insert(0, src_path)
 
-from PySide6.QtWidgets import QApplication, QTextEdit
-from PySide6.QtCore import Qt
-from PySide6.QtTest import QTest
+try:
+    from PySide6.QtWidgets import QApplication, QTextEdit
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node_graph import NodeGraph
-from core.node import Node
-from execution.graph_executor import GraphExecutor
-from commands.node_commands import DeleteNodeCommand
-from commands.command_history import CommandHistory
-
-
-class TestDeleteUndoPerformanceRegression(unittest.TestCase):
+    from ui.editor.node_editor_window import NodeEditorWindow
+    from core.node_graph import NodeGraph
+    from core.node import Node
+    from execution.graph_executor import GraphExecutor
+    from commands.node_commands import DeleteNodeCommand
+    from commands.command_history import CommandHistory
+    
+    QT_AVAILABLE = True
+    
+    class TestDeleteUndoPerformanceRegression(unittest.TestCase):
     """Test suite for delete-undo performance regression detection."""
     
     def setUp(self):
@@ -173,7 +175,7 @@ class TestDeleteUndoPerformanceRegression(unittest.TestCase):
         # Check for duplicate connections in pin lists
         duplicate_count = 0
         for node in self.graph.nodes:
-            if isinstance(node, Node):
+            if hasattr(node, "title"):
                 # Check input pins
                 for pin in node.input_pins:
                     pin_connections = pin.connections
@@ -197,10 +199,10 @@ class TestDeleteUndoPerformanceRegression(unittest.TestCase):
         print("Connection integrity validation: PASSED")
         return True
     
-    def get_node_by_title(self, title: str) -> Node:
+    def get_node_by_title(self, title: str):
         """Get node by title for testing."""
         for node in self.graph.nodes:
-            if isinstance(node, Node) and node.title == title:
+            if hasattr(node, 'title') and node.title == title:
                 return node
         self.fail(f"Node with title '{title}' not found")
     
@@ -323,7 +325,7 @@ class TestDeleteUndoPerformanceRegression(unittest.TestCase):
         
         # Get nodes that can be safely deleted and restored
         deletable_nodes = [node for node in self.graph.nodes 
-                          if isinstance(node, Node) and node.title != "Password Configuration"]
+                          if hasattr(node, "title") and node.title != "Password Configuration"]
         
         # Perform random delete-undo cycles
         for cycle in range(5):
@@ -384,6 +386,9 @@ class TestDeleteUndoPerformanceRegression(unittest.TestCase):
         self.assertLess(undo_time, 50, "Undo operation should be under 50ms")
         
         print(f"Performance thresholds: Execution={exec_time:.2f}ms, Delete={delete_time:.2f}ms, Undo={undo_time:.2f}ms")
+
+except ImportError:
+    QT_AVAILABLE = False
 
 
 if __name__ == '__main__':

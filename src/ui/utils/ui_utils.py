@@ -8,21 +8,30 @@ from PySide6.QtCore import Qt
 
 def create_fa_icon(char_code, color="white", font_style="regular"):
     """Creates a QIcon from a Font Awesome character code."""
-    pixmap = QPixmap(32, 32)
-    pixmap.fill(Qt.transparent)
-    painter = QPainter(pixmap)
+    # Return empty icon in headless environments to avoid graphics issues
+    import os
+    if os.environ.get('QT_QPA_PLATFORM') == 'offscreen':
+        return QIcon()
+        
+    try:
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
 
-    if font_style == "solid":
-        font = QFont("Font Awesome 6 Free Solid")
-    else:
-        font = QFont("Font Awesome 7 Free Regular")
+        if font_style == "solid":
+            font = QFont("Font Awesome 6 Free Solid")
+        else:
+            font = QFont("Font Awesome 7 Free Regular")
 
-    font.setPixelSize(24)
-    painter.setFont(font)
-    painter.setPen(QColor(color))
-    painter.drawText(pixmap.rect(), Qt.AlignCenter, char_code)
-    painter.end()
-    return QIcon(pixmap)
+        font.setPixelSize(24)
+        painter.setFont(font)
+        painter.setPen(QColor(color))
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, char_code)
+        painter.end()
+        return QIcon(pixmap)
+    except Exception:
+        # Return empty icon if anything fails
+        return QIcon()
 
 
 class ButtonStyleManager:

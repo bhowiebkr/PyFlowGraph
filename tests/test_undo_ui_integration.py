@@ -23,26 +23,30 @@ try:
     from src.commands.command_history import CommandHistory
     
     QT_AVAILABLE = True
+    
+    class MockCommand(CommandBase):
+        """Mock command for testing."""
+        
+        def __init__(self, description: str):
+            super().__init__(description)
+            self.timestamp = datetime.now()
+            self.execute_called = False
+            self.undo_called = False
+        
+        def execute(self) -> bool:
+            self.execute_called = True
+            return True
+        
+        def undo(self) -> bool:
+            self.undo_called = True
+            return True
+
 except ImportError:
     QT_AVAILABLE = False
-
-
-class MockCommand(CommandBase):
-    """Mock command for testing."""
     
-    def __init__(self, description: str):
-        super().__init__(description)
-        self.timestamp = datetime.now()
-        self.execute_called = False
-        self.undo_called = False
-    
-    def execute(self) -> bool:
-        self.execute_called = True
-        return True
-    
-    def undo(self) -> bool:
-        self.undo_called = True
-        return True
+    # Create dummy class for when imports fail
+    class MockCommand:
+        pass
 
 
 @unittest.skipUnless(QT_AVAILABLE, "PySide6 not available")

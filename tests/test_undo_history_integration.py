@@ -22,32 +22,39 @@ try:
     from src.commands.command_history import CommandHistory
     
     QT_AVAILABLE = True
+    
+    class MockCommand(CommandBase):
+        """Mock command for testing."""
+        
+        def __init__(self, description: str):
+            super().__init__(description)
+            self.execute_called = False
+            self.undo_called = False
+        
+        def execute(self) -> bool:
+            self.execute_called = True
+            return True
+        
+        def undo(self) -> bool:
+            self.undo_called = True
+            return True
+
+
+    class MockGraph:
+        """Mock graph for testing command integration."""
+        
+        def __init__(self):
+            self.command_history = CommandHistory()
+
 except ImportError:
     QT_AVAILABLE = False
-
-
-class MockCommand(CommandBase):
-    """Mock command for testing."""
     
-    def __init__(self, description: str):
-        super().__init__(description)
-        self.execute_called = False
-        self.undo_called = False
+    # Create dummy classes for when imports fail
+    class MockCommand:
+        pass
     
-    def execute(self) -> bool:
-        self.execute_called = True
-        return True
-    
-    def undo(self) -> bool:
-        self.undo_called = True
-        return True
-
-
-class MockGraph:
-    """Mock graph for testing command integration."""
-    
-    def __init__(self):
-        self.command_history = CommandHistory()
+    class MockGraph:
+        pass
 
 
 @unittest.skipUnless(QT_AVAILABLE, "PySide6 not available")

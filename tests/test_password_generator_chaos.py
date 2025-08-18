@@ -7,18 +7,25 @@ import pytest
 import time
 import random
 from unittest.mock import patch, MagicMock
-from PySide6.QtWidgets import QApplication, QMessageBox
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtTest import QTest
+try:
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtTest import QTest
 
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node_graph import NodeGraph
+    from ui.editor.node_editor_window import NodeEditorWindow
+    from core.node_graph import NodeGraph
+    
+    QT_AVAILABLE = True
+
+except ImportError:
+    QT_AVAILABLE = False
 
 
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 not available")
 class TestPasswordGeneratorChaos:
     """Chaos testing for password generator workflow integrity."""
     
