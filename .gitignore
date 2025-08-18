@@ -147,6 +147,11 @@ temp
 .bmad-core/
 .bmad-*
 
+# Personal AI configurations
+.superclaude/
+claude_agents/
+claude_commands/
+
 npm-global/
 
 # Node.js (if used)
