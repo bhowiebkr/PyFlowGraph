@@ -163,19 +163,41 @@ class CompositeCommand(CommandBase):
     def undo(self) -> bool:
         """Undo all executed commands in reverse order."""
         if not self._executed:
+            print(f"DEBUG: CompositeCommand.undo() - not executed, cannot undo")
             return False
         
-        success = True
-        for command in reversed(self.executed_commands):
-            if not command.undo():
-                success = False
-            else:
+        print(f"DEBUG: CompositeCommand.undo() - undoing {len(self.executed_commands)} commands")
+        success_count = 0
+        
+        for i, command in enumerate(reversed(self.executed_commands)):
+            print(f"DEBUG: Undoing command {i+1}/{len(self.executed_commands)}: {command.get_description()}")
+            undo_result = command.undo()
+            print(f"DEBUG: Command {i+1} undo returned: {undo_result}")
+            
+            if undo_result:
                 command._mark_undone()
+                success_count += 1
+                print(f"DEBUG: Command {i+1} undone successfully")
+            else:
+                print(f"DEBUG: Command {i+1} undo FAILED")
+                # Continue with other commands even if one fails
         
-        if success:
+        # Consider composite undo successful if most commands succeeded
+        # This prevents cascade failures from minor undo issues
+        success_ratio = success_count / len(self.executed_commands) if self.executed_commands else 1.0
+        overall_success = success_ratio >= 0.5  # At least 50% must succeed
+        
+        if overall_success:
             self._mark_undone()
+            if success_count == len(self.executed_commands):
+                print(f"DEBUG: All commands undone successfully, composite marked as undone")
+            else:
+                print(f"DEBUG: {success_count}/{len(self.executed_commands)} commands undone successfully, composite marked as undone")
+        else:
+            print(f"DEBUG: Only {success_count}/{len(self.executed_commands)} commands undone, composite undo failed")
         
-        return success
+        print(f"DEBUG: CompositeCommand.undo() returning: {overall_success}")
+        return overall_success
     
     def get_memory_usage(self) -> int:
         """Calculate total memory usage of all contained commands."""

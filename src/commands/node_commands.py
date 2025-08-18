@@ -263,10 +263,16 @@ class DeleteNodeCommand(CommandBase):
             return False
         
         try:
-            
             # Import here to avoid circular imports
             from core.node import Node
             from PySide6.QtGui import QColor
+            
+            # Import debug config safely
+            try:
+                from utils.debug_config import should_debug, DEBUG_UNDO_REDO
+                debug_enabled = should_debug(DEBUG_UNDO_REDO)
+            except ImportError:
+                debug_enabled = False
             
             # Recreate node with preserved state - check if it was a RerouteNode
             if self.node_state.get('is_reroute', False):
@@ -291,8 +297,7 @@ class DeleteNodeCommand(CommandBase):
             
             # Only apply regular node properties if it's not a RerouteNode
             if not self.node_state.get('is_reroute', False):
-                from utils.debug_config import should_debug, DEBUG_UNDO_REDO
-                if should_debug(DEBUG_UNDO_REDO):
+                if debug_enabled:
                     print(f"DEBUG: Restoring regular node properties for '{self.node_state['title']}'")
                     print(f"DEBUG: Original size: {self.node_state['width']}x{self.node_state['height']}")
                 # Restore size BEFORE updating pins (important for layout)
@@ -320,7 +325,7 @@ class DeleteNodeCommand(CommandBase):
                         restored_node.color_title_text = self.node_state['color_title_text']
                 
                 # Pins were already updated by set_code() above
-                if should_debug(DEBUG_UNDO_REDO):
+                if debug_enabled:
                     print(f"DEBUG: Pins already updated by set_code()")
                 
                 # Calculate minimum size requirements for validation
@@ -332,7 +337,7 @@ class DeleteNodeCommand(CommandBase):
                 corrected_width = max(original_width, min_width)
                 corrected_height = max(original_height, min_height)
                 
-                if should_debug(DEBUG_UNDO_REDO) and (corrected_width != original_width or corrected_height != original_height):
+                if debug_enabled and (corrected_width != original_width or corrected_height != original_height):
                     print(f"DEBUG: Node restoration size corrected from "
                           f"{original_width}x{original_height} to {corrected_width}x{corrected_height}")
                 
@@ -341,7 +346,7 @@ class DeleteNodeCommand(CommandBase):
                 restored_node.height = corrected_height
                 restored_node.base_width = self.node_state['base_width']
                 
-                if should_debug(DEBUG_UNDO_REDO):
+                if debug_enabled:
                     print(f"DEBUG: Node size set to {restored_node.width}x{restored_node.height}")
             
             # Force visual update with correct colors and size
@@ -358,17 +363,17 @@ class DeleteNodeCommand(CommandBase):
             # Apply GUI state AFTER GUI widgets are created
             if self.node_state.get('gui_state') and not self.node_state.get('is_reroute', False):
                 try:
-                    if should_debug(DEBUG_UNDO_REDO):
+                    if debug_enabled:
                         print(f"DEBUG: Applying GUI state: {self.node_state['gui_state']}")
                         print(f"DEBUG: GUI widgets available: {bool(restored_node.gui_widgets)}")
                         print(f"DEBUG: GUI widgets count: {len(restored_node.gui_widgets) if restored_node.gui_widgets else 0}")
                     restored_node.apply_gui_state(self.node_state['gui_state'])
-                    if should_debug(DEBUG_UNDO_REDO):
+                    if debug_enabled:
                         print(f"DEBUG: GUI state applied successfully")
                 except Exception as e:
-                    if should_debug(DEBUG_UNDO_REDO):
+                    if debug_enabled:
                         print(f"DEBUG: GUI state restoration failed: {e}")
-            elif should_debug(DEBUG_UNDO_REDO):
+            elif debug_enabled:
                 if not self.node_state.get('gui_state'):
                     print(f"DEBUG: No GUI state to restore")
                 elif self.node_state.get('is_reroute', False):
@@ -412,7 +417,7 @@ class DeleteNodeCommand(CommandBase):
             
             # Final layout update sequence (only for regular nodes)
             if not self.node_state.get('is_reroute', False):
-                if should_debug(DEBUG_UNDO_REDO):
+                if debug_enabled:
                     print(f"DEBUG: Final layout update sequence")
                 
                 # Force layout update to ensure pins are positioned correctly
@@ -421,7 +426,7 @@ class DeleteNodeCommand(CommandBase):
                 # Ensure size still meets minimum requirements after GUI state
                 restored_node.fit_size_to_content()
                 
-                if should_debug(DEBUG_UNDO_REDO):
+                if debug_enabled:
                     print(f"DEBUG: Final node size: {restored_node.width}x{restored_node.height}")
                 
             # Final visual refresh
@@ -430,7 +435,7 @@ class DeleteNodeCommand(CommandBase):
             # Update node reference
             self.node = restored_node
             
-            if should_debug(DEBUG_UNDO_REDO):
+            if debug_enabled:
                 print(f"DEBUG: Node restoration completed successfully")
             self._mark_undone()
             return True

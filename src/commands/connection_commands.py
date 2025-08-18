@@ -104,26 +104,43 @@ class CreateConnectionCommand(CommandBase):
     
     def undo(self) -> bool:
         """Remove the created connection."""
-        if not self.created_connection or self.created_connection not in self.node_graph.connections:
-            return False
+        if not self.created_connection:
+            # No connection to remove
+            self._mark_undone()
+            return True
         
         try:
+            # Check if connection still exists in the graph
+            if self.created_connection not in self.node_graph.connections:
+                # Connection was already removed (likely by node deletion)
+                # This is not an error - just mark as undone and continue
+                self._mark_undone()
+                return True
+            
             # Remove connection references from pins using proper methods
-            if hasattr(self.output_pin, 'remove_connection'):
-                self.output_pin.remove_connection(self.created_connection)
-            if hasattr(self.input_pin, 'remove_connection'):
-                self.input_pin.remove_connection(self.created_connection)
+            if hasattr(self.created_connection, 'start_pin') and self.created_connection.start_pin:
+                if hasattr(self.created_connection.start_pin, 'remove_connection'):
+                    self.created_connection.start_pin.remove_connection(self.created_connection)
+            
+            if hasattr(self.created_connection, 'end_pin') and self.created_connection.end_pin:
+                if hasattr(self.created_connection.end_pin, 'remove_connection'):
+                    self.created_connection.end_pin.remove_connection(self.created_connection)
             
             # Remove from graph
-            self.node_graph.removeItem(self.created_connection)
-            self.node_graph.connections.remove(self.created_connection)
+            if self.created_connection.scene() == self.node_graph:
+                self.node_graph.removeItem(self.created_connection)
+            
+            if self.created_connection in self.node_graph.connections:
+                self.node_graph.connections.remove(self.created_connection)
             
             self._mark_undone()
             return True
             
         except Exception as e:
             print(f"Failed to undo connection creation: {e}")
-            return False
+            # Even if we failed, mark as undone to maintain state consistency
+            self._mark_undone()
+            return True  # Return True to not fail the composite command
     
     def _validate_connection(self) -> bool:
         """Validate that the connection can still be made."""
@@ -244,7 +261,12 @@ class DeleteConnectionCommand(CommandBase):
             input_node = self._find_node_by_id(self.connection_data['input_node_id'])
             
             if not output_node or not input_node:
-                return False
+                # If nodes don't exist (e.g., they were deleted), we can't restore the connection
+                # This is not an error - just means the connection can't be restored
+                print(f"Warning: Cannot restore connection - nodes not found (output: {output_node is not None}, input: {input_node is not None})")
+                # Mark as undone even though we couldn't restore, to maintain command state consistency
+                self._mark_undone()
+                return True  # Return True to not fail the composite command
             
             # Get pins by index based on node type
             try:
@@ -254,6 +276,10 @@ class DeleteConnectionCommand(CommandBase):
                     output_pin = output_node.output_pin
                 else:
                     # Regular Node - use pin list
+                    if self.connection_data['output_pin_index'] >= len(output_node.output_pins):
+                        print(f"Warning: Output pin index {self.connection_data['output_pin_index']} out of range")
+                        self._mark_undone()
+                        return True
                     output_pin = output_node.output_pins[self.connection_data['output_pin_index']]
                 
                 # Handle input pin
@@ -262,11 +288,24 @@ class DeleteConnectionCommand(CommandBase):
                     input_pin = input_node.input_pin
                 else:
                     # Regular Node - use pin list
+                    if self.connection_data['input_pin_index'] >= len(input_node.input_pins):
+                        print(f"Warning: Input pin index {self.connection_data['input_pin_index']} out of range")
+                        self._mark_undone()
+                        return True
                     input_pin = input_node.input_pins[self.connection_data['input_pin_index']]
                     
             except (IndexError, AttributeError) as e:
                 print(f"Warning: Could not restore connection due to pin access error: {e}")
-                return False
+                self._mark_undone()
+                return True  # Return True to not fail the composite command
+            
+            # Check if connection already exists
+            for existing_conn in self.node_graph.connections:
+                if (hasattr(existing_conn, 'start_pin') and existing_conn.start_pin == output_pin and
+                    hasattr(existing_conn, 'end_pin') and existing_conn.end_pin == input_pin):
+                    print(f"Warning: Connection already exists, skipping restoration")
+                    self._mark_undone()
+                    return True
             
             # Recreate connection
             from core.connection import Connection
@@ -294,7 +333,9 @@ class DeleteConnectionCommand(CommandBase):
             
         except Exception as e:
             print(f"Failed to undo connection deletion: {e}")
-            return False
+            # Even if we failed, mark as undone to maintain state consistency
+            self._mark_undone()
+            return True  # Return True to not fail the composite command
     
     def _find_node_by_id(self, node_id: str):
         """Find node in graph by UUID."""

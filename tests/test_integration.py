@@ -23,7 +23,6 @@ from PySide6.QtWidgets import QApplication
 
 from core.node_graph import NodeGraph
 from core.node import Node
-from data.flow_format import load_flow_file
 
 
 class TestIntegration(unittest.TestCase):
@@ -118,6 +117,8 @@ def output_result(text: str):
                 file_path = os.path.join(examples_dir, example_file)
                 
                 try:
+                    # Import dynamically to avoid circular import
+                    from data.flow_format import load_flow_file
                     data = load_flow_file(file_path)
                     self.assertIn("nodes", data)
                     
@@ -156,17 +157,30 @@ def test1() -> str:
         
         node2.set_code('''
 @node_entry
-def test2(val: int):
+def test2(val: str):
     print(val)
 ''')
         
-        # Try to connect incompatible types
+        # Try to connect compatible types - should succeed
         str_out = next(p for p in node1.output_pins if p.pin_category == "data")
-        int_in = next(p for p in node2.input_pins if p.pin_category == "data")
+        str_in = next(p for p in node2.input_pins if p.pin_category == "data")
         
-        # Connection should still be created (validation might be elsewhere)
-        connection = self.graph.create_connection(str_out, int_in)
+        # Connection should be created successfully
+        connection = self.graph.create_connection(str_out, str_in)
         self.assertIsNotNone(connection)
+        
+        # Test that incompatible types are properly rejected
+        node3 = self.graph.create_node("Node 3", pos=(400, 0))
+        node3.set_code('''
+@node_entry
+def test3(val: int):
+    print(val)
+''')
+        
+        int_in = next(p for p in node3.input_pins if p.pin_category == "data")
+        # This should return None (connection rejected)
+        invalid_connection = self.graph.create_connection(str_out, int_in)
+        self.assertIsNone(invalid_connection)
 
 
 def run_integration_tests():

@@ -138,13 +138,12 @@ def target(input_val: str):
     
     if len(reroute_nodes_final) == 0 and direct_connection_exists:
         print(f"  COMPLETE SUCCESS: RerouteNode creation was properly undone!")
-        return True
     elif len(reroute_nodes_final) > 0 and direct_connection_exists:
         print(f"  PARTIAL: RerouteNode still exists but connection was restored (user's reported issue)")
-        return False
+        assert False, "RerouteNode still exists but connection was restored (user's reported issue)"
     else:
         print(f"  FAIL: Unexpected state")
-        return False
+        assert False, "Unexpected state"
 
 def test_reroute_redo():
     """Test redo operations with RerouteNodes."""
@@ -201,22 +200,20 @@ def test_reroute_redo():
         final_reroute_nodes = [node for node in graph.nodes if isinstance(node, RerouteNode)]
         if len(final_reroute_nodes) == 0:
             print("SUCCESS: Redo worked correctly - RerouteNode is deleted")
-            return True
         else:
             print("FAIL: Redo failed - RerouteNode still exists")
-            return False
-    
-    return False
+            assert False, "Redo failed - RerouteNode still exists"
+    else:
+        assert False, "No RerouteNode found for redo test"
 
 if __name__ == "__main__":
     print("Testing RerouteNode creation/deletion/undo sequence...\n")
     
-    success1 = test_reroute_creation_undo_sequence()
-    success2 = test_reroute_redo()
-    
-    if success1 and success2:
+    try:
+        test_reroute_creation_undo_sequence()
+        test_reroute_redo()
         print("\nSUCCESS: All tests passed")
-    else:
-        print(f"\nFAIL: Tests failed - creation/undo: {success1}, redo: {success2}")
-    
-    sys.exit(0 if (success1 and success2) else 1)
+        sys.exit(0)
+    except AssertionError as e:
+        print(f"\nFAIL: Tests failed - {e}")
+        sys.exit(1)

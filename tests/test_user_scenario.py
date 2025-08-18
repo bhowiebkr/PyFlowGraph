@@ -85,23 +85,22 @@ def test_user_scenario():
             
             if isinstance(restored_node, RerouteNode):
                 print(f"  [PASS] SUCCESS: RerouteNode correctly restored as RerouteNode!")
-                return True
             else:
                 print(f"  [FAIL] FAIL: RerouteNode was restored as regular Node!")
-                return False
+                assert False, "RerouteNode was restored as regular Node!"
         else:
             print(f"  [FAIL] FAIL: No node with title 'Reroute' found!")
-            return False
+            assert False, "No node with title 'Reroute' found!"
     else:
         print(f"  [FAIL] FAIL: No nodes restored!")
-        return False
+        assert False, "No nodes restored!"
 
 if __name__ == "__main__":
-    success = test_user_scenario()
-    if success:
+    try:
+        test_user_scenario()
         print("\n[PASS] Test passed - User issue has been FIXED!")
         print("RerouteNodes now correctly restore as RerouteNodes, not regular Nodes")
-    else:
+        sys.exit(0)
+    except AssertionError:
         print("\n[FAIL] Test failed - User issue still exists")
-    
-    sys.exit(0 if success else 1)
+        sys.exit(1)

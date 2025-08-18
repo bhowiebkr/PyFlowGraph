@@ -15,13 +15,14 @@ import os
 import unittest
 import time
 from pathlib import Path
+import pytest
 
 # Add src directory to path
 src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src')
 sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication, QMessageBox
-from PySide6.QtCore import Qt, QTimer, QPointF
+from PySide6.QtCore import Qt, QTimer, QPointF, QPoint
 from PySide6.QtGui import QKeyEvent, QMouseEvent, QWheelEvent
 from PySide6.QtTest import QTest
 
@@ -31,6 +32,7 @@ from core.reroute_node import RerouteNode
 from core.connection import Connection
 
 
+@pytest.mark.gui
 class FullGUITestCase(unittest.TestCase):
     """Base class for full GUI integration tests."""
     
@@ -487,9 +489,9 @@ class TestViewOperations(FullGUITestCase):
         # Test zooming in (simulate mouse wheel)
         wheel_event = QWheelEvent(
             self.view.rect().center(),  # position
-            self.view.rect().center(),  # global position  
-            QPointF(0, 0),              # pixel delta
-            QPointF(0, 120),            # angle delta (positive = zoom in)
+            self.view.rect().center(),  # global position
+            QPoint(0, 0),               # pixel delta (QPoint not QPointF)
+            QPoint(0, 120),             # angle delta (QPoint not QPointF)
             Qt.NoButton,                # buttons
             Qt.NoModifier,              # modifiers
             Qt.ScrollPhase.NoScrollPhase,  # phase

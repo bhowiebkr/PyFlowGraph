@@ -163,7 +163,7 @@ class NodeGraph(QGraphicsScene):
         """Copies selected nodes, their connections, and the graph's requirements to the clipboard."""
         selected_nodes = [item for item in self.selectedItems() if isinstance(item, (Node, RerouteNode))]
         if not selected_nodes:
-            return
+            return {"requirements": [], "nodes": [], "connections": []}
 
         nodes_data = [node.serialize() for node in selected_nodes]
         connections_data = []
@@ -172,33 +172,59 @@ class NodeGraph(QGraphicsScene):
             if hasattr(conn.start_pin.node, "uuid") and hasattr(conn.end_pin.node, "uuid") and conn.start_pin.node.uuid in selected_node_uuids and conn.end_pin.node.uuid in selected_node_uuids:
                 connections_data.append(conn.serialize())
 
-        main_window = self.views()[0].window()
-        requirements = main_window.current_requirements if hasattr(main_window, "current_requirements") else []
+        # Get requirements from main window if available
+        requirements = []
+        views = self.views()
+        if views:
+            main_window = views[0].window()
+            requirements = main_window.current_requirements if hasattr(main_window, "current_requirements") else []
 
         clipboard_data = {"requirements": requirements, "nodes": nodes_data, "connections": connections_data}
 
         # Convert to markdown format for clipboard
-        from data.flow_format import FlowFormatHandler
-        handler = FlowFormatHandler()
-        clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes from PyFlowGraph")
-        
-        QApplication.clipboard().setText(clipboard_markdown)
+        try:
+            from data.flow_format import FlowFormatHandler
+            handler = FlowFormatHandler()
+            clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes from PyFlowGraph")
+            QApplication.clipboard().setText(clipboard_markdown)
+        except ImportError:
+            # Fallback to JSON format if FlowFormatHandler is not available (e.g., during testing)
+            import json
+            QApplication.clipboard().setText(json.dumps(clipboard_data, indent=2))
         print(f"Copied {len(nodes_data)} nodes to clipboard as markdown.")
+        
+        return clipboard_data
 
     def paste(self):
         """Pastes nodes and connections from the clipboard."""
         clipboard_text = QApplication.clipboard().text()
+        
+        # Determine paste position
+        paste_pos = QPointF(0, 0)  # Default position
+        views = self.views()
+        if views:
+            paste_pos = views[0].mapToScene(views[0].viewport().rect().center())
+        
         try:
             # Try to parse as markdown first
             from data.flow_format import FlowFormatHandler
             handler = FlowFormatHandler()
             data = handler.markdown_to_data(clipboard_text)
-            self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
+            self.deserialize(data, paste_pos)
+        except ImportError:
+            # FlowFormatHandler not available, try JSON
+            try:
+                import json
+                data = json.loads(clipboard_text)
+                self.deserialize(data, paste_pos)
+            except (json.JSONDecodeError, TypeError):
+                print("Clipboard does not contain valid graph data.")
         except Exception:
             # Fallback: try to parse as JSON for backward compatibility
             try:
+                import json
                 data = json.loads(clipboard_text)
-                self.deserialize(data, self.views()[0].mapToScene(self.views()[0].viewport().rect().center()))
+                self.deserialize(data, paste_pos)
             except (json.JSONDecodeError, TypeError):
                 print("Clipboard does not contain valid graph data.")
 
@@ -300,29 +326,37 @@ class NodeGraph(QGraphicsScene):
         from utils.debug_config import should_debug, DEBUG_FILE_LOADING
         
         for node in nodes_to_update:
-            # Re-validate minimum size now that GUI is fully constructed
-            min_width, min_height = node.calculate_absolute_minimum_size()
-            current_width, current_height = node.width, node.height
-            
-            # Check if current size is still too small after GUI construction
-            required_width = max(current_width, min_width)
-            required_height = max(current_height, min_height)
-            
-            if required_width != current_width or required_height != current_height:
-                if should_debug(DEBUG_FILE_LOADING):
-                    print(f"DEBUG: Final size validation - Node '{node.title}' needs resize from "
-                          f"{current_width}x{current_height} to {required_width}x{required_height}")
+            # Check if node is still valid (not deleted)
+            try:
+                if node.scene() is None:
+                    continue  # Node has been removed from scene
                 
-                node.width = required_width
-                node.height = required_height
-            
-            # Force a complete layout rebuild like manual resize does
-            node._update_layout()
-            # Update all pin connections like manual resize does
-            for pin in node.pins:
-                pin.update_connections()
-            # Force node visual update
-            node.update()
+                # Re-validate minimum size now that GUI is fully constructed
+                min_width, min_height = node.calculate_absolute_minimum_size()
+                current_width, current_height = node.width, node.height
+                
+                # Check if current size is still too small after GUI construction
+                required_width = max(current_width, min_width)
+                required_height = max(current_height, min_height)
+                
+                if required_width != current_width or required_height != current_height:
+                    if should_debug(DEBUG_FILE_LOADING):
+                        print(f"DEBUG: Final size validation - Node '{node.title}' needs resize from "
+                              f"{current_width}x{current_height} to {required_width}x{required_height}")
+                    
+                    node.width = required_width
+                    node.height = required_height
+                
+                # Force a complete layout rebuild like manual resize does
+                node._update_layout()
+                # Update all pin connections like manual resize does
+                for pin in node.pins:
+                    pin.update_connections()
+                # Force node visual update
+                node.update()
+            except RuntimeError:
+                # Node has been deleted, skip
+                continue
         self.update()
 
     # --- Other methods remain the same ---
@@ -467,7 +501,11 @@ class NodeGraph(QGraphicsScene):
         if use_command:
             # Use command pattern
             command = CreateRerouteNodeCommand(self, connection, position)
-            return self.execute_command(command)
+            success = self.execute_command(command)
+            if success:
+                return command.reroute_node  # Return the created node
+            else:
+                return None
         else:
             # Direct creation (for internal use)
             start_pin, end_pin = connection.start_pin, connection.end_pin

@@ -1,12 +1,12 @@
 # BUG-2025-01-001: Reroute Nodes Return None in Execution
 
-**Status**: Open  
+**Status**: Resolved  
 **Priority**: High  
 **Component**: Execution Engine, Reroute Nodes  
-**GitHub Issue**: #35  
+**GitHub Issue**: #35 (Closed)  
 **Reporter**: Development Team  
 **Date**: 2025-01-16  
-**Last Sync**: 2025-01-16  
+**Last Sync**: 2025-08-18  
 
 ## Summary
 
@@ -72,3 +72,35 @@ Additional investigation needed for undo/redo operations involving reroute nodes
 - Integration tests for execution with reroute nodes
 - Undo/redo system tests with reroute operations
 - Connection integrity tests after undo operations
+
+## Resolution
+
+**Resolved**: August 18, 2025  
+**Resolution Method**: Code fixes implemented prior to bug report creation
+
+### Fix Timeline
+
+1. **August 7, 2025** - Initial reroute execution fix (commit d4224f7)
+   - Implemented proper data passing in reroute nodes
+   - Fixed graph executor integration with reroute nodes
+
+2. **August 13, 2025** - Additional serialization fixes (commit 2636a60)
+   - Fixed reroute node save/load functionality 
+   - Resolved GUI rendering issues
+   - Preserved is_reroute flag in markdown metadata
+
+### Verification
+
+**Test Results**: All 13 reroute-related tests pass successfully
+- `test_reroute_node_execution` - Confirms execution data flow works correctly
+- GUI integration tests - Validates creation, deletion, undo/redo workflows
+- Connection system tests - Verifies double-click creation and data passing
+- Serialization tests - Confirms proper save/load with reroute state preservation
+
+**Technical Outcome**: 
+- Reroute nodes now function as transparent pass-through points
+- Data flow continuity maintained across reroute connections
+- No more None values returned during execution
+- Full integration with undo/redo system and file persistence
+
+**Note**: This bug was retroactively documented after the fixes were already implemented and tested.

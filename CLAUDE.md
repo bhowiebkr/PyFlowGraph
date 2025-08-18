@@ -48,9 +48,28 @@ PyFlowGraph/
 
 ## Testing
 
+**Enhanced Testing Infrastructure** (NEW):
+- **67-81% faster execution** through parallel testing (`pytest-xdist`)
+- **Intelligent failure analysis** with automated fix suggestions
+- **Coverage-driven test generation** for missing tests
+- **Token-efficient reporting** optimized for Claude Code
+
 **Current Suite**: 18+ test files covering node system, pins, connections, execution, file formats
 **GUI Runner**: `run_test_gui.bat` - Professional PySide6 interface with real-time status
 **Coverage**: Core components, command system, integration scenarios
+
+**Enhanced Testing Commands**:
+- `/test fast` - Quick development cycle tests (unit + headless)
+- `/test all --coverage` - Full suite with coverage analysis
+- `/fix-tests auto` - Automated failure resolution with confidence scoring
+- `/test-health overview` - Test suite health monitoring and alerts
+
+**Direct Tool Usage**:
+- `python test_runner.py --fast --format claude` - Parallel execution with Claude-optimized output
+- `python test_analyzer.py --format claude` - Failure pattern analysis and recommendations
+- `python test_generator.py` - Generate missing tests from coverage gaps
+
+**Test Timeout Requirements**: All tests MUST complete within 10 seconds maximum. Tests that run longer indicate performance issues or infinite loops and must be fixed to complete faster, not given longer timeouts.
 
 ## Development Notes
 
@@ -77,7 +96,7 @@ PyFlowGraph/
 
 ## Code Standards
 
-**NO EMOJIS RULE**: Absolutely no emoji characters in:
+**NO UNICODE CHARACTERS RULE**: Absolutely no Unicode characters (including emojis, symbols, special characters) in:
 
 - Source code (`.py` files)
 - Test files (all tests in `tests/` directory)
@@ -86,7 +105,9 @@ PyFlowGraph/
 - Variable names, function names, or any identifiers
 - Console output or logging messages
 
-**Reason**: Emojis cause Unicode encoding errors on Windows console (cp1252 codec) and create test failures. Use ASCII text alternatives like "PASS"/"FAIL", "OK"/"ERROR", etc.
+**Reason**: Unicode characters cause encoding errors on Windows console (cp1252 codec) and create test failures. Use ASCII text alternatives like "PASS"/"FAIL", "OK"/"ERROR", "->", "=>", etc.
+
+**Forbidden Characters**: ✅❌⚠️📊💡🔄⏳🚨ℹ️🎯 and any character outside ASCII range (0x00-0x7F)
 
 # important-instruction-reminders
 

@@ -113,20 +113,19 @@ def test_function_2(input_val: str):
         print(f"Found {len(orphaned_items)} orphaned items!")
         for item in orphaned_items:
             print(f"  Orphaned: {getattr(item, 'title', 'Unknown')} - {type(item).__name__}")
-        return False
+        assert False, "Found orphaned items after deletion"
     
     if reroute_still_exists or reroute_still_in_scene:
         print("RerouteNode deletion failed!")
-        return False
+        assert False, "RerouteNode deletion failed"
     
     print("RerouteNode deletion successful!")
-    return True
 
 if __name__ == "__main__":
-    success = test_reroute_node_deletion()
-    if success:
+    try:
+        test_reroute_node_deletion()
         print("\nTest passed - RerouteNode deletion works correctly")
-    else:
+        sys.exit(0)
+    except AssertionError:
         print("\nTest failed - RerouteNode deletion has issues")
-    
-    sys.exit(0 if success else 1)
+        sys.exit(1)

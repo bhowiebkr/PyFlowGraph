@@ -13,7 +13,6 @@ if project_root not in sys.path:
 from PySide6.QtWidgets import QFileDialog
 from PySide6.QtCore import QSettings
 from .flow_format import FlowFormatHandler, extract_title_from_filename
-from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
 
 
 class FileOperationsManager:
@@ -28,13 +27,8 @@ class FileOperationsManager:
         # Current file state
         self.current_file_path = None
         self.current_graph_name = "untitled"
-        self.current_requirements = []
-        self.use_default_environment = True  # Default to True for new/untitled graphs
         
-        # Reference to execution controller (set later)
-        self.execution_controller = None
-        
-        # Reference to default environment manager
+        # Environment management (lazy import to avoid circular dependencies)
         self.default_env_manager = default_env_manager
     
     def set_execution_controller(self, execution_controller):
@@ -202,7 +196,8 @@ class FileOperationsManager:
                 self.output_log.append(f"Using saved environment preference: {saved_choice}")
                 self._apply_environment_selection(saved_choice)
             else:
-                # Show dialog for first-time loading
+                # Show dialog for first-time loading (lazy import to avoid circular dependency)
+                from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
                 dialog = EnvironmentSelectionDialog(self.current_graph_name, self.parent_window)
                 if dialog.exec():
                     selected_option = dialog.get_selected_option()
@@ -268,3 +263,18 @@ class FileOperationsManager:
         if hasattr(self, 'use_default_environment') and self.use_default_environment:
             return os.path.join(venv_parent_dir, "default")
         return os.path.join(venv_parent_dir, self.current_graph_name)
+
+
+def load_file(window, file_path):
+    """Convenience function to load a file using the window's file operations manager.
+    
+    Args:
+        window: The main window object with file_operations_manager
+        file_path: Path to the file to load
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if hasattr(window, 'file_operations_manager'):
+        return window.file_operations_manager.load(file_path)
+    return False

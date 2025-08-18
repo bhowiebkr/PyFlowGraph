@@ -55,7 +55,14 @@ class Connection(QGraphicsPathItem):
         path.cubicTo(ctrl1, ctrl2, p2)
         self.setPath(path)
 
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedChange:
+            # Update pen immediately when selection changes
+            self.setPen(self._pen_selected if value else self._pen)
+        return super().itemChange(change, value)
+
     def paint(self, painter, option, widget=None):
+        # Make sure pen is set correctly (backup for paint method)
         self.setPen(self._pen_selected if self.isSelected() else self._pen)
         if option.state & QStyle.State_Selected:
             option.state &= ~QStyle.State_Selected
