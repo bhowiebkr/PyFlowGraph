@@ -442,12 +442,9 @@ class Node(QGraphicsItem):
     def open_unified_editor(self):
         from ui.dialogs.code_editor_dialog import CodeEditorDialog
         parent_widget = self.scene().views()[0] if self.scene().views() else None
-        dialog = CodeEditorDialog(self.code, self.gui_code, self.gui_get_values_code, parent_widget)
-        if dialog.exec():
-            results = dialog.get_results()
-            self.set_code(results["code"])
-            self.set_gui_code(results["gui_code"])
-            self.set_gui_get_values_code(results["gui_logic_code"])
+        node_graph = self.scene() if self.scene() else None
+        dialog = CodeEditorDialog(self, node_graph, self.code, self.gui_code, self.gui_get_values_code, parent_widget)
+        dialog.exec()
 
     def set_code(self, code_text):
         self.code = code_text

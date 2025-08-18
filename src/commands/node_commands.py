@@ -616,8 +616,7 @@ class CodeChangeCommand(CommandBase):
     def execute(self) -> bool:
         """Apply the code change."""
         try:
-            self.node.code = self.new_code
-            self.node.update_pins_from_code()
+            self.node.set_code(self.new_code)
             self._mark_executed()
             return True
         except Exception as e:
@@ -627,8 +626,7 @@ class CodeChangeCommand(CommandBase):
     def undo(self) -> bool:
         """Revert the code change."""
         try:
-            self.node.code = self.old_code
-            self.node.update_pins_from_code()
+            self.node.set_code(self.old_code)
             self._mark_undone()
             return True
         except Exception as e:
