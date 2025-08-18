@@ -77,7 +77,7 @@ class ExecutionController:
         self.status_label.setText("Ready")
         self.status_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
-        self.output_log.append("📦 === BATCH MODE SELECTED ===")
+        self.output_log.append("[BATCH] === BATCH MODE SELECTED ===")
         self.output_log.append("Click 'Execute Graph' to run entire graph at once")
     
     def _update_ui_for_live_mode(self):
@@ -95,9 +95,9 @@ class ExecutionController:
             self.status_label.setText("Live Ready")
             self.status_label.setStyleSheet("color: #FF9800; font-weight: bold;")
 
-            self.output_log.append("🎯 === LIVE MODE SELECTED ===")
-            self.output_log.append("📋 Click 'Start Live Mode' to activate interactive execution")
-            self.output_log.append("💡 Then use buttons inside nodes to control flow!")
+            self.output_log.append("[LIVE] === LIVE MODE SELECTED ===")
+            self.output_log.append("=> Click 'Start Live Mode' to activate interactive execution")
+            self.output_log.append("=> Then use buttons inside nodes to control flow!")
         finally:
             self._ui_update_in_progress = False
     
@@ -108,7 +108,7 @@ class ExecutionController:
             self.file_ops.ensure_environment_selected()
             
         self.output_log.clear()
-        self.output_log.append("▶️ === BATCH EXECUTION STARTED ===")
+        self.output_log.append("=> === BATCH EXECUTION STARTED ===")
 
         # Update button state during execution
         self.main_exec_button.setText("Executing...")
@@ -119,9 +119,9 @@ class ExecutionController:
 
         try:
             self.executor.execute()
-            self.output_log.append("✅ === BATCH EXECUTION FINISHED ===")
+            self.output_log.append("[OK] === BATCH EXECUTION FINISHED ===")
         except Exception as e:
-            self.output_log.append(f"❌ === EXECUTION FAILED: {e} ===")
+            self.output_log.append(f"[ERROR] === EXECUTION FAILED: {e} ===")
         finally:
             # Restore button state
             self.main_exec_button.setText("Execute Graph")
@@ -137,12 +137,14 @@ class ExecutionController:
             self.file_ops.ensure_environment_selected()
             
         self.output_log.clear()
-        self.output_log.append("🔥 === LIVE MODE ACTIVATED ===")
-        self.output_log.append("✨ Interactive execution enabled!")
-        self.output_log.append("🎮 Click buttons inside nodes to trigger execution")
-        self.output_log.append("📋 Graph state has been reset and is ready for interaction")
+        self.output_log.append("[LIVE] === LIVE MODE ACTIVATED ===")
+        self.output_log.append("=> Interactive execution enabled!")
+        self.output_log.append("=> Click buttons inside nodes to trigger execution")
+        self.output_log.append("=> Graph state has been reset and is ready for interaction")
 
         self.live_active = True
+        # CRITICAL FIX: Ensure live mode is enabled in the executor
+        self.live_executor.set_live_mode(True)
         self.live_executor.restart_graph()
 
         # Update button to pause state
@@ -163,7 +165,7 @@ class ExecutionController:
         self.status_label.setText("Live Paused")
         self.status_label.setStyleSheet("color: #F44336; font-weight: bold;")
 
-        self.output_log.append("⏸️ Live mode paused - node buttons are now inactive")
+        self.output_log.append("[PAUSE] Live mode paused - node buttons are now inactive")
         self.output_log.append("Click 'Resume Live Mode' to reactivate")
     
     def _check_environment_validity(self):
