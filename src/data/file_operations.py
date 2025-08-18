@@ -13,7 +13,6 @@ if project_root not in sys.path:
 from PySide6.QtWidgets import QFileDialog
 from PySide6.QtCore import QSettings
 from .flow_format import FlowFormatHandler, extract_title_from_filename
-from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
 
 
 class FileOperationsManager:
@@ -28,13 +27,8 @@ class FileOperationsManager:
         # Current file state
         self.current_file_path = None
         self.current_graph_name = "untitled"
-        self.current_requirements = []
-        self.use_default_environment = True  # Default to True for new/untitled graphs
         
-        # Reference to execution controller (set later)
-        self.execution_controller = None
-        
-        # Reference to default environment manager
+        # Environment management (lazy import to avoid circular dependencies)
         self.default_env_manager = default_env_manager
     
     def set_execution_controller(self, execution_controller):
@@ -202,7 +196,8 @@ class FileOperationsManager:
                 self.output_log.append(f"Using saved environment preference: {saved_choice}")
                 self._apply_environment_selection(saved_choice)
             else:
-                # Show dialog for first-time loading
+                # Show dialog for first-time loading (lazy import to avoid circular dependency)
+                from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
                 dialog = EnvironmentSelectionDialog(self.current_graph_name, self.parent_window)
                 if dialog.exec():
                     selected_option = dialog.get_selected_option()
