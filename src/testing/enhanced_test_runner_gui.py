@@ -388,11 +388,11 @@ class EnhancedTestRunnerWindow(QMainWindow):
         # Tree controls
         tree_controls = QHBoxLayout()
         
-        headless_btn = QPushButton("✓ Headless")
+        headless_btn = QPushButton("[H] Headless")
         headless_btn.clicked.connect(lambda: self.test_tree.check_category(TestCategory.HEADLESS, True))
         tree_controls.addWidget(headless_btn)
         
-        gui_btn = QPushButton("✓ GUI")
+        gui_btn = QPushButton("[G] GUI")
         gui_btn.clicked.connect(lambda: self.test_tree.check_category(TestCategory.GUI, True))
         tree_controls.addWidget(gui_btn)
         
@@ -547,7 +547,7 @@ class EnhancedTestRunnerWindow(QMainWindow):
         self.progress_bar.setValue(current_value + 1)
         
         # Add output
-        status_symbol = "✓" if status == "passed" else "✗"
+        status_symbol = "PASS" if status == "passed" else "FAIL"
         self.output_text.append(f"[{category.upper()}] {status_symbol} {test_name} ({duration:.2f}s) - {status.upper()}")
         
         if output.strip():
