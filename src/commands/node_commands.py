@@ -18,6 +18,10 @@ if project_root not in sys.path:
 
 from .command_base import CommandBase, CompositeCommand
 
+# Debug configuration
+# Set to True to enable detailed node command and connection restoration debugging
+DEBUG_NODE_COMMANDS = False
+
 
 class CreateNodeCommand(CommandBase):
     """Command for creating nodes with full state preservation."""
@@ -186,9 +190,11 @@ class DeleteNodeCommand(CommandBase):
                     get_values_func = scope.get("get_values")
                     if callable(get_values_func):
                         self.node_state['gui_state'] = get_values_func(self.node.gui_widgets)
-                        print(f"DEBUG: Captured GUI state: {self.node_state['gui_state']}")
+                        if DEBUG_NODE_COMMANDS:
+                            print(f"DEBUG: Captured GUI state: {self.node_state['gui_state']}")
             except Exception as e:
-                print(f"DEBUG: Could not capture GUI state: {e}")
+                if DEBUG_NODE_COMMANDS:
+                    print(f"DEBUG: Could not capture GUI state: {e}")
             
             # Check connections before removal
             connections_to_node = []
@@ -205,27 +211,33 @@ class DeleteNodeCommand(CommandBase):
                 start_node = connection.start_pin.node
                 end_node = connection.end_pin.node
                 
-                # Get pin indices based on node type
+                # Get pin indices and names for more robust restoration
                 if hasattr(start_node, 'is_reroute') and start_node.is_reroute:
                     # RerouteNode - use single pins
                     output_pin_index = 0 if connection.start_pin == start_node.output_pin else -1
+                    output_pin_name = "output"
                 else:
-                    # Regular Node - use pin lists
+                    # Regular Node - use pin lists and store both index and name
                     output_pin_index = self._get_pin_index(start_node.output_pins, connection.start_pin)
+                    output_pin_name = connection.start_pin.name
                 
                 if hasattr(end_node, 'is_reroute') and end_node.is_reroute:
                     # RerouteNode - use single pins
                     input_pin_index = 0 if connection.end_pin == end_node.input_pin else -1
+                    input_pin_name = "input"
                 else:
-                    # Regular Node - use pin lists
+                    # Regular Node - use pin lists and store both index and name
                     input_pin_index = self._get_pin_index(end_node.input_pins, connection.end_pin)
+                    input_pin_name = connection.end_pin.name
                 
                 conn_data = {
                     'connection': connection,
                     'output_node_id': start_node.uuid,
                     'output_pin_index': output_pin_index,
+                    'output_pin_name': output_pin_name,
                     'input_node_id': end_node.uuid,
-                    'input_pin_index': input_pin_index
+                    'input_pin_index': input_pin_index,
+                    'input_pin_name': input_pin_name
                 }
                 self.affected_connections.append(conn_data)
                 
@@ -267,12 +279,8 @@ class DeleteNodeCommand(CommandBase):
             from core.node import Node
             from PySide6.QtGui import QColor
             
-            # Import debug config safely
-            try:
-                from utils.debug_config import should_debug, DEBUG_UNDO_REDO
-                debug_enabled = should_debug(DEBUG_UNDO_REDO)
-            except ImportError:
-                debug_enabled = False
+            # Use local debug configuration
+            debug_enabled = DEBUG_NODE_COMMANDS
             
             # Recreate node with preserved state - check if it was a RerouteNode
             if self.node_state.get('is_reroute', False):
@@ -398,41 +406,61 @@ class DeleteNodeCommand(CommandBase):
                     output_pin = None
                     input_pin = None
                     
-                    # Handle output pin
+                    # Handle output pin with robust fallback
+                    output_pin = None
                     if hasattr(output_node, 'is_reroute') and output_node.is_reroute:
                         # RerouteNode - use single output pin
                         output_pin = output_node.output_pin
                     else:
-                        # Regular Node - validate pin index and list
+                        # Regular Node - try pin index first, then fallback to name search
                         output_pin_index = conn_data['output_pin_index']
+                        output_pin_name = conn_data.get('output_pin_name', 'exec_out')
+                        
                         if (hasattr(output_node, 'output_pins') and 
                             output_node.output_pins and 
                             0 <= output_pin_index < len(output_node.output_pins)):
                             output_pin = output_node.output_pins[output_pin_index]
-                        else:
                             if debug_enabled:
-                                print(f"DEBUG: Output pin index {output_pin_index} out of range or no output pins on node {output_node.title}")
-                                print(f"DEBUG: Node has {len(output_node.output_pins) if hasattr(output_node, 'output_pins') and output_node.output_pins else 0} output pins")
-                            failed_connections += 1
-                            continue
+                                print(f"DEBUG: Found output pin by index {output_pin_index}: '{output_pin.name}' on '{output_node.title}'")
+                        else:
+                            # Fallback: search by name
+                            if debug_enabled:
+                                print(f"DEBUG: Output pin index {output_pin_index} failed, searching by name '{output_pin_name}' on '{output_node.title}'")
+                            output_pin = output_node.get_pin_by_name(output_pin_name)
+                            if output_pin and debug_enabled:
+                                print(f"DEBUG: Found output pin by name: '{output_pin.name}' on '{output_node.title}'")
+                        
+                        if not output_pin and debug_enabled:
+                            print(f"DEBUG: Output pin not found by index {output_pin_index} or name '{output_pin_name}' on node {output_node.title}")
+                            print(f"DEBUG: Available output pins: {[p.name for p in output_node.output_pins] if hasattr(output_node, 'output_pins') and output_node.output_pins else []}")
                     
-                    # Handle input pin
+                    # Handle input pin with robust fallback
+                    input_pin = None
                     if hasattr(input_node, 'is_reroute') and input_node.is_reroute:
                         # RerouteNode - use single input pin
                         input_pin = input_node.input_pin
                     else:
-                        # Regular Node - validate pin index and list
+                        # Regular Node - try pin index first, then fallback to name search
                         input_pin_index = conn_data['input_pin_index']
+                        input_pin_name = conn_data.get('input_pin_name', 'exec_in')
+                        
                         if (hasattr(input_node, 'input_pins') and 
                             input_node.input_pins and 
                             0 <= input_pin_index < len(input_node.input_pins)):
                             input_pin = input_node.input_pins[input_pin_index]
-                        else:
                             if debug_enabled:
-                                print(f"DEBUG: Input pin index {input_pin_index} out of range or no input pins on node {input_node.title}")
-                                print(f"DEBUG: Node has {len(input_node.input_pins) if hasattr(input_node, 'input_pins') and input_node.input_pins else 0} input pins")
-                            failed_connections += 1
-                            continue
+                                print(f"DEBUG: Found input pin by index {input_pin_index}: '{input_pin.name}' on '{input_node.title}'")
+                        else:
+                            # Fallback: search by name
+                            if debug_enabled:
+                                print(f"DEBUG: Input pin index {input_pin_index} failed, searching by name '{input_pin_name}' on '{input_node.title}'")
+                            input_pin = input_node.get_pin_by_name(input_pin_name)
+                            if input_pin and debug_enabled:
+                                print(f"DEBUG: Found input pin by name: '{input_pin.name}' on '{input_node.title}'")
+                        
+                        if not input_pin and debug_enabled:
+                            print(f"DEBUG: Input pin not found by index {input_pin_index} or name '{input_pin_name}' on node {input_node.title}")
+                            print(f"DEBUG: Available input pins: {[p.name for p in input_node.input_pins] if hasattr(input_node, 'input_pins') and input_node.input_pins else []}")
                     
                     # Validate pins exist
                     if not output_pin or not input_pin:
@@ -460,16 +488,16 @@ class DeleteNodeCommand(CommandBase):
                     self.node_graph.addItem(new_connection)
                     self.node_graph.connections.append(new_connection)
                     
-                    # Update pin connection references
-                    if hasattr(output_pin, 'add_connection'):
-                        output_pin.add_connection(new_connection)
-                    if hasattr(input_pin, 'add_connection'):
-                        input_pin.add_connection(new_connection)
+                    # Note: Connection constructor automatically adds itself to pin connection lists
+                    # No need to manually call add_connection as it would create duplicates
                     
                     restored_connections += 1
                     
                     if debug_enabled:
                         print(f"DEBUG: Connection restored successfully between {output_node.title}.{output_pin.name} and {input_node.title}.{input_pin.name}")
+                        print(f"DEBUG: Pin details - Output pin category: {output_pin.pin_category}, Input pin category: {input_pin.pin_category}")
+                        print(f"DEBUG: Connection added to graph connections (total: {len(self.node_graph.connections)})")
+                        print(f"DEBUG: Output pin connections: {len(output_pin.connections)}, Input pin connections: {len(input_pin.connections)}")
                         
                 except Exception as e:
                     if debug_enabled:
