@@ -19,6 +19,7 @@ from execution.environment_manager import EnvironmentManagerDialog
 from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
 from ui.dialogs.graph_properties_dialog import GraphPropertiesDialog
+from ui.dialogs.undo_history_dialog import UndoHistoryDialog
 
 # Import our new modular components
 from ui.utils.ui_utils import create_fa_icon, create_execution_control_widget, ButtonStyleManager
@@ -133,6 +134,14 @@ class NodeEditorWindow(QMainWindow):
         self.action_redo = QAction(create_fa_icon("\uf01e", "lightgreen"), "&Redo", self)
         self.action_redo.setShortcut("Ctrl+Y")
         self.action_redo.triggered.connect(self.on_redo)
+        
+        # Add additional redo shortcut (Ctrl+Shift+Z) for enhanced accessibility
+        self.action_redo.setShortcuts(["Ctrl+Y", "Ctrl+Shift+Z"])
+
+        # Undo history dialog action
+        self.action_undo_history = QAction(create_fa_icon("\uf1da", "lightblue"), "Undo &History...", self)
+        self.action_undo_history.setShortcut("Ctrl+H")
+        self.action_undo_history.triggered.connect(self.on_undo_history)
 
         self.action_settings = QAction("Settings...", self)
         self.action_settings.triggered.connect(self.on_settings)
@@ -168,6 +177,7 @@ class NodeEditorWindow(QMainWindow):
         edit_menu = menu_bar.addMenu("&Edit")
         edit_menu.addAction(self.action_undo)
         edit_menu.addAction(self.action_redo)
+        edit_menu.addAction(self.action_undo_history)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_add_node)
         edit_menu.addSeparator()
@@ -187,6 +197,11 @@ class NodeEditorWindow(QMainWindow):
         toolbar.addAction(self.action_load)
         toolbar.addAction(self.action_save)
         toolbar.addAction(self.action_save_as)
+        toolbar.addSeparator()
+        
+        # Edit operations (undo/redo)
+        toolbar.addAction(self.action_undo)
+        toolbar.addAction(self.action_redo)
         toolbar.addSeparator()
 
         # Add spacer to push execution controls to the right
@@ -319,14 +334,18 @@ class NodeEditorWindow(QMainWindow):
         if can_undo:
             undo_desc = self.graph.get_undo_description()
             self.action_undo.setText(f"&Undo {undo_desc}")
+            self.action_undo.setToolTip(f"Undo: {undo_desc} (Ctrl+Z)")
         else:
             self.action_undo.setText("&Undo")
+            self.action_undo.setToolTip("No operations available to undo (Ctrl+Z)")
         
         if can_redo:
             redo_desc = self.graph.get_redo_description()
             self.action_redo.setText(f"&Redo {redo_desc}")
+            self.action_redo.setToolTip(f"Redo: {redo_desc} (Ctrl+Y, Ctrl+Shift+Z)")
         else:
             self.action_redo.setText("&Redo")
+            self.action_redo.setToolTip("No operations available to redo (Ctrl+Y, Ctrl+Shift+Z)")
     
     def on_undo(self):
         """Handle undo action."""
@@ -335,6 +354,42 @@ class NodeEditorWindow(QMainWindow):
     def on_redo(self):
         """Handle redo action."""
         self.graph.redo_last_command()
+
+    def on_undo_history(self):
+        """Open the undo history dialog."""
+        dialog = UndoHistoryDialog(self.graph.command_history, self)
+        dialog.jumpToIndex.connect(self._jump_to_command_index)
+        dialog.exec()
+    
+    def _jump_to_command_index(self, target_index: int):
+        """Jump to specific command index in history."""
+        current_index = self.graph.command_history.current_index
+        
+        if target_index == current_index:
+            # Already at target position
+            self.statusBar().showMessage(f"Already at position {target_index + 1}", 2000)
+            return
+        
+        if target_index < current_index:
+            # Need to undo to reach target
+            undone_descriptions = self.graph.command_history.undo_to_command(target_index)
+            if undone_descriptions:
+                count = len(undone_descriptions)
+                self.statusBar().showMessage(f"Undone {count} operations to reach position {target_index + 1}", 3000)
+                self._update_undo_redo_actions()
+        elif target_index > current_index:
+            # Need to redo to reach target
+            redone_count = 0
+            while self.graph.command_history.current_index < target_index:
+                description = self.graph.command_history.redo()
+                if description:
+                    redone_count += 1
+                else:
+                    break
+            
+            if redone_count > 0:
+                self.statusBar().showMessage(f"Redone {redone_count} operations to reach position {target_index + 1}", 3000)
+                self._update_undo_redo_actions()
 
     def closeEvent(self, event):
         """Handle application close event."""
