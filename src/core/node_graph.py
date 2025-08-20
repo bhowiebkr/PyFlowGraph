@@ -118,6 +118,14 @@ class NodeGraph(QGraphicsScene):
                 print(f"\n=== KEYBOARD REDO (Y) TRIGGERED ===")
                 self.redo_last_command()
                 return
+            elif event.key() == Qt.Key_G:
+                print(f"\n=== KEYBOARD GROUP TRIGGERED ===")
+                selected_nodes = [item for item in self.selectedItems() if isinstance(item, Node)]
+                if len(selected_nodes) >= 2:
+                    self._create_group_from_selection(selected_nodes)
+                else:
+                    print(f"DEBUG: Cannot group - need at least 2 nodes, found {len(selected_nodes)}")
+                return
         
         # Handle delete operations
         if event.key() == Qt.Key_Delete:
@@ -158,6 +166,38 @@ class NodeGraph(QGraphicsScene):
                 print(f"DEBUG: No items selected for deletion")
         else:
             super().keyPressEvent(event)
+    
+    def _create_group_from_selection(self, selected_nodes):
+        """Create a group from selected nodes using the group creation dialog"""
+        # Validate selection
+        from core.group import validate_group_creation
+        is_valid, error_message = validate_group_creation(selected_nodes)
+        
+        if not is_valid:
+            from PySide6.QtWidgets import QMessageBox
+            msg = QMessageBox()
+            msg.setWindowTitle("Invalid Selection")
+            msg.setText(f"Cannot create group: {error_message}")
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec()
+            return
+        
+        # Show group creation dialog
+        from ui.dialogs.group_creation_dialog import show_group_creation_dialog
+        
+        # Get the main window as parent for the dialog
+        main_window = None
+        views = self.views()
+        if views:
+            main_window = views[0].window()
+        
+        group_properties = show_group_creation_dialog(selected_nodes, main_window)
+        
+        if group_properties:
+            # Create and execute the group creation command
+            from commands.create_group_command import CreateGroupCommand
+            command = CreateGroupCommand(self, group_properties)
+            self.execute_command(command)
 
     def copy_selected(self):
         """Copies selected nodes, their connections, and the graph's requirements to the clipboard."""

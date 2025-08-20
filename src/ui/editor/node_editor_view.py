@@ -68,20 +68,64 @@ class NodeEditorView(QGraphicsView):
         
         menu = QMenu(self)
         
+        # Get selected items for group operations
+        selected_items = [item for item in self.scene().selectedItems() if isinstance(item, Node)]
+        
         if node:
             # Context menu for a node
             properties_action = menu.addAction("Properties")
+            
+            # Add group option if multiple nodes are selected
+            group_action = None
+            if len(selected_items) >= 2:
+                group_action = menu.addAction("Group Selected")
+                # Basic validation - ensure we have valid nodes
+                if not self._can_group_nodes(selected_items):
+                    group_action.setEnabled(False)
+            
             action = menu.exec(event.globalPos())
             if action == properties_action:
                 node.show_properties_dialog()
+            elif action == group_action and group_action:
+                self._create_group_from_selection(selected_items)
         else:
             # Context menu for empty space
             add_node_action = menu.addAction("Add Node")
+            
+            # Add group option if multiple nodes are selected
+            group_action = None
+            if len(selected_items) >= 2:
+                group_action = menu.addAction("Group Selected")
+                # Basic validation - ensure we have valid nodes
+                if not self._can_group_nodes(selected_items):
+                    group_action.setEnabled(False)
+            
             action = menu.exec(event.globalPos())
             if action == add_node_action:
                 main_window = self.window()
                 if hasattr(main_window, "on_add_node"):
                     main_window.on_add_node(scene_pos=scene_pos)
+            elif action == group_action and group_action:
+                self._create_group_from_selection(selected_items)
+    
+    def _can_group_nodes(self, nodes):
+        """Basic validation for group creation"""
+        # Must have at least 2 nodes
+        if len(nodes) < 2:
+            return False
+        
+        # All items must be valid Node instances
+        from core.node import Node
+        for node in nodes:
+            if not isinstance(node, Node):
+                return False
+                
+        return True
+    
+    def _create_group_from_selection(self, selected_nodes):
+        """Create a group from selected nodes"""
+        # Delegate to the node graph for actual group creation
+        self.scene()._create_group_from_selection(selected_nodes)
 
     def mousePressEvent(self, event: QMouseEvent):
         is_pan_button = event.button() in (Qt.RightButton, Qt.MiddleButton)
