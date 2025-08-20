@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 # Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src')
+src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
 sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton, QLabel, QRadioButton

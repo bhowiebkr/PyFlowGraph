@@ -43,6 +43,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, QThread, QObject, Signal, QSize, QRect
 from PySide6.QtGui import QFont, QIcon, QPalette, QColor, QPixmap, QPainter, QBrush
 
+# Import badge updater module
+from badge_updater import BadgeUpdater
+
 
 class TestResult:
     """Container for test execution results."""
@@ -287,6 +290,9 @@ class TestRunnerMainWindow(QMainWindow):
         
         # Track currently selected test for auto-refresh
         self.currently_selected_test = None
+        
+        # Initialize badge updater
+        self.badge_updater = BadgeUpdater()
 
         self.setup_ui()
         self.discover_tests()
@@ -321,12 +327,17 @@ class TestRunnerMainWindow(QMainWindow):
         self.clear_btn = QPushButton("Clear Results")
         self.clear_btn.clicked.connect(self.clear_results)
 
+        self.update_badges_btn = QPushButton("Update README Badges")
+        self.update_badges_btn.clicked.connect(self.update_readme_badges)
+        self.update_badges_btn.setEnabled(False)  # Disabled until tests are run
+
         control_layout.addWidget(self.select_all_cb)
         control_layout.addStretch()
         control_layout.addWidget(self.run_selected_btn)
         control_layout.addWidget(self.run_all_btn)
         control_layout.addWidget(self.stop_btn)
         control_layout.addWidget(self.clear_btn)
+        control_layout.addWidget(self.update_badges_btn)
 
         # Progress bar
         self.progress_bar = QProgressBar()
@@ -447,7 +458,7 @@ class TestRunnerMainWindow(QMainWindow):
 
     def discover_tests(self):
         """Discover all test files in the tests directory."""
-        tests_dir = Path(__file__).parent.parent.parent / "tests"
+        tests_dir = Path(__file__).parent.parent / "tests"
 
         if not tests_dir.exists():
             self.statusBar().showMessage("Tests directory not found")
@@ -629,6 +640,10 @@ class TestRunnerMainWindow(QMainWindow):
 
         # Update status message
         self.statusBar().showMessage(f"Tests completed: {passed_tests} passed, {failed_tests} failed, {total_tests} total")
+        
+        # Enable badge update button if tests were executed
+        if total_tests > 0:
+            self.update_badges_btn.setEnabled(True)
 
         # Clean up thread
         if self.test_thread:
@@ -663,6 +678,47 @@ class TestRunnerMainWindow(QMainWindow):
         self.output_widget.clear()
 
         self.statusBar().showMessage("Results cleared")
+        
+        # Disable badge update button when results are cleared
+        self.update_badges_btn.setEnabled(False)
+    
+    def update_readme_badges(self):
+        """Update README.md with test result badges."""
+        try:
+            # Prepare test results in the format expected by BadgeUpdater
+            test_results = {}
+            
+            for file_path, result in self.test_tree.test_results.items():
+                # Only include tests that have been executed
+                if result.status in ["passed", "failed", "error"]:
+                    test_results[file_path] = {
+                        "status": result.status,
+                        "duration": result.duration,
+                        "output": result.output
+                    }
+            
+            if not test_results:
+                self.statusBar().showMessage("No test results to update badges with")
+                return
+            
+            # Update badges
+            success = self.badge_updater.update_readme_badges(test_results)
+            
+            if success:
+                # Generate and display summary report
+                summary = self.badge_updater.generate_summary_report(test_results)
+                print(summary)
+                
+                # Update status message
+                total_tests = len(test_results)
+                passed_tests = sum(1 for r in test_results.values() if r["status"] == "passed")
+                self.statusBar().showMessage(f"README badges and detailed test results updated: {passed_tests}/{total_tests} tests passed")
+            else:
+                self.statusBar().showMessage("Failed to update README badges")
+                
+        except Exception as e:
+            print(f"Error updating badges: {e}")
+            self.statusBar().showMessage(f"Badge update error: {str(e)}")
 
 
 def main():
