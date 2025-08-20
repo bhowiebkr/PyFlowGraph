@@ -18,6 +18,10 @@ if project_root not in sys.path:
 
 from .command_base import CommandBase, CompositeCommand
 
+# Debug configuration
+# Set to True to enable detailed node command and connection restoration debugging
+DEBUG_NODE_COMMANDS = False
+
 
 class CreateNodeCommand(CommandBase):
     """Command for creating nodes with full state preservation."""
@@ -186,9 +190,11 @@ class DeleteNodeCommand(CommandBase):
                     get_values_func = scope.get("get_values")
                     if callable(get_values_func):
                         self.node_state['gui_state'] = get_values_func(self.node.gui_widgets)
-                        print(f"DEBUG: Captured GUI state: {self.node_state['gui_state']}")
+                        if DEBUG_NODE_COMMANDS:
+                            print(f"DEBUG: Captured GUI state: {self.node_state['gui_state']}")
             except Exception as e:
-                print(f"DEBUG: Could not capture GUI state: {e}")
+                if DEBUG_NODE_COMMANDS:
+                    print(f"DEBUG: Could not capture GUI state: {e}")
             
             # Check connections before removal
             connections_to_node = []
@@ -205,27 +211,33 @@ class DeleteNodeCommand(CommandBase):
                 start_node = connection.start_pin.node
                 end_node = connection.end_pin.node
                 
-                # Get pin indices based on node type
+                # Get pin indices and names for more robust restoration
                 if hasattr(start_node, 'is_reroute') and start_node.is_reroute:
                     # RerouteNode - use single pins
                     output_pin_index = 0 if connection.start_pin == start_node.output_pin else -1
+                    output_pin_name = "output"
                 else:
-                    # Regular Node - use pin lists
+                    # Regular Node - use pin lists and store both index and name
                     output_pin_index = self._get_pin_index(start_node.output_pins, connection.start_pin)
+                    output_pin_name = connection.start_pin.name
                 
                 if hasattr(end_node, 'is_reroute') and end_node.is_reroute:
                     # RerouteNode - use single pins
                     input_pin_index = 0 if connection.end_pin == end_node.input_pin else -1
+                    input_pin_name = "input"
                 else:
-                    # Regular Node - use pin lists
+                    # Regular Node - use pin lists and store both index and name
                     input_pin_index = self._get_pin_index(end_node.input_pins, connection.end_pin)
+                    input_pin_name = connection.end_pin.name
                 
                 conn_data = {
                     'connection': connection,
                     'output_node_id': start_node.uuid,
                     'output_pin_index': output_pin_index,
+                    'output_pin_name': output_pin_name,
                     'input_node_id': end_node.uuid,
-                    'input_pin_index': input_pin_index
+                    'input_pin_index': input_pin_index,
+                    'input_pin_name': input_pin_name
                 }
                 self.affected_connections.append(conn_data)
                 
@@ -267,12 +279,8 @@ class DeleteNodeCommand(CommandBase):
             from core.node import Node
             from PySide6.QtGui import QColor
             
-            # Import debug config safely
-            try:
-                from utils.debug_config import should_debug, DEBUG_UNDO_REDO
-                debug_enabled = should_debug(DEBUG_UNDO_REDO)
-            except ImportError:
-                debug_enabled = False
+            # Use local debug configuration
+            debug_enabled = DEBUG_NODE_COMMANDS
             
             # Recreate node with preserved state - check if it was a RerouteNode
             if self.node_state.get('is_reroute', False):
@@ -379,41 +387,126 @@ class DeleteNodeCommand(CommandBase):
                 elif self.node_state.get('is_reroute', False):
                     print(f"DEBUG: Skipping GUI state for reroute node")
             
-            # Restore connections
+            # Restore connections with improved error handling
             restored_connections = 0
+            failed_connections = 0
             for conn_data in self.affected_connections:
-                # Find nodes by ID
-                output_node = self._find_node_by_id(conn_data['output_node_id'])
-                input_node = self._find_node_by_id(conn_data['input_node_id'])
-                
-                if output_node and input_node:
-                    # Get pins by index based on node type
-                    try:
-                        # Handle output pin
-                        if hasattr(output_node, 'is_reroute') and output_node.is_reroute:
-                            # RerouteNode - use single output pin
-                            output_pin = output_node.output_pin
+                try:
+                    # Find nodes by ID
+                    output_node = self._find_node_by_id(conn_data['output_node_id'])
+                    input_node = self._find_node_by_id(conn_data['input_node_id'])
+                    
+                    if not output_node or not input_node:
+                        if debug_enabled:
+                            print(f"DEBUG: Connection restoration failed - nodes not found (output: {output_node is not None}, input: {input_node is not None})")
+                        failed_connections += 1
+                        continue
+                    
+                    # Get pins by index based on node type with proper validation
+                    output_pin = None
+                    input_pin = None
+                    
+                    # Handle output pin with robust fallback
+                    output_pin = None
+                    if hasattr(output_node, 'is_reroute') and output_node.is_reroute:
+                        # RerouteNode - use single output pin
+                        output_pin = output_node.output_pin
+                    else:
+                        # Regular Node - try pin index first, then fallback to name search
+                        output_pin_index = conn_data['output_pin_index']
+                        output_pin_name = conn_data.get('output_pin_name', 'exec_out')
+                        
+                        if (hasattr(output_node, 'output_pins') and 
+                            output_node.output_pins and 
+                            0 <= output_pin_index < len(output_node.output_pins)):
+                            output_pin = output_node.output_pins[output_pin_index]
+                            if debug_enabled:
+                                print(f"DEBUG: Found output pin by index {output_pin_index}: '{output_pin.name}' on '{output_node.title}'")
                         else:
-                            # Regular Node - use pin list
-                            output_pin = output_node.output_pins[conn_data['output_pin_index']]
+                            # Fallback: search by name
+                            if debug_enabled:
+                                print(f"DEBUG: Output pin index {output_pin_index} failed, searching by name '{output_pin_name}' on '{output_node.title}'")
+                            output_pin = output_node.get_pin_by_name(output_pin_name)
+                            if output_pin and debug_enabled:
+                                print(f"DEBUG: Found output pin by name: '{output_pin.name}' on '{output_node.title}'")
                         
-                        # Handle input pin
-                        if hasattr(input_node, 'is_reroute') and input_node.is_reroute:
-                            # RerouteNode - use single input pin
-                            input_pin = input_node.input_pin
+                        if not output_pin and debug_enabled:
+                            print(f"DEBUG: Output pin not found by index {output_pin_index} or name '{output_pin_name}' on node {output_node.title}")
+                            print(f"DEBUG: Available output pins: {[p.name for p in output_node.output_pins] if hasattr(output_node, 'output_pins') and output_node.output_pins else []}")
+                    
+                    # Handle input pin with robust fallback
+                    input_pin = None
+                    if hasattr(input_node, 'is_reroute') and input_node.is_reroute:
+                        # RerouteNode - use single input pin
+                        input_pin = input_node.input_pin
+                    else:
+                        # Regular Node - try pin index first, then fallback to name search
+                        input_pin_index = conn_data['input_pin_index']
+                        input_pin_name = conn_data.get('input_pin_name', 'exec_in')
+                        
+                        if (hasattr(input_node, 'input_pins') and 
+                            input_node.input_pins and 
+                            0 <= input_pin_index < len(input_node.input_pins)):
+                            input_pin = input_node.input_pins[input_pin_index]
+                            if debug_enabled:
+                                print(f"DEBUG: Found input pin by index {input_pin_index}: '{input_pin.name}' on '{input_node.title}'")
                         else:
-                            # Regular Node - use pin list
-                            input_pin = input_node.input_pins[conn_data['input_pin_index']]
+                            # Fallback: search by name
+                            if debug_enabled:
+                                print(f"DEBUG: Input pin index {input_pin_index} failed, searching by name '{input_pin_name}' on '{input_node.title}'")
+                            input_pin = input_node.get_pin_by_name(input_pin_name)
+                            if input_pin and debug_enabled:
+                                print(f"DEBUG: Found input pin by name: '{input_pin.name}' on '{input_node.title}'")
                         
-                        # Recreate connection
-                        from core.connection import Connection
-                        new_connection = Connection(output_pin, input_pin)
-                        self.node_graph.addItem(new_connection)
-                        self.node_graph.connections.append(new_connection)
-                        restored_connections += 1
+                        if not input_pin and debug_enabled:
+                            print(f"DEBUG: Input pin not found by index {input_pin_index} or name '{input_pin_name}' on node {input_node.title}")
+                            print(f"DEBUG: Available input pins: {[p.name for p in input_node.input_pins] if hasattr(input_node, 'input_pins') and input_node.input_pins else []}")
+                    
+                    # Validate pins exist
+                    if not output_pin or not input_pin:
+                        if debug_enabled:
+                            print(f"DEBUG: Connection restoration failed - pins not found (output: {output_pin is not None}, input: {input_pin is not None})")
+                        failed_connections += 1
+                        continue
+                    
+                    # Check if connection already exists to avoid duplicates
+                    connection_exists = False
+                    for existing_conn in self.node_graph.connections:
+                        if (hasattr(existing_conn, 'start_pin') and existing_conn.start_pin == output_pin and
+                            hasattr(existing_conn, 'end_pin') and existing_conn.end_pin == input_pin):
+                            connection_exists = True
+                            break
+                    
+                    if connection_exists:
+                        if debug_enabled:
+                            print(f"DEBUG: Connection already exists, skipping restoration")
+                        continue
+                    
+                    # Recreate connection
+                    from core.connection import Connection
+                    new_connection = Connection(output_pin, input_pin)
+                    self.node_graph.addItem(new_connection)
+                    self.node_graph.connections.append(new_connection)
+                    
+                    # Note: Connection constructor automatically adds itself to pin connection lists
+                    # No need to manually call add_connection as it would create duplicates
+                    
+                    restored_connections += 1
+                    
+                    if debug_enabled:
+                        print(f"DEBUG: Connection restored successfully between {output_node.title}.{output_pin.name} and {input_node.title}.{input_pin.name}")
+                        print(f"DEBUG: Pin details - Output pin category: {output_pin.pin_category}, Input pin category: {input_pin.pin_category}")
+                        print(f"DEBUG: Connection added to graph connections (total: {len(self.node_graph.connections)})")
+                        print(f"DEBUG: Output pin connections: {len(output_pin.connections)}, Input pin connections: {len(input_pin.connections)}")
                         
-                    except (IndexError, AttributeError):
-                        pass  # Connection restoration failed, but continue with other connections
+                except Exception as e:
+                    if debug_enabled:
+                        print(f"DEBUG: Connection restoration failed with exception: {e}")
+                    failed_connections += 1
+                    continue
+            
+            if debug_enabled:
+                print(f"DEBUG: Connection restoration summary: {restored_connections} restored, {failed_connections} failed")
             
             # Final layout update sequence (only for regular nodes)
             if not self.node_state.get('is_reroute', False):
@@ -616,8 +709,7 @@ class CodeChangeCommand(CommandBase):
     def execute(self) -> bool:
         """Apply the code change."""
         try:
-            self.node.code = self.new_code
-            self.node.update_pins_from_code()
+            self.node.set_code(self.new_code)
             self._mark_executed()
             return True
         except Exception as e:
@@ -627,8 +719,7 @@ class CodeChangeCommand(CommandBase):
     def undo(self) -> bool:
         """Revert the code change."""
         try:
-            self.node.code = self.old_code
-            self.node.update_pins_from_code()
+            self.node.set_code(self.old_code)
             self._mark_undone()
             return True
         except Exception as e:
@@ -641,3 +732,220 @@ class CodeChangeCommand(CommandBase):
         old_code_size = len(self.old_code) * 2
         new_code_size = len(self.new_code) * 2
         return base_size + old_code_size + new_code_size
+
+
+class PasteNodesCommand(CompositeCommand):
+    """Command for pasting nodes and connections as a single undo unit."""
+    
+    def __init__(self, node_graph, clipboard_data: Dict[str, Any], paste_position: QPointF):
+        """
+        Initialize paste nodes command.
+        
+        Args:
+            node_graph: The NodeGraph instance
+            clipboard_data: Data from clipboard containing nodes and connections
+            paste_position: Position to paste nodes at
+        """
+        # Parse clipboard data to determine operation description
+        node_count = len(clipboard_data.get('nodes', []))
+        connection_count = len(clipboard_data.get('connections', []))
+        
+        if node_count == 1 and connection_count == 0:
+            description = f"Paste '{clipboard_data['nodes'][0].get('title', 'node')}'"
+        elif node_count > 1 and connection_count == 0:
+            description = f"Paste {node_count} nodes"
+        elif node_count == 1 and connection_count > 0:
+            description = f"Paste '{clipboard_data['nodes'][0].get('title', 'node')}' with {connection_count} connections"
+        else:
+            description = f"Paste {node_count} nodes with {connection_count} connections"
+        
+        # Store data for execute method to handle connection creation
+        self.node_graph = node_graph
+        self.clipboard_data = clipboard_data
+        self.paste_position = paste_position
+        self.uuid_mapping = {}  # Map old UUIDs to new UUIDs
+        self.created_nodes = []
+        
+        # Create only node creation commands initially
+        commands = []
+        nodes_data = clipboard_data.get('nodes', [])
+        for i, node_data in enumerate(nodes_data):
+            # Generate new UUID for this node
+            old_uuid = node_data.get('id', str(uuid.uuid4()))
+            new_uuid = str(uuid.uuid4())
+            self.uuid_mapping[old_uuid] = new_uuid
+            
+            # Calculate offset position for multiple nodes
+            offset_x = (i % 3) * 200  # Arrange in grid pattern
+            offset_y = (i // 3) * 150
+            node_position = QPointF(
+                paste_position.x() + offset_x,
+                paste_position.y() + offset_y
+            )
+            
+            # Create node command
+            create_cmd = CreateNodeCommand(
+                node_graph=node_graph,
+                title=node_data.get('title', 'Pasted Node'),
+                position=node_position,
+                node_id=new_uuid,
+                code=node_data.get('code', ''),
+                description=node_data.get('description', '')
+            )
+            commands.append(create_cmd)
+            self.created_nodes.append((create_cmd, node_data))
+        
+        super().__init__(description, commands)
+    
+    def execute(self) -> bool:
+        """Execute node creation first, then create connections."""
+        # First execute node creation commands
+        if not super().execute():
+            return False
+        
+        # Now create connections using actual pin objects
+        connections_data = self.clipboard_data.get('connections', [])
+        connection_commands = []
+        
+        for conn_data in connections_data:
+            # Map old UUIDs to new UUIDs
+            old_output_node_id = conn_data.get('output_node_id', '')
+            old_input_node_id = conn_data.get('input_node_id', '')
+            
+            new_output_node_id = self.uuid_mapping.get(old_output_node_id)
+            new_input_node_id = self.uuid_mapping.get(old_input_node_id)
+            
+            # Only create connection if both nodes are being pasted
+            if new_output_node_id and new_input_node_id:
+                # Find the actual created nodes
+                output_node = self._find_node_by_id(new_output_node_id)
+                input_node = self._find_node_by_id(new_input_node_id)
+                
+                if output_node and input_node:
+                    # Find pins by name
+                    output_pin_name = conn_data.get('output_pin_name', '')
+                    input_pin_name = conn_data.get('input_pin_name', '')
+                    
+                    output_pin = output_node.get_pin_by_name(output_pin_name)
+                    input_pin = input_node.get_pin_by_name(input_pin_name)
+                    
+                    if output_pin and input_pin:
+                        # Import here to avoid circular imports
+                        from .connection_commands import CreateConnectionCommand
+                        
+                        conn_cmd = CreateConnectionCommand(
+                            node_graph=self.node_graph,
+                            output_pin=output_pin,
+                            input_pin=input_pin
+                        )
+                        connection_commands.append(conn_cmd)
+        
+        # Execute connection commands
+        for conn_cmd in connection_commands:
+            result = conn_cmd.execute()
+            if result:
+                conn_cmd._mark_executed()
+                self.commands.append(conn_cmd)
+                self.executed_commands.append(conn_cmd)
+            else:
+                print(f"Failed to create connection: {conn_cmd.get_description()}")
+        
+        return True
+    
+    def _find_node_by_id(self, node_id: str):
+        """Find node in graph by UUID."""
+        for node in self.node_graph.nodes:
+            if hasattr(node, 'uuid') and node.uuid == node_id:
+                return node
+        return None
+    
+    def get_memory_usage(self) -> int:
+        """Estimate memory usage for paste operation."""
+        base_size = 1024
+        data_size = len(str(self.clipboard_data)) * 2
+        mapping_size = len(self.uuid_mapping) * 100
+        return base_size + data_size + mapping_size
+
+
+class MoveMultipleCommand(CompositeCommand):
+    """Command for moving multiple nodes as a single undo unit."""
+    
+    def __init__(self, node_graph, nodes_and_positions: List[tuple]):
+        """
+        Initialize move multiple command.
+        
+        Args:
+            node_graph: The NodeGraph instance
+            nodes_and_positions: List of (node, old_pos, new_pos) tuples
+        """
+        # Create individual move commands
+        commands = []
+        node_count = len(nodes_and_positions)
+        
+        if node_count == 1:
+            node = nodes_and_positions[0][0]
+            description = f"Move '{node.title}'"
+        else:
+            description = f"Move {node_count} nodes"
+        
+        for node, old_pos, new_pos in nodes_and_positions:
+            move_cmd = MoveNodeCommand(node_graph, node, old_pos, new_pos)
+            commands.append(move_cmd)
+        
+        super().__init__(description, commands)
+    
+    def get_memory_usage(self) -> int:
+        """Estimate memory usage for move operation."""
+        base_size = 256
+        return base_size + super().get_memory_usage()
+
+
+class DeleteMultipleCommand(CompositeCommand):
+    """Command for deleting multiple items as a single undo unit."""
+    
+    def __init__(self, node_graph, selected_items: List):
+        """
+        Initialize delete multiple command.
+        
+        Args:
+            node_graph: The NodeGraph instance
+            selected_items: List of items (nodes and connections) to delete
+        """
+        # Import here to avoid circular imports
+        from core.node import Node
+        from core.reroute_node import RerouteNode
+        from core.connection import Connection
+        
+        # Create individual delete commands
+        commands = []
+        node_count = 0
+        connection_count = 0
+        
+        for item in selected_items:
+            if isinstance(item, (Node, RerouteNode)):
+                commands.append(DeleteNodeCommand(node_graph, item))
+                node_count += 1
+            elif isinstance(item, Connection):
+                from .connection_commands import DeleteConnectionCommand
+                commands.append(DeleteConnectionCommand(node_graph, item))
+                connection_count += 1
+        
+        # Generate description
+        if node_count > 0 and connection_count > 0:
+            description = f"Delete {node_count} nodes and {connection_count} connections"
+        elif node_count > 1:
+            description = f"Delete {node_count} nodes"
+        elif node_count == 1:
+            node_title = getattr(selected_items[0], 'title', 'node')
+            description = f"Delete '{node_title}'"
+        elif connection_count > 1:
+            description = f"Delete {connection_count} connections"
+        else:
+            description = f"Delete {len(selected_items)} items"
+        
+        super().__init__(description, commands)
+    
+    def get_memory_usage(self) -> int:
+        """Estimate memory usage for delete operation."""
+        base_size = 512
+        return base_size + super().get_memory_usage()

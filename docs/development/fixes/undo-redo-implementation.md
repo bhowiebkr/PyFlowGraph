@@ -1,5 +1,23 @@
 # PyFlowGraph Undo/Redo Implementation Guide
 
+## Story 2.2: Code Modification Undo - Implementation Status
+
+**COMPLETED**: Story 2.2 has been implemented with the following scope:
+
+### What Was Implemented (Story 2.2 Scope)
+- **CodeChangeCommand**: For execution code changes only
+- **Dialog Integration**: CodeEditorDialog creates commands on accept
+- **Hybrid Undo Contexts**: QTextEdit internal undo during editing, atomic commands on accept
+- **Node Integration**: Node.open_unified_editor() passes node_graph reference
+- **Test Coverage**: Unit tests, integration tests, and GUI workflow tests
+
+### What Was NOT Implemented (Future Stories)
+- Graph-level undo/redo system (requires Epic 1 completion)
+- Node creation/deletion/movement commands
+- Connection creation/deletion commands  
+- Menu/toolbar undo/redo UI integration
+- Command history management and signals
+
 ## Architecture: Hybrid with Commit Pattern
 
 This implementation provides separate undo/redo contexts for the graph and code editor, with code changes committed as atomic operations to the graph history.
@@ -388,34 +406,35 @@ class DeleteConnectionCommand(Command):
         return self.connection is not None
 
 
-class ChangeNodeCodeCommand(Command):
-    """Command for code changes from editor dialog"""
+class CodeChangeCommand(CommandBase):
+    """Command for execution code changes from editor dialog (Story 2.2 implementation)"""
     
-    def __init__(self, node, old_code: str, new_code: str):
-        super().__init__(f"Edit Code: {node.title}")
+    def __init__(self, node_graph, node, old_code: str, new_code: str):
+        super().__init__(f"Change code for {node.title}")
+        self.node_graph = node_graph
         self.node = node
         self.old_code = old_code
         self.new_code = new_code
-        self.old_pins = None
         
     def execute(self) -> bool:
-        # Store old pin configuration
-        self.old_pins = [(p.name, p.pin_type) for p in self.node.pins]
-        
-        # Update code
-        self.node.set_code(self.new_code)
-        
-        # Rebuild pins from new code
-        self.node.update_pins_from_code()
-        return True
+        """Execute code change using Node.set_code() method"""
+        try:
+            self.node.set_code(self.new_code)
+            self._mark_executed()
+            return True
+        except Exception as e:
+            print(f"Error executing code change: {e}")
+            return False
         
     def undo(self) -> bool:
-        # Restore old code
-        self.node.set_code(self.old_code)
-        
-        # Rebuild pins from old code
-        self.node.update_pins_from_code()
-        return True
+        """Undo code change by restoring original code"""
+        try:
+            self.node.set_code(self.old_code)
+            self._mark_undone()
+            return True
+        except Exception as e:
+            print(f"Error undoing code change: {e}")
+            return False
 
 
 class CompositeCommand(Command):
@@ -444,7 +463,32 @@ class CompositeCommand(Command):
         return self.execute()
 ```
 
-### 4. Integration with NodeGraph (`src/node_graph.py` modifications)
+### 4. Node Integration (`src/core/node.py` - Story 2.2 Implementation)
+
+```python
+# Actual implementation in Node class
+
+def open_unified_editor(self):
+    """Open code editor dialog with command integration"""
+    from ui.dialogs.code_editor_dialog import CodeEditorDialog
+    parent_widget = self.scene().views()[0] if self.scene().views() else None
+    node_graph = self.scene() if self.scene() else None
+    dialog = CodeEditorDialog(self, node_graph, self.code, self.gui_code, self.gui_get_values_code, parent_widget)
+    dialog.exec()
+
+def set_code(self, code_text):
+    """Set execution code and update pins automatically"""
+    self.code = code_text
+    self.update_pins_from_code()
+```
+
+**Key Implementation Notes:**
+- Node.open_unified_editor() passes node_graph reference to dialog
+- Dialog creates commands internally when accepting changes
+- Node.set_code() method is used by commands for consistent behavior
+- Pin regeneration happens automatically when code changes
+
+### 5. Integration with NodeGraph (`src/node_graph.py` modifications)
 
 ```python
 # Add to existing NodeGraph class
@@ -533,81 +577,123 @@ class NodeGraph(QGraphicsScene):
         pass
 ```
 
-### 5. Code Editor Integration (`src/code_editor_dialog.py` modifications)
+### 5. Code Editor Integration (`src/ui/dialogs/code_editor_dialog.py` - Story 2.2 Implementation)
 
 ```python
-# Modify existing CodeEditorDialog class
-
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QDialogButtonBox
-from PySide6.QtCore import Qt
-from commands.graph_commands import ChangeNodeCodeCommand
+# Actual implementation from Story 2.2: Code Modification Undo
 
 class CodeEditorDialog(QDialog):
-    def __init__(self, node, graph, parent=None):
+    def __init__(self, node, node_graph, code, gui_code, gui_logic_code, parent=None):
         super().__init__(parent)
+        self.setWindowTitle("Unified Code Editor")
+        self.setMinimumSize(750, 600)
+        
+        # Store references for command creation
         self.node = node
-        self.graph = graph  # Need reference to graph for command history
-        self.original_code = node.code
-        
-        self.setWindowTitle(f"Edit Code - {node.title}")
-        self.setup_ui()
-        
-    def setup_ui(self):
-        layout = QVBoxLayout()
-        
-        # Create code editor with its own undo/redo
-        self.editor = PythonCodeEditor()
-        self.editor.setPlainText(self.original_code)
-        
-        # Editor has its own undo/redo during editing
-        # These shortcuts only work while editor has focus
-        self.editor.setup_editor_undo()  # Uses QTextEdit built-in
-        
-        layout.addWidget(self.editor)
-        
-        # Buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.node_graph = node_graph
+        self.original_code = code
+        self.original_gui_code = gui_code
+        self.original_gui_logic_code = gui_logic_code
+
+        layout = QVBoxLayout(self)
+        tab_widget = QTabWidget()
+        layout.addWidget(tab_widget)
+
+        # --- Execution Code Editor ---
+        self.code_editor = PythonCodeEditor()
+        self.code_editor.setFont(QFont("Monospace", 11))
+        exec_placeholder = "from typing import Tuple\\n\\n@node_entry\\ndef node_function(input_1: str) -> Tuple[str, int]:\\n    return 'hello', len(input_1)"
+        self.code_editor.setPlainText(code if code is not None else exec_placeholder)
+        tab_widget.addTab(self.code_editor, "Execution Code")
+
+        # --- GUI Layout Code Editor ---
+        self.gui_editor = PythonCodeEditor()
+        self.gui_editor.setFont(QFont("Monospace", 11))
+        gui_placeholder = (
+            "# This script builds the node's custom GUI.\\n"
+            "# Use 'parent', 'layout', 'widgets', and 'QtWidgets' variables.\\n\\n"
+            "label = QtWidgets.QLabel('Multiplier:', parent)\\n"
+            "spinbox = QtWidgets.QSpinBox(parent)\\n"
+            "spinbox.setValue(2)\\n"
+            "layout.addWidget(label)\\n"
+            "layout.addWidget(spinbox)\\n"
+            "widgets['multiplier'] = spinbox\\n"
         )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-        
-        self.setLayout(layout)
-        self.resize(800, 600)
-        
-    def accept(self):
-        """On accept, commit code changes as single undo command"""
-        new_code = self.editor.toPlainText()
-        
-        if new_code != self.original_code:
-            # Create and execute command through graph's history
-            command = ChangeNodeCodeCommand(
-                self.node,
-                self.original_code,
-                new_code
-            )
-            self.graph.command_history.push(command)
+        self.gui_editor.setPlainText(gui_code if gui_code is not None else gui_placeholder)
+        tab_widget.addTab(self.gui_editor, "GUI Layout")
+
+        # --- GUI Logic Code Editor ---
+        self.gui_logic_editor = PythonCodeEditor()
+        self.gui_logic_editor.setFont(QFont("Monospace", 11))
+        gui_logic_placeholder = (
+            "# This script defines how the GUI interacts with the execution code.\\n\\n"
+            "def get_values(widgets):\\n"
+            "    return {'multiplier': widgets['multiplier'].value()}\\n\\n"
+            "def set_values(widgets, outputs):\\n"
+            "    # result = outputs.get('output_1', 'N/A')\\n"
+            "    # widgets['result_label'].setText(f'Result: {result}')\\n\\n"
+            "def set_initial_state(widgets, state):\\n"
+            "    if 'multiplier' in state:\\n"
+            "        widgets['multiplier'].setValue(state['multiplier'])\\n"
+        )
+        self.gui_logic_editor.setPlainText(gui_logic_code if gui_logic_code is not None else gui_logic_placeholder)
+        tab_widget.addTab(self.gui_logic_editor, "GUI Logic")
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self._handle_accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+
+    def _handle_accept(self):
+        """Handle accept button by creating command and pushing to history."""
+        try:
+            # Get current editor content
+            new_code = self.code_editor.toPlainText()
+            new_gui_code = self.gui_editor.toPlainText()
+            new_gui_logic_code = self.gui_logic_editor.toPlainText()
             
-        super().accept()
-        
-    def reject(self):
-        """On cancel, discard all changes"""
-        # No changes to graph history
-        super().reject()
-        
-    def keyPressEvent(self, event):
-        """Handle keyboard shortcuts"""
-        # Let Ctrl+Z/Y work in editor only
-        if event.key() == Qt.Key_Z and event.modifiers() == Qt.ControlModifier:
-            self.editor.undo()
-        elif event.key() == Qt.Key_Y and event.modifiers() == Qt.ControlModifier:
-            self.editor.redo()
-        elif event.key() == Qt.Key_Escape:
-            self.reject()
-        else:
-            super().keyPressEvent(event)
+            # Create command for execution code changes (only this uses command pattern)
+            if new_code != self.original_code:
+                from commands.node_commands import CodeChangeCommand
+                code_command = CodeChangeCommand(
+                    self.node_graph, self.node, self.original_code, new_code
+                )
+                # Push command to graph's history if it exists
+                if hasattr(self.node_graph, 'command_history'):
+                    self.node_graph.command_history.push(code_command)
+                else:
+                    # Fallback: execute directly
+                    code_command.execute()
+            
+            # Handle GUI code changes with direct method calls (not part of command pattern)
+            if new_gui_code != self.original_gui_code:
+                self.node.set_gui_code(new_gui_code)
+            
+            if new_gui_logic_code != self.original_gui_logic_code:
+                self.node.set_gui_get_values_code(new_gui_logic_code)
+            
+            # Accept the dialog
+            self.accept()
+            
+        except Exception as e:
+            print(f"Error handling code editor accept: {e}")
+            # Still accept the dialog to avoid blocking user
+            self.accept()
+
+    def get_results(self):
+        """Returns the code from all three editors in a dictionary."""
+        return {
+            "code": self.code_editor.toPlainText(), 
+            "gui_code": self.gui_editor.toPlainText(), 
+            "gui_logic_code": self.gui_logic_editor.toPlainText()
+        }
 ```
+
+**Key Implementation Notes:**
+- Only execution code changes use the command pattern (as specified in Story 2.2)
+- GUI code changes use direct method calls to Node
+- Hybrid undo contexts: internal QTextEdit undo during editing, atomic commands on accept
+- Fallback execution if command_history not available
 
 ### 6. UI Integration (`src/node_editor_window.py` modifications)
 

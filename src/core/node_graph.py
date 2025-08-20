@@ -196,7 +196,7 @@ class NodeGraph(QGraphicsScene):
         return clipboard_data
 
     def paste(self):
-        """Pastes nodes and connections from the clipboard."""
+        """Pastes nodes and connections from the clipboard using command pattern."""
         clipboard_text = QApplication.clipboard().text()
         
         # Determine paste position
@@ -210,13 +210,13 @@ class NodeGraph(QGraphicsScene):
             from data.flow_format import FlowFormatHandler
             handler = FlowFormatHandler()
             data = handler.markdown_to_data(clipboard_text)
-            self.deserialize(data, paste_pos)
+            self._paste_with_command(data, paste_pos)
         except ImportError:
             # FlowFormatHandler not available, try JSON
             try:
                 import json
                 data = json.loads(clipboard_text)
-                self.deserialize(data, paste_pos)
+                self._paste_with_command(data, paste_pos)
             except (json.JSONDecodeError, TypeError):
                 print("Clipboard does not contain valid graph data.")
         except Exception:
@@ -224,9 +224,56 @@ class NodeGraph(QGraphicsScene):
             try:
                 import json
                 data = json.loads(clipboard_text)
-                self.deserialize(data, paste_pos)
+                self._paste_with_command(data, paste_pos)
             except (json.JSONDecodeError, TypeError):
                 print("Clipboard does not contain valid graph data.")
+    
+    def _paste_with_command(self, data, paste_pos):
+        """Helper method to paste using PasteNodesCommand."""
+        if not data or not data.get('nodes'):
+            print("No nodes to paste.")
+            return
+        
+        # Convert data format to match PasteNodesCommand expectations
+        clipboard_data = self._convert_data_format(data)
+        
+        # Create and execute paste command
+        from commands.node_commands import PasteNodesCommand
+        paste_cmd = PasteNodesCommand(self, clipboard_data, paste_pos)
+        result = self.execute_command(paste_cmd)
+        
+        if not result:
+            print("Failed to paste nodes.")
+    
+    def _convert_data_format(self, data):
+        """Convert deserialize format to PasteNodesCommand format."""
+        clipboard_data = {
+            'nodes': [],
+            'connections': []
+        }
+        
+        # Convert nodes
+        for node_data in data.get('nodes', []):
+            converted_node = {
+                'id': node_data.get('uuid', ''),
+                'title': node_data.get('title', 'Unknown'),
+                'description': node_data.get('description', ''),
+                'code': node_data.get('code', ''),
+                'pos': node_data.get('pos', [0, 0])
+            }
+            clipboard_data['nodes'].append(converted_node)
+        
+        # Convert connections
+        for conn_data in data.get('connections', []):
+            converted_conn = {
+                'output_node_id': conn_data.get('start_node_uuid', ''),
+                'input_node_id': conn_data.get('end_node_uuid', ''),
+                'output_pin_name': conn_data.get('start_pin_name', ''),
+                'input_pin_name': conn_data.get('end_pin_name', '')
+            }
+            clipboard_data['connections'].append(converted_conn)
+        
+        return clipboard_data
 
     def serialize(self):
         """Serializes all nodes and their connections."""

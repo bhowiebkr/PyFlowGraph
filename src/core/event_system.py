@@ -94,13 +94,13 @@ class LiveGraphExecutor:
         self.live_mode = enabled
         if enabled:
             if not self.events_setup:
-                self.log.append("🔥 LIVE MODE ACTIVATED - Setting up interactive controls...")
+                self.log.append("LIVE MODE ACTIVATED - Setting up interactive controls...")
                 self._setup_node_events()
                 self.events_setup = True
             else:
-                self.log.append("🔥 LIVE MODE ACTIVATED - Graph is ready for interaction!")
+                self.log.append("LIVE MODE ACTIVATED - Graph is ready for interaction!")
         else:
-            self.log.append("📦 BATCH MODE ACTIVATED - Traditional execution mode")
+            self.log.append("BATCH MODE ACTIVATED - Traditional execution mode")
             # Don't cleanup events - keep them for fast reactivation
             self.reset_graph_state()
 
@@ -126,10 +126,10 @@ class LiveGraphExecutor:
                     widget.clicked.connect(lambda checked=False, n=node: self.trigger_node_execution(n))
                     connected_count += 1
                 except Exception as e:
-                    self.log.append(f"⚠️ Failed to connect button '{widget_name}': {e}")
+                    self.log.append(f"WARNING: Failed to connect button '{widget_name}': {e}")
 
         if connected_count > 0:
-            self.log.append(f"🔗 Connected {connected_count} interactive button(s) in '{node.title}'")
+            self.log.append(f"Connected {connected_count} interactive button(s) in '{node.title}'")
 
     def _cleanup_node_events(self):
         """Clean up all node event handlers."""
@@ -139,20 +139,20 @@ class LiveGraphExecutor:
     def trigger_node_execution(self, source_node):
         """Trigger execution starting from a specific node."""
         if not self.live_mode:
-            self.log.append("⚠️ Not in live mode - enable Live Mode first!")
+            self.log.append("WARNING: Not in live mode - enable Live Mode first!")
             return
 
-        self.log.append(f"🚀 Button clicked in '{source_node.title}'")
-        self.log.append(f"⚡ Starting execution flow...")
+        self.log.append(f"Button clicked in '{source_node.title}'")
+        self.log.append(f"Starting execution flow...")
 
         # Execute this node and follow execution flow
         try:
             self._execute_node_flow_live(source_node)
-            self.log.append("✅ Interactive execution completed!")
-            self.log.append("🎯 Ready for next interaction...")
+            self.log.append("Interactive execution completed!")
+            self.log.append("Ready for next interaction...")
         except Exception as e:
-            self.log.append(f"❌ Execution error: {e}")
-            self.log.append("💡 Try resetting the graph")
+            self.log.append(f"ERROR: Execution error: {e}")
+            self.log.append("TIP: Try resetting the graph")
 
     def _execute_node_flow_live(self, node):
         """Execute a node in live mode with state persistence."""
@@ -171,7 +171,7 @@ class LiveGraphExecutor:
         # Execute just this node and its downstream flow
         execution_count = temp_executor._execute_node_flow(node, self.pin_values, 0, 100)
 
-        self.log.append(f"✅ Live execution completed ({execution_count} nodes)")
+        self.log.append(f"Live execution completed ({execution_count} nodes)")
 
     def handle_event(self, event: GraphEvent):
         """Handle an event emitted by the event manager."""
@@ -184,7 +184,7 @@ class LiveGraphExecutor:
         """Reset the graph to initial state."""
         self.graph_state.clear()
         self.pin_values.clear()
-        self.log.append("🔄 Graph state reset")
+        self.log.append("Graph state reset")
 
         # DON'T emit GRAPH_RESET event to avoid recursion
         # The reset is complete - no need for additional events
@@ -192,7 +192,7 @@ class LiveGraphExecutor:
     def restart_graph(self):
         """Reset and restart the entire graph."""
         self.reset_graph_state()
-        self.log.append("🔄 Graph reset completed. Click node buttons to start interaction.")
+        self.log.append("Graph reset completed. Click node buttons to start interaction.")
 
         # DON'T auto-trigger entry nodes - let user click buttons instead
         # This prevents recursion and gives users control

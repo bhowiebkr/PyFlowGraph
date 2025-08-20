@@ -17,6 +17,10 @@ if project_root not in sys.path:
 
 from .pin import Pin
 
+# Debug configuration  
+# Set to True to enable detailed GUI widget update debugging
+DEBUG_GUI_UPDATES = False
+
 
 class ResizableWidgetContainer(QWidget):
     """A custom QWidget that emits a signal whenever its size changes."""
@@ -442,12 +446,9 @@ class Node(QGraphicsItem):
     def open_unified_editor(self):
         from ui.dialogs.code_editor_dialog import CodeEditorDialog
         parent_widget = self.scene().views()[0] if self.scene().views() else None
-        dialog = CodeEditorDialog(self.code, self.gui_code, self.gui_get_values_code, parent_widget)
-        if dialog.exec():
-            results = dialog.get_results()
-            self.set_code(results["code"])
-            self.set_gui_code(results["gui_code"])
-            self.set_gui_get_values_code(results["gui_logic_code"])
+        node_graph = self.scene() if self.scene() else None
+        dialog = CodeEditorDialog(self, node_graph, self.code, self.gui_code, self.gui_get_values_code, parent_widget)
+        dialog.exec()
 
     def set_code(self, code_text):
         self.code = code_text
@@ -475,15 +476,30 @@ class Node(QGraphicsItem):
 
     def set_gui_values(self, outputs):
         if not self.gui_get_values_code or not self.gui_widgets:
+            if DEBUG_GUI_UPDATES:
+                print(f"DEBUG: set_gui_values() early return for '{self.title}' - gui_code: {bool(self.gui_get_values_code)}, widgets: {bool(self.gui_widgets)}")
             return
         try:
+            if DEBUG_GUI_UPDATES:
+                print(f"DEBUG: set_gui_values() called for '{self.title}' with outputs: {outputs}")
+                print(f"DEBUG: Available widgets: {list(self.gui_widgets.keys()) if self.gui_widgets else []}")
             scope = {"widgets": self.gui_widgets}
             exec(self.gui_get_values_code, scope)
             value_setter = scope.get("set_values")
             if callable(value_setter):
+                if DEBUG_GUI_UPDATES:
+                    print(f"DEBUG: Calling set_values() function for '{self.title}'")
                 value_setter(self.gui_widgets, outputs)
+                if DEBUG_GUI_UPDATES:
+                    print(f"DEBUG: set_values() completed successfully for '{self.title}'")
+            else:
+                if DEBUG_GUI_UPDATES:
+                    print(f"DEBUG: No callable set_values() function found for '{self.title}'")
         except Exception as e:
-            pass
+            if DEBUG_GUI_UPDATES:
+                print(f"DEBUG: set_gui_values() failed for '{self.title}': {e}")
+                import traceback
+                traceback.print_exc()
 
     def apply_gui_state(self, state):
         if not self.gui_get_values_code or not self.gui_widgets or not state:

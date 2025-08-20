@@ -15,6 +15,10 @@ if project_root not in sys.path:
 from core.node import Node
 from core.reroute_node import RerouteNode
 
+# Debug configuration
+# Set to True to enable detailed execution flow debugging
+DEBUG_EXECUTION = False
+
 
 class GraphExecutor:
     def __init__(self, graph, log_widget, venv_path_callback):
@@ -159,7 +163,12 @@ class GraphExecutor:
                     output_values[pin.name] = result[i]
 
         if hasattr(node, "set_gui_values"):
+            if DEBUG_EXECUTION:
+                print(f"DEBUG: Execution completed for '{node.title}', calling set_gui_values with: {output_values}")
             node.set_gui_values(output_values)
+        else:
+            if DEBUG_EXECUTION:
+                print(f"DEBUG: Node '{node.title}' does not have set_gui_values method")
 
         # Follow execution flow to next nodes
         execution_count = self._follow_execution_outputs(node, pin_values, execution_count, execution_limit)

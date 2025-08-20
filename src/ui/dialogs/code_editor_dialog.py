@@ -20,10 +20,17 @@ class CodeEditorDialog(QDialog):
     A dialog that hosts a tabbed interface for editing all of a node's code.
     """
 
-    def __init__(self, code, gui_code, gui_logic_code, parent=None):
+    def __init__(self, node, node_graph, code, gui_code, gui_logic_code, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Unified Code Editor")
         self.setMinimumSize(750, 600)
+        
+        # Store references for command creation
+        self.node = node
+        self.node_graph = node_graph
+        self.original_code = code
+        self.original_gui_code = gui_code
+        self.original_gui_logic_code = gui_logic_code
 
         layout = QVBoxLayout(self)
         tab_widget = QTabWidget()
@@ -71,10 +78,46 @@ class CodeEditorDialog(QDialog):
         tab_widget.addTab(self.gui_logic_editor, "GUI Logic")
 
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.accept)
+        button_box.accepted.connect(self._handle_accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 
     def get_results(self):
         """Returns the code from all three editors in a dictionary."""
         return {"code": self.code_editor.toPlainText(), "gui_code": self.gui_editor.toPlainText(), "gui_logic_code": self.gui_logic_editor.toPlainText()}
+    
+    def _handle_accept(self):
+        """Handle accept button by creating command and pushing to history."""
+        try:
+            # Get current editor content
+            new_code = self.code_editor.toPlainText()
+            new_gui_code = self.gui_editor.toPlainText()
+            new_gui_logic_code = self.gui_logic_editor.toPlainText()
+            
+            # Create command for execution code changes
+            if new_code != self.original_code:
+                from commands.node_commands import CodeChangeCommand
+                code_command = CodeChangeCommand(
+                    self.node_graph, self.node, self.original_code, new_code
+                )
+                # Push command to graph's history if it exists
+                if hasattr(self.node_graph, 'command_history'):
+                    self.node_graph.command_history.push(code_command)
+                else:
+                    # Fallback: execute directly
+                    code_command.execute()
+            
+            # Handle GUI code changes with direct method calls (not part of story scope)
+            if new_gui_code != self.original_gui_code:
+                self.node.set_gui_code(new_gui_code)
+            
+            if new_gui_logic_code != self.original_gui_logic_code:
+                self.node.set_gui_get_values_code(new_gui_logic_code)
+            
+            # Accept the dialog
+            self.accept()
+            
+        except Exception as e:
+            print(f"Error handling code editor accept: {e}")
+            # Still accept the dialog to avoid blocking user
+            self.accept()

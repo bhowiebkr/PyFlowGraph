@@ -5,17 +5,25 @@ import sys
 import os
 import time
 import unittest
-from PySide6.QtWidgets import QApplication
-from PySide6.QtTest import QTest
-from PySide6.QtCore import Qt, QPointF, QTimer
-from PySide6.QtGui import QTransform
 
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from ui.editor.node_editor_window import NodeEditorWindow
+try:
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtTest import QTest
+    from PySide6.QtCore import Qt, QPointF, QTimer
+    from PySide6.QtGui import QTransform
+
+    from ui.editor.node_editor_window import NodeEditorWindow
+    
+    QT_AVAILABLE = True
+
+except ImportError:
+    QT_AVAILABLE = False
 
 
+@unittest.skipUnless(QT_AVAILABLE, "PySide6 not available")
 class TestViewStatePersistence(unittest.TestCase):
     """Test that view state (zoom and pan) is properly saved and restored between file loads."""
     

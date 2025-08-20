@@ -319,11 +319,8 @@ class DeleteConnectionCommand(CommandBase):
             self.node_graph.addItem(restored_connection)
             self.node_graph.connections.append(restored_connection)
             
-            # Update pin connection references using proper methods
-            if hasattr(output_pin, 'add_connection'):
-                output_pin.add_connection(restored_connection)
-            if hasattr(input_pin, 'add_connection'):
-                input_pin.add_connection(restored_connection)
+            # Note: Connection constructor automatically adds itself to pin connection lists
+            # No need to manually call add_connection as it would create duplicates
             
             # Update connection reference
             self.connection = restored_connection
@@ -464,19 +461,13 @@ class CreateRerouteNodeCommand(CommandBase):
             self.first_connection = Connection(original_output_pin, self.reroute_node.input_pin)
             self.node_graph.addItem(self.first_connection)
             self.node_graph.connections.append(self.first_connection)
-            if hasattr(original_output_pin, 'add_connection'):
-                original_output_pin.add_connection(self.first_connection)
-            if hasattr(self.reroute_node.input_pin, 'add_connection'):
-                self.reroute_node.input_pin.add_connection(self.first_connection)
+            # Note: Connection constructor automatically adds itself to pin connection lists
             
             # Create second connection (reroute output to original input)
             self.second_connection = Connection(self.reroute_node.output_pin, original_input_pin)
             self.node_graph.addItem(self.second_connection)
             self.node_graph.connections.append(self.second_connection)
-            if hasattr(self.reroute_node.output_pin, 'add_connection'):
-                self.reroute_node.output_pin.add_connection(self.second_connection)
-            if hasattr(original_input_pin, 'add_connection'):
-                original_input_pin.add_connection(self.second_connection)
+            # Note: Connection constructor automatically adds itself to pin connection lists
             
             self._mark_executed()
             return True
@@ -547,10 +538,7 @@ class CreateRerouteNodeCommand(CommandBase):
             restored_connection = Connection(output_pin, input_pin)
             self.node_graph.addItem(restored_connection)
             self.node_graph.connections.append(restored_connection)
-            if hasattr(output_pin, 'add_connection'):
-                output_pin.add_connection(restored_connection)
-            if hasattr(input_pin, 'add_connection'):
-                input_pin.add_connection(restored_connection)
+            # Note: Connection constructor automatically adds itself to pin connection lists
             
             self._mark_undone()
             return True

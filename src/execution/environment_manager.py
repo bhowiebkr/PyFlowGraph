@@ -407,7 +407,7 @@ class EnvironmentManagerDialog(QDialog):
             env_choice = self.settings.value(key)
             
             # Create display text
-            display_text = f"{graph_name} → {self._get_env_type_display(env_choice)}"
+            display_text = f"{graph_name} -> {self._get_env_type_display(env_choice)}"
             
             item = QListWidgetItem(display_text)
             item.setData(Qt.UserRole, {"graph_name": graph_name, "env_choice": env_choice, "key": key})
@@ -483,10 +483,10 @@ class EnvironmentManagerDialog(QDialog):
         self.details_env_path.setText(f"Path: {env_path}")
         
         if exists:
-            self.details_env_status.setText(f"Status: ✅ {status}")
+            self.details_env_status.setText(f"Status: OK - {status}")
             self.details_env_status.setStyleSheet("color: green;")
         else:
-            self.details_env_status.setText(f"Status: ❌ {status}")
+            self.details_env_status.setText(f"Status: ERROR - {status}")
             self.details_env_status.setStyleSheet("color: red;")
         
         # Enable buttons
