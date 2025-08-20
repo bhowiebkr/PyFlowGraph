@@ -119,12 +119,10 @@ class NodeGraph(QGraphicsScene):
                 self.redo_last_command()
                 return
             elif event.key() == Qt.Key_G:
-                print(f"\n=== KEYBOARD GROUP TRIGGERED ===")
                 selected_nodes = [item for item in self.selectedItems() if isinstance(item, Node)]
                 if len(selected_nodes) >= 2:
                     self._create_group_from_selection(selected_nodes)
-                else:
-                    print(f"DEBUG: Cannot group - need at least 2 nodes, found {len(selected_nodes)}")
+                # If insufficient nodes, the validation in _create_group_from_selection will show an error
                 return
         
         # Handle delete operations
@@ -170,7 +168,11 @@ class NodeGraph(QGraphicsScene):
     def _create_group_from_selection(self, selected_nodes):
         """Create a group from selected nodes using the group creation dialog"""
         # Validate selection
-        from core.group import validate_group_creation
+        try:
+            from core.group import validate_group_creation
+        except ImportError:
+            from src.core.group import validate_group_creation
+        
         is_valid, error_message = validate_group_creation(selected_nodes)
         
         if not is_valid:
@@ -183,7 +185,10 @@ class NodeGraph(QGraphicsScene):
             return
         
         # Show group creation dialog
-        from ui.dialogs.group_creation_dialog import show_group_creation_dialog
+        try:
+            from ui.dialogs.group_creation_dialog import show_group_creation_dialog
+        except ImportError:
+            from src.ui.dialogs.group_creation_dialog import show_group_creation_dialog
         
         # Get the main window as parent for the dialog
         main_window = None
@@ -195,7 +200,10 @@ class NodeGraph(QGraphicsScene):
         
         if group_properties:
             # Create and execute the group creation command
-            from commands.create_group_command import CreateGroupCommand
+            try:
+                from commands.create_group_command import CreateGroupCommand
+            except ImportError:
+                from src.commands.create_group_command import CreateGroupCommand
             command = CreateGroupCommand(self, group_properties)
             self.execute_command(command)
 
@@ -634,3 +642,43 @@ class NodeGraph(QGraphicsScene):
         if self._drag_connection:
             self.end_drag_connection(event.scenePos())
         super().mouseReleaseEvent(event)
+
+    def selectionChanged(self):
+        """Override QGraphicsScene.selectionChanged to handle group resize handle updates"""
+        super().selectionChanged()
+        
+        # Force update of all groups when scene selection changes
+        # This ensures resize handles are properly shown/hidden
+        for item in self.items():
+            if type(item).__name__ == 'Group':
+                # Prepare for potential bounding rect changes
+                item.prepareGeometryChange()
+                # Force visual update
+                item.update()
+                # Update scene area where handles might be drawn/cleared
+                expanded_rect = item.boundingRect()
+                scene_rect = item.mapRectToScene(expanded_rect)
+                self.update(scene_rect)
+
+    def handle_node_position_changed(self, node):
+        """Handle node position changes and update group memberships accordingly"""
+        if not hasattr(node, 'uuid'):
+            return
+        
+        # Check all groups in the scene to see if this node should be added or removed
+        for item in self.items():
+            if type(item).__name__ == 'Group':
+                is_node_inside = item._is_node_within_group_bounds(node)
+                is_currently_member = item.is_member(node.uuid)
+                
+                if is_node_inside and not is_currently_member:
+                    # Node moved into group - add it as a member
+                    item.add_member_node(node.uuid)
+                    # Update group title to reflect new member count
+                    item.update()
+                    
+                elif not is_node_inside and is_currently_member:
+                    # Node moved out of group - remove it as a member
+                    item.remove_member_node(node.uuid)
+                    # Update group title to reflect new member count
+                    item.update()
