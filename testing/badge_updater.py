@@ -36,59 +36,103 @@ class BadgeUpdater:
         else:
             self.test_results_path = Path(test_results_path)
     
-    def generate_test_badges(self, test_results: Dict[str, Dict]) -> List[str]:
-        """Generate badge markdown from test results.
+    def calculate_test_stats(self, test_results: Dict[str, Dict]) -> Dict:
+        """Calculate comprehensive test statistics.
         
         Args:
             test_results: Dictionary with test file paths as keys and result dicts as values
-                         Each result dict should have: {'status': str, 'duration': float, 'output': str}
         
         Returns:
-            List of badge markdown strings
+            Dictionary with comprehensive test statistics
         """
-        badges = []
-        
-        # Calculate test statistics
         total_tests = len(test_results)
         passed_tests = sum(1 for result in test_results.values() if result.get('status') == 'passed')
-        failed_tests = total_tests - passed_tests
+        failed_tests = sum(1 for result in test_results.values() if result.get('status') == 'failed')
+        error_tests = sum(1 for result in test_results.values() if result.get('status') == 'error')
+        skipped_tests = sum(1 for result in test_results.values() if result.get('status') == 'skipped')
         
-        # Test status badge
-        if failed_tests == 0 and total_tests > 0:
-            status_badge = "![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square)"
-        elif total_tests > 0:
-            status_badge = f"![Tests](https://img.shields.io/badge/tests-{failed_tests}%20failing-red?style=flat-square)"
-        else:
-            status_badge = "![Tests](https://img.shields.io/badge/tests-no%20tests-lightgrey?style=flat-square)"
-        
-        badges.append(status_badge)
-        
-        # Test count badge
-        count_badge = f"![Test Count](https://img.shields.io/badge/tests-{total_tests}%20total-blue?style=flat-square)"
-        badges.append(count_badge)
-        
-        # Success rate badge
+        # Calculate success rate
         if total_tests > 0:
             success_rate = (passed_tests / total_tests) * 100
-            if success_rate == 100:
-                rate_color = "brightgreen"
-            elif success_rate >= 80:
-                rate_color = "green" 
-            elif success_rate >= 60:
-                rate_color = "yellow"
-            else:
-                rate_color = "red"
-            
-            rate_badge = f"![Success Rate](https://img.shields.io/badge/success%20rate-{success_rate:.0f}%25-{rate_color}?style=flat-square)"
-            badges.append(rate_badge)
+        else:
+            success_rate = 0
         
-        # Last updated badge
+        # Determine overall status
+        if total_tests == 0:
+            status = "unknown"
+        elif failed_tests == 0 and error_tests == 0:
+            status = "passing"
+        else:
+            status = "failing"
+        
+        # Format timestamp
         now = datetime.datetime.now()
-        timestamp = now.strftime("%Y---%m---%d")
-        updated_badge = f"![Last Updated](https://img.shields.io/badge/last%20tested-{timestamp}-blue?style=flat-square)"
-        badges.append(updated_badge)
+        last_run = now.strftime("%Y-%m-%d %H:%M:%S")
         
-        return badges
+        return {
+            "status": status,
+            "passed": passed_tests,
+            "failed": failed_tests,
+            "errors": error_tests,
+            "skipped": skipped_tests,
+            "success_rate": int(success_rate),
+            "test_files": total_tests,
+            "total_tests": total_tests,
+            "warnings": 0,  # Could be enhanced to parse test output for warnings
+            "last_run": last_run
+        }
+    
+    def create_stats_badge(self, stats: Dict) -> str:
+        """Create a cool stats section for the README."""
+
+        # Status information (without emojis to comply with Windows encoding requirements)
+        status_info = {
+            "passing": {"color": "green", "text": "PASSING"},
+            "failing": {"color": "red", "text": "FAILING"},
+            "unknown": {"color": "yellow", "text": "UNKNOWN"},
+        }
+
+        status = status_info.get(stats["status"], status_info["unknown"])
+
+        # Determine colors for individual badges
+        passed_color = "green" if stats["passed"] > 0 else "lightgrey"
+        success_rate_color = "green" if stats["success_rate"] >= 80 else "orange" if stats["success_rate"] >= 60 else "red"
+
+        # Create the badge section
+        badge_section = f"""<!-- TEST_STATS_START -->
+
+<div align="center">
+
+![Tests](https://img.shields.io/badge/Tests-{stats['passed']}%20passed-{passed_color})
+![Failed](https://img.shields.io/badge/Failed-{stats['failed']}-red)
+![Success Rate](https://img.shields.io/badge/Success%20Rate-{stats['success_rate']}%25-{success_rate_color})
+![Test Files](https://img.shields.io/badge/Test%20Files-{stats['test_files']}-blue)
+![Total Tests](https://img.shields.io/badge/Total%20Tests-{stats['total_tests']}-lightgrey)
+![Skipped](https://img.shields.io/badge/Skipped-{stats['skipped']}-yellow)
+![Errors](https://img.shields.io/badge/Errors-{stats['errors']}-orange)
+![Warnings](https://img.shields.io/badge/Warnings-{stats['warnings']}-lightgrey)
+![Last Run](https://img.shields.io/badge/Last%20Run-{stats['last_run'].replace('-', '--').replace(' ', '%20').replace(':', '%3A')}-lightblue)
+
+</div>
+
+<div align="center">
+
+**[View Detailed Test Report]({self._get_relative_test_results_path()})** - Complete test results with individual test details
+
+</div>
+
+<!-- TEST_STATS_END -->"""
+
+        return badge_section
+    
+    def _get_relative_test_results_path(self) -> str:
+        """Get relative path to test results file from README."""
+        try:
+            relative_path = self.test_results_path.relative_to(self.readme_path.parent)
+            return str(relative_path).replace('\\', '/')  # Use forward slashes for URLs
+        except ValueError:
+            # If paths are on different drives, use absolute path
+            return str(self.test_results_path).replace('\\', '/')
     
     def find_badge_section(self, content: str) -> Tuple[int, int]:
         """Find the badge section in README content.
@@ -98,19 +142,27 @@ class BadgeUpdater:
         """
         lines = content.split('\n')
         
-        # Look for existing badge section markers
-        start_marker = "<!-- TEST-BADGES-START -->"
-        end_marker = "<!-- TEST-BADGES-END -->"
+        # Look for existing badge section markers (check both old and new markers)
+        start_markers = ["<!-- TEST_STATS_START -->", "<!-- TEST-BADGES-START -->"]
+        end_markers = ["<!-- TEST_STATS_END -->", "<!-- TEST-BADGES-END -->"]
         
         start_idx = -1
         end_idx = -1
         
         for i, line in enumerate(lines):
-            if start_marker in line:
-                start_idx = i
-            elif end_marker in line and start_idx != -1:
-                end_idx = i
-                break
+            # Check for any start marker
+            for start_marker in start_markers:
+                if start_marker in line:
+                    start_idx = i
+                    break
+            # Check for any end marker (only if we found a start)
+            if start_idx != -1:
+                for end_marker in end_markers:
+                    if end_marker in line:
+                        end_idx = i
+                        break
+                if end_idx != -1:
+                    break
         
         return start_idx, end_idx
     
@@ -151,18 +203,57 @@ class BadgeUpdater:
 
 ---
 
-## Test Results Details
+## Test Results Table
 
-"""
-        
+| Status | Test Name | Duration | Details |
+|--------|-----------|----------|---------|"""
+
         # Sort tests by status (failed first, then passed) and then by name
         sorted_tests = sorted(test_results.items(), key=lambda x: (x[1].get('status') != 'failed', Path(x[0]).name))
+        
+        # Add table rows
+        for test_path, result in sorted_tests:
+            test_name = Path(test_path).name
+            status = result.get('status', 'unknown')
+            duration = result.get('duration', 0)
+            
+            # Status emoji
+            if status == 'passed':
+                status_emoji = "✅"
+            elif status == 'failed':
+                status_emoji = "❌"
+            elif status == 'error':
+                status_emoji = "⚠️"
+            else:
+                status_emoji = "❓"
+            
+            # Create anchor ID for the test
+            anchor_id = test_name.replace('.py', '').replace('_', '-').replace(' ', '-').lower()
+            
+            # Add clickable link for failed tests, plain text for passed tests
+            if status in ['failed', 'error']:
+                test_link = f"[{test_name}](#{anchor_id})"
+            else:
+                test_link = test_name
+            
+            content += f"\n| {status_emoji} | {test_link} | {duration:.2f}s | {status.upper()} |"
+
+        content += f"""
+
+---
+
+## Detailed Test Results
+
+"""
         
         for test_path, result in sorted_tests:
             test_name = Path(test_path).name
             status = result.get('status', 'unknown')
             duration = result.get('duration', 0)
             output = result.get('output', 'No output available')
+            
+            # Create anchor ID for the test (same as in table)
+            anchor_id = test_name.replace('.py', '').replace('_', '-').replace(' ', '-').lower()
             
             # Status styling
             if status == 'passed':
@@ -174,7 +265,17 @@ class BadgeUpdater:
             else:
                 status_badge = "[UNKNOWN]"
             
-            content += f"""### {status_badge} {test_name}
+            # Add anchor for failed/error tests, regular heading for passed tests
+            if status in ['failed', 'error']:
+                content += f"""### <a id="{anchor_id}"></a>{status_badge} {test_name}
+
+**Status:** {status.upper()}  
+**Duration:** {duration:.2f} seconds  
+**File Path:** `{test_path}`
+
+"""
+            else:
+                content += f"""### {status_badge} {test_name}
 
 **Status:** {status.upper()}  
 **Duration:** {duration:.2f} seconds  
@@ -196,6 +297,10 @@ class BadgeUpdater:
 ```
 
 """
+            
+            # Add back to top link for failed/error tests
+            if status in ['failed', 'error']:
+                content += "[↑ Back to Test Table](#test-results-table)\n\n"
             
             content += "---\n\n"
         
@@ -264,25 +369,11 @@ class BadgeUpdater:
             with open(self.readme_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Generate new badges
-            badges = self.generate_test_badges(test_results)
+            # Calculate comprehensive test statistics
+            stats = self.calculate_test_stats(test_results)
             
-            # Calculate relative path to test results file from README
-            try:
-                relative_path = self.test_results_path.relative_to(self.readme_path.parent)
-            except ValueError:
-                # If paths are on different drives, use absolute path
-                relative_path = self.test_results_path
-            
-            badge_section = "\n".join([
-                "<!-- TEST-BADGES-START -->",
-                "",
-                " ".join(badges),
-                "",
-                f"**[View Detailed Test Results]({relative_path})**",
-                "",
-                "<!-- TEST-BADGES-END -->"
-            ])
+            # Generate new badge section
+            badge_section = self.create_stats_badge(stats)
             
             # Find existing badge section
             start_idx, end_idx = self.find_badge_section(content)
@@ -397,6 +488,17 @@ def main():
     
     if success:
         print("Badge update completed successfully!")
+        
+        # Show stats preview
+        stats = updater.calculate_test_stats(example_results)
+        print(f"\nTest Statistics:")
+        print(f"  Status: {stats['status'].upper()}")
+        print(f"  Passed: {stats['passed']}")
+        print(f"  Failed: {stats['failed']}")
+        print(f"  Errors: {stats['errors']}")
+        print(f"  Success Rate: {stats['success_rate']}%")
+        print(f"  Last Run: {stats['last_run']}")
+        
         print(updater.generate_summary_report(example_results))
     else:
         print("Badge update failed!")

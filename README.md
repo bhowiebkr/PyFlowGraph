@@ -1,12 +1,28 @@
 # PyFlowGraph
 
-<!-- TEST-BADGES-START -->
+<!-- TEST_STATS_START -->
 
-![Tests](https://img.shields.io/badge/tests-9%20failing-red?style=flat-square) ![Test Count](https://img.shields.io/badge/tests-48%20total-blue?style=flat-square) ![Success Rate](https://img.shields.io/badge/success%20rate-81%25-green?style=flat-square) ![Last Updated](https://img.shields.io/badge/last%20tested-2025---08---20-blue?style=flat-square)
+<div align="center">
 
-**[View Detailed Test Results](testing\test_results.md)**
+![Tests](https://img.shields.io/badge/Tests-39%20passed-green)
+![Failed](https://img.shields.io/badge/Failed-9-red)
+![Success Rate](https://img.shields.io/badge/Success%20Rate-81%25-green)
+![Test Files](https://img.shields.io/badge/Test%20Files-48-blue)
+![Total Tests](https://img.shields.io/badge/Total%20Tests-48-lightgrey)
+![Skipped](https://img.shields.io/badge/Skipped-0-yellow)
+![Errors](https://img.shields.io/badge/Errors-0-orange)
+![Warnings](https://img.shields.io/badge/Warnings-0-lightgrey)
+![Last Run](https://img.shields.io/badge/Last%20Run-2025--08--20%2001%3A33%3A09-lightblue)
 
-<!-- TEST-BADGES-END -->
+</div>
+
+<div align="center">
+
+**[View Detailed Test Report](testing/test_results.md)** - Complete test results with individual test details
+
+</div>
+
+<!-- TEST_STATS_END -->
 
 
 A universal, node-based visual scripting editor built with Python and PySide6 that bridges traditional data-flow programming with interactive application development. Create, connect, and execute Python code as nodes using either batch processing for data pipelines or live event-driven execution for interactive applications.

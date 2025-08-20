@@ -1,6 +1,6 @@
 # PyFlowGraph Test Results
 
-**Generated:** 2025-08-20 01:23:01  
+**Generated:** 2025-08-20 01:33:09  
 **Test Runner:** Professional PySide6 GUI Test Tool
 
 ---
@@ -13,17 +13,72 @@
 | **Passed** | 39 |
 | **Failed** | 9 |
 | **Success Rate** | 81.2% |
-| **Total Duration** | 52.34 seconds |
-| **Average Duration** | 1.09 seconds per test |
+| **Total Duration** | 54.60 seconds |
+| **Average Duration** | 1.14 seconds per test |
 
 ---
 
-## Test Results Details
+## Test Results Table
 
-### [FAIL] test_actual_execution_after_undo.py
+| Status | Test Name | Duration | Details |
+|--------|-----------|----------|---------|
+| ❌ | [test_actual_execution_after_undo.py](#test-actual-execution-after-undo) | 0.70s | FAILED |
+| ❌ | [test_code_editor_dialog_integration.py](#test-code-editor-dialog-integration) | 0.16s | FAILED |
+| ❌ | [test_execute_graph_modes.py](#test-execute-graph-modes) | 10.02s | FAILED |
+| ❌ | [test_group_data_flow.py](#test-group-data-flow) | 0.55s | FAILED |
+| ❌ | [test_group_interface_pins.py](#test-group-interface-pins) | 0.22s | FAILED |
+| ❌ | [test_group_ui_integration.py](#test-group-ui-integration) | 10.01s | FAILED |
+| ❌ | [test_performance_fix_demonstration.py](#test-performance-fix-demonstration) | 0.26s | FAILED |
+| ❌ | [test_performance_regression_validation.py](#test-performance-regression-validation) | 0.28s | FAILED |
+| ❌ | [test_real_workflow_integration.py](#test-real-workflow-integration) | 0.31s | FAILED |
+| ✅ | test_basic_commands.py | 0.13s | PASSED |
+| ✅ | test_code_change_command.py | 0.13s | PASSED |
+| ✅ | test_code_editor_undo_workflow.py | 0.27s | PASSED |
+| ✅ | test_command_system.py | 0.48s | PASSED |
+| ✅ | test_composite_commands.py | 0.19s | PASSED |
+| ✅ | test_connection_system.py | 0.28s | PASSED |
+| ✅ | test_connection_system_headless.py | 0.29s | PASSED |
+| ✅ | test_copy_paste_integration.py | 0.17s | PASSED |
+| ✅ | test_debug_flags.py | 0.24s | PASSED |
+| ✅ | test_delete_undo_performance_regression.py | 2.43s | PASSED |
+| ✅ | test_end_to_end_workflows.py | 3.30s | PASSED |
+| ✅ | test_execution_engine.py | 0.33s | PASSED |
+| ✅ | test_file_formats.py | 0.09s | PASSED |
+| ✅ | test_full_gui_integration.py | 6.98s | PASSED |
+| ✅ | test_graph_management.py | 0.33s | PASSED |
+| ✅ | test_group_resize.py | 0.18s | PASSED |
+| ✅ | test_group_system.py | 0.24s | PASSED |
+| ✅ | test_gui_node_deletion.py | 0.76s | PASSED |
+| ✅ | test_gui_node_deletion_workflow.py | 0.75s | PASSED |
+| ✅ | test_gui_value_update_regression.py | 0.30s | PASSED |
+| ✅ | test_integration.py | 0.32s | PASSED |
+| ✅ | test_markdown_loaded_deletion.py | 0.60s | PASSED |
+| ✅ | test_node_deletion_connection_bug.py | 0.23s | PASSED |
+| ✅ | test_node_system.py | 0.28s | PASSED |
+| ✅ | test_node_system_headless.py | 0.29s | PASSED |
+| ✅ | test_password_generator_chaos.py | 4.56s | PASSED |
+| ✅ | test_pin_system.py | 0.30s | PASSED |
+| ✅ | test_pin_system_headless.py | 0.28s | PASSED |
+| ✅ | test_reroute_creation_undo.py | 0.76s | PASSED |
+| ✅ | test_reroute_node_deletion.py | 0.59s | PASSED |
+| ✅ | test_reroute_undo_redo.py | 0.61s | PASSED |
+| ✅ | test_reroute_with_connections.py | 0.60s | PASSED |
+| ✅ | test_selection_operations.py | 0.28s | PASSED |
+| ✅ | test_undo_history_integration.py | 0.42s | PASSED |
+| ✅ | test_undo_history_workflow.py | 0.25s | PASSED |
+| ✅ | test_undo_ui_integration.py | 0.41s | PASSED |
+| ✅ | test_user_scenario.py | 0.60s | PASSED |
+| ✅ | test_user_scenario_gui.py | 0.59s | PASSED |
+| ✅ | test_view_state_persistence.py | 2.24s | PASSED |
+
+---
+
+## Detailed Test Results
+
+### <a id="test-actual-execution-after-undo"></a>[FAIL] test_actual_execution_after_undo.py
 
 **Status:** FAILED  
-**Duration:** 0.62 seconds  
+**Duration:** 0.70 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_actual_execution_after_undo.py`
 
 **Output:**
@@ -48,28 +103,28 @@ Running baseline execution...
 EXEC_LOG: --- Executing Node: Password Configuration ---
 EXEC_LOG: Password config: 12 chars, Upper: True, Lower: True, Numbers: True, Symbols: False
 EXEC_LOG: --- Executing Node: Password Generator Engine ---
-EXEC_LOG: Generated password: ROteRefhUumc
+EXEC_LOG: Generated password: lNQgirghY9VV
 EXEC_LOG: --- Executing Node: Password Strength Analyzer ---
-EXEC_LOG: Password strength: Strong (Score: 65/100)
-Feedback: Add numbers; Add symbols for extra security
+EXEC_LOG: Password strength: Very Strong (Score: 85/100)
+Feedback: Add symbols for extra security
 EXEC_LOG: --- Executing Node: Password Output & Copy ---
 EXEC_LOG: === PASSWORD GENERATION COMPLETE ===
-Generated Password: ROteRefhUumc
-Strength: Strong (65/100)
-Feedback: Add numbers; Add symbols for extra security
+Generated Password: lNQgirghY9VV
+Strength: Very Strong (85/100)
+Feedback: Add symbols for extra security
 Execution completed. Logs count: 8
-  LOG: Generated password: ROteRefhUumc
+  LOG: Generated password: lNQgirghY9VV
   LOG: --- Executing Node: Password Strength Analyzer ---
-  LOG: Password strength: Strong (Score: 65/100)
-Feedback: Add numbers; Add symbols for extra security
+  LOG: Password strength: Very Strong (Score: 85/100)
+Feedback: Add symbols for extra security
   LOG: --- Executing Node: Password Output & Copy ---
   LOG: === PASSWORD GENERATION COMPLETE ===
-Generated Password: ROteRefhUumc
-Strength: Strong (65/100)
-Feedback: Add numbers; Add symbols for extra security
-Baseline - Password: 'ROteRefhUumc'
-Baseline - Strength: 'Generated Password: ROteRefhUumc
-Strength: Strong ...'
+Generated Password: lNQgirghY9VV
+Strength: Very Strong (85/100)
+Feedback: Add symbols for extra security
+Baseline - Password: 'lNQgirghY9VV'
+Baseline - Strength: 'Generated Password: lNQgirghY9VV
+Strength: Very St...'
 Baseline execution successful: password=True, result=True
 
 --- Deleting Middle Nodes ---
@@ -78,15 +133,19 @@ After deletion: 2 nodes, 0 connections
 
 --- Undoing Deletions ---
 After undo: 4 nodes, 13 connections
+
+--- Post-Undo Output Node Stat
 ... (output truncated)
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_code_editor_dialog_integration.py
+### <a id="test-code-editor-dialog-integration"></a>[FAIL] test_code_editor_dialog_integration.py
 
 **Status:** FAILED  
-**Duration:** 0.13 seconds  
+**Duration:** 0.16 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_code_editor_dialog_integration.py`
 
 **Output:**
@@ -105,7 +164,7 @@ Traceback (most recent call last):
                       ^^^^^^^^^^^^^^^^^^^
   File "C:\Users\howard\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py", line 1400, in get_original
     raise AttributeError(
-AttributeError: <Mock spec='str' id='2634681931024'> does not have the attribute '_handle_accept'
+AttributeError: <Mock spec='str' id='2356574868752'> does not have the attribute '_handle_accept'
 
 ======================================================================
 ERROR: test_dialog_initialization_with_graph_reference (__main__.TestCodeEditorDialogIntegration.test_dialog_initialization_with_graph_reference)
@@ -124,12 +183,14 @@ Traceback (most recent call last):
 ... (output truncated)
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_execute_graph_modes.py
+### <a id="test-execute-graph-modes"></a>[FAIL] test_execute_graph_modes.py
 
 **Status:** FAILED  
-**Duration:** 10.03 seconds  
+**Duration:** 10.02 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_execute_graph_modes.py`
 
 **Output:**
@@ -137,12 +198,14 @@ Traceback (most recent call last):
 Test timed out after 10 seconds
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_group_data_flow.py
+### <a id="test-group-data-flow"></a>[FAIL] test_group_data_flow.py
 
 **Status:** FAILED  
-**Duration:** 0.57 seconds  
+**Duration:** 0.55 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_group_data_flow.py`
 
 **Output:**
@@ -152,18 +215,20 @@ QFontDatabase: Must construct a QGuiApplication before accessing QFontDatabase
 
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_group_interface_pins.py
+### <a id="test-group-interface-pins"></a>[FAIL] test_group_interface_pins.py
 
 **Status:** FAILED  
-**Duration:** 0.18 seconds  
+**Duration:** 0.22 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_group_interface_pins.py`
 
 **Output:**
 ```
 
-........E...EEE.EF..........
+........E...EEE.E...........
 ======================================================================
 ERROR: test_create_routing_for_group (__main__.TestGroupConnectionRouter.test_create_routing_for_group)
 Test creating routing table for a group.
@@ -197,9 +262,11 @@ Traceback (most recent call last):
 ... (output truncated)
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_group_ui_integration.py
+### <a id="test-group-ui-integration"></a>[FAIL] test_group_ui_integration.py
 
 **Status:** FAILED  
 **Duration:** 10.01 seconds  
@@ -210,9 +277,11 @@ Traceback (most recent call last):
 Test timed out after 10 seconds
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_performance_fix_demonstration.py
+### <a id="test-performance-fix-demonstration"></a>[FAIL] test_performance_fix_demonstration.py
 
 **Status:** FAILED  
 **Duration:** 0.26 seconds  
@@ -234,7 +303,7 @@ Baseline connection traversals: 6
 --- Cycle 1 ---
 Deleting node: Generator Node
 Connections after delete: 3
-Undo operation took: 2.03 ms
+Undo operation took: 1.79 ms
 Connections after undo: 3
 Connection traversals after undo: 4
 Traversal ratio (current/baseline): 0.67
@@ -250,18 +319,20 @@ Traceback (most recent call last):
 AssertionError: 3 != 6 : Cycle 1: Should restore all connections
 
 ----------------------------------------------------------------------
-Ran 2 tests in 0.081s
+Ran 2 tests in 0.079s
 
 FAILED (failures=1)
 
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_performance_regression_validation.py
+### <a id="test-performance-regression-validation"></a>[FAIL] test_performance_regression_validation.py
 
 **Status:** FAILED  
-**Duration:** 0.26 seconds  
+**Duration:** 0.28 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_performance_regression_validation.py`
 
 **Output:**
@@ -269,25 +340,25 @@ FAILED (failures=1)
 
 === Testing Duplicate Connection Prevention ===
 Initial state: 2 graph connections, 4 pin connections
-Undo operation took: 2.28 ms
+Undo operation took: 2.68 ms
 After undo: 2 graph connections, 6 pin connections
 
 === Testing Execution Performance Stability ===
 Baseline execution time: 0.001 ms
 Post-undo execution time: 0.001 ms
-Performance ratio (post-undo / baseline): 0.697
+Performance ratio (post-undo / baseline): 0.714
 
 === Testing Multiple Delete-Undo Cycles ===
 Cycle 1/3
-Cycle 1 performance change: 30.4%
+Cycle 1 performance change: 15.4%
 Cycle 2/3
-Cycle 2 performance change: 23.9%
+Cycle 2 performance change: 44.2%
 Cycle 3/3
-Cycle 3 performance change: 10.9%
-Maximum performance degradation: 30.4%
+Cycle 3 performance change: -1.9%
+Maximum performance degradation: 44.2%
 
 === Testing Performance Regression Thresholds ===
-Performance thresholds: Delete=0.01ms, Undo=1.98ms
+Performance thresholds: Delete=0.01ms, Undo=2.15ms
 
 F...
 ======================================================================
@@ -300,18 +371,20 @@ Traceback (most recent call last):
 AssertionError: 6 != 4 : Pin connections should be restored without duplicates
 
 ----------------------------------------------------------------------
-Ran 4 tests in 0.097s
+Ran 4 tests in 0.095s
 
 FAILED (failures=1)
 
 ```
 
+[↑ Back to Test Table](#test-results-table)
+
 ---
 
-### [FAIL] test_real_workflow_integration.py
+### <a id="test-real-workflow-integration"></a>[FAIL] test_real_workflow_integration.py
 
 **Status:** FAILED  
-**Duration:** 0.28 seconds  
+**Duration:** 0.31 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_real_workflow_integration.py`
 
 **Output:**
@@ -340,18 +413,20 @@ Traceback (most recent call last):
 AssertionError: 0 != 4
 
 ----------------------------------------------------------------------
-Ran 12 tests in 0.105s
+Ran 12 tests in 0.108s
 
 FAILED (failures=1)
 
 ```
+
+[↑ Back to Test Table](#test-results-table)
 
 ---
 
 ### [PASS] test_basic_commands.py
 
 **Status:** PASSED  
-**Duration:** 0.10 seconds  
+**Duration:** 0.13 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_basic_commands.py`
 
 **Output:**
@@ -430,7 +505,7 @@ DEBUG: Command.undo() ret
 ### [PASS] test_code_change_command.py
 
 **Status:** PASSED  
-**Duration:** 0.12 seconds  
+**Duration:** 0.13 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_code_change_command.py`
 
 **Output:**
@@ -445,7 +520,7 @@ Failed to undo code change: Undo failed
 ### [PASS] test_code_editor_undo_workflow.py
 
 **Status:** PASSED  
-**Duration:** 0.19 seconds  
+**Duration:** 0.27 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_code_editor_undo_workflow.py`
 
 ---
@@ -453,7 +528,7 @@ Failed to undo code change: Undo failed
 ### [PASS] test_command_system.py
 
 **Status:** PASSED  
-**Duration:** 0.46 seconds  
+**Duration:** 0.48 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_command_system.py`
 
 **Output:**
@@ -531,7 +606,7 @@ DEBUG: C
 ### [PASS] test_composite_commands.py
 
 **Status:** PASSED  
-**Duration:** 0.16 seconds  
+**Duration:** 0.19 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_composite_commands.py`
 
 **Output:**
@@ -600,7 +675,7 @@ DEBUG: CompositeCommand.undo() returning: True
 ### [PASS] test_connection_system.py
 
 **Status:** PASSED  
-**Duration:** 0.27 seconds  
+**Duration:** 0.28 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_connection_system.py`
 
 **Output:**
@@ -627,7 +702,7 @@ DEBUG: Command execution completed successfully in 0.0ms
 ### [PASS] test_connection_system_headless.py
 
 **Status:** PASSED  
-**Duration:** 0.27 seconds  
+**Duration:** 0.29 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_connection_system_headless.py`
 
 **Output:**
@@ -662,13 +737,13 @@ DEBUG: Command execution completed successfully in 0.0ms
 
 === COMPOSITE COMMAND EXECUTE START ===
 DEBUG: Executing composite command with 2 commands
-DEBUG: Executing command 1/2: <Mock name='mock.get_description()' id='1896250580880'>
+DEBUG: Executing command 1/2: <Mock name='mock.get_description()' id='2033699299216'>
 DEBUG: Command 1 returned: True
 DEBUG: Command 1 succeeded, added to executed list
-DEBUG: Executing command 2/2: <Mock name='mock.get_description()' id='1896250482768'>
+DEBUG: Executing command 2/2: <Mock name='mock.get_description()' id='2033699201104'>
 DEBUG: Command 2 returned: False
 DEBUG: Command 2 FAILED - rolling back 1 executed commands
-DEBUG: Rolling back command 1/1: <Mock name='mock.get_description()' id='1896250580880'>
+DEBUG: Rolling back command 1/1: <Mock name='mock.get_description()' id='2033699299216'>
 DEBUG: Rollback 1 returned: True
 DEBUG: Rollback complete, composite command failed
 === COMPOSITE COMMAND EXECUTE END (FAILED) ===
@@ -676,20 +751,20 @@ DEBUG: Rollback complete, composite command failed
 
 === COMPOSITE COMMAND EXECUTE START ===
 DEBUG: Executing composite command with 2 commands
-DEBUG: Executing command 1/2: <Mock name='mock.get_description()' id='1896250608080'>
+DEBUG: Executing command 1/2: <Mock name='mock.get_description()' id='2033699326416'>
 DEBUG: Command 1 returned: True
 DEBUG: Command 1 succeeded, added to executed list
-DEBUG: Executing command 2/2: <Mock name='mock.get_description()' id='1896250609872'>
+DEBUG: Executing command 2/2: <Mock name='mock.get_description()' id='2033699328208'>
 DEBUG: Command 2 returned: True
 DEBUG: Command 2 succeeded, added to executed list
 DEBUG: All 2 commands succeeded
 === COMPOSITE COMMAND EXECUTE END (SUCCESS) ===
 
 DEBUG: CompositeCommand.undo() - undoing 2 commands
-DEBUG: Undoing command 1/2: <Mock name='mock.get_description()' id='1896250609872'>
+DEBUG: Undoing command 1/2: <Mock name='mock.get_description()' id='2033699328208'>
 DEBUG: Command 1 undo returned: True
 DEBUG: Command 1 undone successfully
-DEBUG: Undoing command 2/2: <Mock name='mock.get_description()' id='1896250608080'>
+DEBUG: Undoing command 2/2: <Mock name='mock.get_description()' id='2033699326416'>
 DEBUG: Command 2 undo returned: True
 DEBUG: Command 2 undone successfully
 DEBUG: All commands undone successfully, composite marked as undone
@@ -702,7 +777,7 @@ DEBUG: CompositeCommand.undo() returning: True
 ### [PASS] test_debug_flags.py
 
 **Status:** PASSED  
-**Duration:** 0.22 seconds  
+**Duration:** 0.24 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_debug_flags.py`
 
 ---
@@ -710,7 +785,7 @@ DEBUG: CompositeCommand.undo() returning: True
 ### [PASS] test_delete_undo_performance_regression.py
 
 **Status:** PASSED  
-**Duration:** 1.21 seconds  
+**Duration:** 2.43 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_delete_undo_performance_regression.py`
 
 ---
@@ -718,7 +793,7 @@ DEBUG: CompositeCommand.undo() returning: True
 ### [PASS] test_end_to_end_workflows.py
 
 **Status:** PASSED  
-**Duration:** 3.29 seconds  
+**Duration:** 3.30 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_end_to_end_workflows.py`
 
 **Output:**
@@ -741,27 +816,27 @@ WORKFLOW: User creates a simple data processing pipeline ...
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2991312669696)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2288178039808)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd1900, parent=0x2b877b729b0, pos=0,84.5) at 0x000002B87823BB00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c44bd0, parent=0x214c1a83c70, pos=0,84.5) at 0x00000214C20CBB00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd1440, parent=0x2b877b729b0, pos=0,109.5) at 0x000002B87823BCC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c44690, parent=0x214c1a83c70, pos=0,109.5) at 0x00000214C20CBCC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd0e00, parent=0x2b877b729b0, pos=0,134.5) at 0x000002B878246340>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c441d0, parent=0x214c1a83c70, pos=0,134.5) at 0x00000214C20D6340>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd14c0, parent=0x2b877b729b0, pos=0,159.5) at 0x000002B878246140>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c44390, parent=0x214c1a83c70, pos=0,159.5) at 0x00000214C20D6140>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd1880, parent=0x2b877b729b0, pos=0,184.5) at 0x000002B878245F00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c443d0, parent=0x214c1a83c70, pos=0,184.5) at 0x00000214C20D5F00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd0980, parent=0x2b877b729b0, pos=250,84.5) at 0x000002B878245940>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c44c90, parent=0x214c1a83c70, pos=250,84.5) at 0x00000214C20D5940>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd0fc0, parent=0x2b877b729b0, pos=250,109.5) at 0x000002B878247380>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c44550, parent=0x214c1a83c70, pos=250,109.5) at 0x00000214C20D7380>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd2500, parent=0x2b877b729b0, pos=250,134.5) at 0x000002B8782
+DEBUG: Cleaning up pin: <core.pin.Pin(0x214c1c44610, parent=0x214c1a83c70, pos=250,134.5) at 0x00000214C20
 ... (output truncated)
 ```
 
@@ -770,7 +845,7 @@ DEBUG: Cleaning up pin: <core.pin.Pin(0x2b877cd2500, parent=0x2b877b729b0, pos=2
 ### [PASS] test_execution_engine.py
 
 **Status:** PASSED  
-**Duration:** 0.30 seconds  
+**Duration:** 0.33 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_execution_engine.py`
 
 **Output:**
@@ -786,7 +861,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 0
 DEBUG: History size now: 1
-DEBUG: Command execution completed successfully in 44.1ms
+DEBUG: Command execution completed successfully in 44.2ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -800,7 +875,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 1
 DEBUG: History size now: 2
-DEBUG: Command execution completed successfully in 1.8ms
+DEBUG: Command execution completed successfully in 2.0ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -828,7 +903,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 0
 DEBUG: History size now: 1
-DEBUG: Command execution completed successfully in 1.9ms
+DEBUG: Command execution completed successfully in 1.7ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -844,7 +919,7 @@ DEBUG: Current
 ### [PASS] test_file_formats.py
 
 **Status:** PASSED  
-**Duration:** 0.08 seconds  
+**Duration:** 0.09 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_file_formats.py`
 
 ---
@@ -852,7 +927,7 @@ DEBUG: Current
 ### [PASS] test_full_gui_integration.py
 
 **Status:** PASSED  
-**Duration:** 6.93 seconds  
+**Duration:** 6.98 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_full_gui_integration.py`
 
 **Output:**
@@ -871,27 +946,27 @@ Test that the main application window opens correctly. ...
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 1650599539008)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2845244404032)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657d3a0, parent=0x1804d08a790, pos=0,84.5) at 0x000001804F667AC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388be80, parent=0x296736bcd10, pos=0,84.5) at 0x0000029675C877C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657d620, parent=0x1804d08a790, pos=0,109.5) at 0x000001804F667C40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388d780, parent=0x296736bcd10, pos=0,109.5) at 0x0000029675C87BC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657d320, parent=0x1804d08a790, pos=0,134.5) at 0x000001804F676180>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388d580, parent=0x296736bcd10, pos=0,134.5) at 0x0000029675C96080>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657d660, parent=0x1804d08a790, pos=0,159.5) at 0x000001804F675F80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388cec0, parent=0x296736bcd10, pos=0,159.5) at 0x0000029675C95CC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657d860, parent=0x1804d08a790, pos=0,184.5) at 0x000001804F675D40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388d480, parent=0x296736bcd10, pos=0,184.5) at 0x0000029675C95D00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657d360, parent=0x1804d08a790, pos=250,84.5) at 0x000001804F675900>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388cd00, parent=0x296736bcd10, pos=250,84.5) at 0x0000029675C959C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657d760, parent=0x1804d08a790, pos=250,109.5) at 0x000001804F677100>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388ca00, parent=0x296736bcd10, pos=250,109.5) at 0x0000029675C96FC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1807657e220, parent=0x1804d08a790, pos=250,134.5) at 0x000001804F6773C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2967388d0c0, parent=0x296736bcd10, pos=250,134.5) at 0x0000029675C97140>
 DEBUG: Pin cleaned up
 DEBUG: Cleaning up pin: <core.pin
 ... (output truncated)
@@ -902,7 +977,7 @@ DEBUG: Cleaning up pin: <core.pin
 ### [PASS] test_graph_management.py
 
 **Status:** PASSED  
-**Duration:** 0.32 seconds  
+**Duration:** 0.33 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_graph_management.py`
 
 **Output:**
@@ -918,7 +993,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 0
 DEBUG: History size now: 1
-DEBUG: Command execution completed successfully in 50.3ms
+DEBUG: Command execution completed successfully in 52.3ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -946,7 +1021,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 2
 DEBUG: History size now: 3
-DEBUG: Command execution completed successfully in 0.2ms
+DEBUG: Command execution completed successfully in 0.1ms
 === COMMAND HISTORY EXECUTE END ===
 
 Copied 2 nodes to clipboard as markdown.
@@ -961,7 +1036,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 0
 DEBUG: History size now: 1
-DEBUG: Command execution completed successfully in 2.4ms
+DEBUG: Command execution completed successfully in 1.9ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -976,7 +1051,7 @@ D
 ### [PASS] test_group_resize.py
 
 **Status:** PASSED  
-**Duration:** 0.17 seconds  
+**Duration:** 0.18 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_group_resize.py`
 
 ---
@@ -984,7 +1059,7 @@ D
 ### [PASS] test_group_system.py
 
 **Status:** PASSED  
-**Duration:** 0.23 seconds  
+**Duration:** 0.24 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_group_system.py`
 
 **Output:**
@@ -1003,7 +1078,7 @@ Undid creation of group 'Test Group'
 ### [PASS] test_gui_node_deletion.py
 
 **Status:** PASSED  
-**Duration:** 0.74 seconds  
+**Duration:** 0.76 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_gui_node_deletion.py`
 
 **Output:**
@@ -1025,16 +1100,16 @@ Total scene items: 95
   Node: Password Strength Analyzer - Scene: True
   Node: Password Generator Engine - Scene: True
   Node: Password Configuration - Scene: True
-  Connection: <core.connection.Connection(0x176b74c5360, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E15B1C00> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c5ba0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E15B1D80> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c5720, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E1587580> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c53e0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E1587B40> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c4e20, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E15877C0> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c4f20, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E1587700> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c4ee0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E1587780> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c5b60, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E1587AC0> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c55a0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176B92835C0> - Scene: True
-  Connection: <core.connection.Connection(0x176b74c58e0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x00000176E1587C00> - Scene: T
+  Connection: <core.connection.Connection(0x21d4d418740, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76471C00> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d418d40, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76471D80> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d418d00, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76447580> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d419000, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76447B40> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d419500, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D764477C0> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d419200, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76447700> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d4187c0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76447780> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d418e80, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76447AC0> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d418e40, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D4F0A35C0> - Scene: True
+  Connection: <core.connection.Connection(0x21d4d418c80, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021D76447C00> - Scene: T
 ... (output truncated)
 ```
 
@@ -1043,7 +1118,7 @@ Total scene items: 95
 ### [PASS] test_gui_node_deletion_workflow.py
 
 **Status:** PASSED  
-**Duration:** 0.71 seconds  
+**Duration:** 0.75 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_gui_node_deletion_workflow.py`
 
 **Output:**
@@ -1065,16 +1140,16 @@ Total scene items: 95
   Node: Password Strength Analyzer - Scene: True
   Node: Password Generator Engine - Scene: True
   Node: Password Configuration - Scene: True
-  Connection: <core.connection.Connection(0x20d12636480, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CC800> - Scene: True
-  Connection: <core.connection.Connection(0x20d12636d80, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CC700> - Scene: True
-  Connection: <core.connection.Connection(0x20d12636c00, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CC600> - Scene: True
-  Connection: <core.connection.Connection(0x20d126369c0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CBF80> - Scene: True
-  Connection: <core.connection.Connection(0x20d126363c0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CC440> - Scene: True
-  Connection: <core.connection.Connection(0x20d12636440, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CC340> - Scene: True
-  Connection: <core.connection.Connection(0x20d12636980, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CC240> - Scene: True
-  Connection: <core.connection.Connection(0x20d12636680, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CBFC0> - Scene: True
-  Connection: <core.connection.Connection(0x20d12636940, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7A4F40> - Scene: True
-  Connection: <core.connection.Connection(0x20d12636900, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000020D3A7CBA80> - Scene: T
+  Connection: <core.connection.Connection(0x21c69d9e5f0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69CD0600> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9ea70, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69C880C0> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9ea30, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69CD0300> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9e1f0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C4393B9C0> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9e0f0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69CD0040> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9e430, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69CD3F80> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9ebf0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69CD3DC0> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9e7f0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69CD3A80> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9ec30, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C439A08C0> - Scene: True
+  Connection: <core.connection.Connection(0x21c69d9ecb0, pos=0,0, z=-1, flags=(ItemIsSelectable)) at 0x0000021C69CD0A40> - Scene: T
 ... (output truncated)
 ```
 
@@ -1083,7 +1158,7 @@ Total scene items: 95
 ### [PASS] test_gui_value_update_regression.py
 
 **Status:** PASSED  
-**Duration:** 0.29 seconds  
+**Duration:** 0.30 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_gui_value_update_regression.py`
 
 **Output:**
@@ -1153,7 +1228,7 @@ Testing post-undo GUI value updat
 ### [PASS] test_integration.py
 
 **Status:** PASSED  
-**Duration:** 0.27 seconds  
+**Duration:** 0.32 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_integration.py`
 
 **Output:**
@@ -1169,7 +1244,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 0
 DEBUG: History size now: 1
-DEBUG: Command execution completed successfully in 44.2ms
+DEBUG: Command execution completed successfully in 49.0ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -1183,7 +1258,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 1
 DEBUG: History size now: 2
-DEBUG: Command execution completed successfully in 1.9ms
+DEBUG: Command execution completed successfully in 2.0ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -1197,7 +1272,7 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 2
 DEBUG: History size now: 3
-DEBUG: Command execution completed successfully in 1.8ms
+DEBUG: Command execution completed successfully in 1.7ms
 === COMMAND HISTORY EXECUTE END ===
 
 
@@ -1227,7 +1302,7 @@ DEBUG: C
 ### [PASS] test_markdown_loaded_deletion.py
 
 **Status:** PASSED  
-**Duration:** 0.58 seconds  
+**Duration:** 0.60 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_markdown_loaded_deletion.py`
 
 **Output:**
@@ -1235,35 +1310,35 @@ DEBUG: C
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2737928298432)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2391649771456)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f40470, parent=0x27d78d7c260, pos=0,84.5) at 0x0000027D794044C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9212310, parent=0x22cd9033990, pos=0,84.5) at 0x0000022CD97144C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f42170, parent=0x27d78d7c260, pos=0,109.5) at 0x0000027D79404480>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9214190, parent=0x22cd9033990, pos=0,109.5) at 0x0000022CD9714480>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f418f0, parent=0x27d78d7c260, pos=0,134.5) at 0x0000027D79406B40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213fd0, parent=0x22cd9033990, pos=0,134.5) at 0x0000022CD9716B40>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3f670, parent=0x27d78d7c260, pos=0,159.5) at 0x0000027D794069C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd92135d0, parent=0x22cd9033990, pos=0,159.5) at 0x0000022CD97169C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3fd30, parent=0x27d78d7c260, pos=0,184.5) at 0x0000027D79406700>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213610, parent=0x22cd9033990, pos=0,184.5) at 0x0000022CD9716700>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f401f0, parent=0x27d78d7c260, pos=250,84.5) at 0x0000027D794063C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213490, parent=0x22cd9033990, pos=250,84.5) at 0x0000022CD97163C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3fef0, parent=0x27d78d7c260, pos=250,109.5) at 0x0000027D79407800>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213410, parent=0x22cd9033990, pos=250,109.5) at 0x0000022CD9717800>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3f3b0, parent=0x27d78d7c260, pos=250,134.5) at 0x0000027D79407B00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd92140d0, parent=0x22cd9033990, pos=250,134.5) at 0x0000022CD9717B00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3f730, parent=0x27d78d7c260, pos=250,159.5) at 0x0000027D79407C80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213390, parent=0x22cd9033990, pos=250,159.5) at 0x0000022CD9717C80>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3f8f0, parent=0x27d78d7c260, pos=250,184.5) at 0x0000027D79406200>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213790, parent=0x22cd9033990, pos=250,184.5) at 0x0000022CD9716200>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3fbb0, parent=0x27d78d7c260, pos=0,59.5) at 0x0000027D7940A080>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213b90, parent=0x22cd9033990, pos=0,59.5) at 0x0000022CD971A080>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x27d78f3feb0, parent=0x27d78d7c260, pos=250,59.5) at 0x0000027D7940A180>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x22cd9213d10, parent=0x22cd9033990, pos=250,59.5) at 0x0000022CD971A180>
 DEBUG: Pin cleaned up
 DEBUG: Cleared pins list
 DEBUG: Cleare
@@ -1275,7 +1350,7 @@ DEBUG: Cleare
 ### [PASS] test_node_deletion_connection_bug.py
 
 **Status:** PASSED  
-**Duration:** 0.20 seconds  
+**Duration:** 0.23 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_node_deletion_connection_bug.py`
 
 **Output:**
@@ -1298,35 +1373,8 @@ All tests passed! The connection deletion bug has been fixed.
 ### [PASS] test_node_system.py
 
 **Status:** PASSED  
-**Duration:** 0.27 seconds  
+**Duration:** 0.28 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_node_system.py`
-
-**Output:**
-```
-
-=== COMMAND HISTORY EXECUTE START ===
-DEBUG: Executing command: Create 'Deserialized Node' node
-DEBUG: Command type: CreateNodeCommand
-DEBUG: Current history size: 0
-DEBUG: Current index: -1
-DEBUG: Calling command.execute()...
-DEBUG: Command.execute() returned: True
-DEBUG: Command marked as executed
-DEBUG: Added command to history at index 0
-DEBUG: History size now: 1
-DEBUG: Command execution completed successfully in 1.6ms
-=== COMMAND HISTORY EXECUTE END ===
-
-
-```
-
----
-
-### [PASS] test_node_system_headless.py
-
-**Status:** PASSED  
-**Duration:** 0.27 seconds  
-**File Path:** `E:\HOME\PyFlowGraph\tests\test_node_system_headless.py`
 
 **Output:**
 ```
@@ -1349,10 +1397,37 @@ DEBUG: Command execution completed successfully in 1.7ms
 
 ---
 
+### [PASS] test_node_system_headless.py
+
+**Status:** PASSED  
+**Duration:** 0.29 seconds  
+**File Path:** `E:\HOME\PyFlowGraph\tests\test_node_system_headless.py`
+
+**Output:**
+```
+
+=== COMMAND HISTORY EXECUTE START ===
+DEBUG: Executing command: Create 'Deserialized Node' node
+DEBUG: Command type: CreateNodeCommand
+DEBUG: Current history size: 0
+DEBUG: Current index: -1
+DEBUG: Calling command.execute()...
+DEBUG: Command.execute() returned: True
+DEBUG: Command marked as executed
+DEBUG: Added command to history at index 0
+DEBUG: History size now: 1
+DEBUG: Command execution completed successfully in 2.0ms
+=== COMMAND HISTORY EXECUTE END ===
+
+
+```
+
+---
+
 ### [PASS] test_password_generator_chaos.py
 
 **Status:** PASSED  
-**Duration:** 4.66 seconds  
+**Duration:** 4.56 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_password_generator_chaos.py`
 
 **Output:**
@@ -1373,16 +1448,9 @@ Initial password: '', strength: '...'
 
 --- Chaos Cycle 1 ---
 
-=== NODE GRAPH REMOVE_NODE START ===
-DEBUG: remove_node called with use_command=True
-DEBUG: Node to remove: 'Password Strength Analyzer' (ID: 1623875971712)
-DEBUG: Graph has 4 nodes before removal
-DEBUG: Scene has 95 items before removal
-DEBUG: Using command pattern for removal
-
 === COMMAND HISTORY EXECUTE START ===
-DEBUG: Executing command: Delete 'Password Strength Analyzer' node
-DEBUG: Command type: DeleteNodeCommand
+DEBUG: Executing command: Disconnect Password Configuration.output_4 from Password Generator Engine.include_numbers
+DEBUG: Command type: DeleteConnectionCommand
 DEBUG: Current history size: 0
 DEBUG: Current index: -1
 DEBUG: Calling command.execute()...
@@ -1390,25 +1458,29 @@ DEBUG: Command.execute() returned: True
 DEBUG: Command marked as executed
 DEBUG: Added command to history at index 0
 DEBUG: History size now: 1
-DEBUG: Command execution completed successfully in 0.7ms
+DEBUG: Command execution completed successfully in 0.3ms
 === COMMAND HISTORY EXECUTE END ===
 
-DEBUG: Command execution returned: True
-=== NODE GRAPH REMOVE_NODE END (COMMAND) ===
 
-Performed operations: ['Deleted node: Password Strength Analyzer']
+=== NODE GRAPH REMOVE_NODE START ===
+DEBUG: remove_node called with use_command=True
+DEBUG: Node to remove: 'Password Strength Analyzer' (ID: 2305213078336)
+DEBUG: Graph has 4 nodes before removal
+DEBUG: Scene has 94 items before removal
+DEBUG: Using command pattern for removal
 
-=== COMMAND HISTORY UNDO START ===
-DEBUG: Attempting to undo command
-DEBUG: Current index: 0
-DEBUG: History size: 1
-DEBUG: Can undo: True
-DEBUG: Undoing command: Delete 'Password Strength Analyzer' node
+=== COMMAND HISTORY EXECUTE START ===
+DEBUG: Executing command: Delete 'Password Strength Analyzer' node
 DEBUG: Command type: DeleteNodeCommand
-DEBUG: Calling command.undo()...
-DEBUG: Command.undo() returned: True
-DEBUG: Command undone successfully, index now: -1
-=== 
+DEBUG: Current history size: 1
+DEBUG: Current index: 0
+DEBUG: Calling command.execute()...
+DEBUG: Command.execute() returned: True
+DEBUG: Command marked as executed
+DEBUG: Added command to history at index 1
+DEBUG: History size now: 2
+DEBUG: Command execution completed successfully in 0.9ms
+=== COMMAND HISTORY EXECUTE 
 ... (output truncated)
 ```
 
@@ -1417,7 +1489,7 @@ DEBUG: Command undone successfully, index now: -1
 ### [PASS] test_pin_system.py
 
 **Status:** PASSED  
-**Duration:** 0.28 seconds  
+**Duration:** 0.30 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_pin_system.py`
 
 ---
@@ -1425,7 +1497,7 @@ DEBUG: Command undone successfully, index now: -1
 ### [PASS] test_pin_system_headless.py
 
 **Status:** PASSED  
-**Duration:** 0.24 seconds  
+**Duration:** 0.28 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_pin_system_headless.py`
 
 ---
@@ -1433,7 +1505,7 @@ DEBUG: Command undone successfully, index now: -1
 ### [PASS] test_reroute_creation_undo.py
 
 **Status:** PASSED  
-**Duration:** 0.73 seconds  
+**Duration:** 0.76 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_reroute_creation_undo.py`
 
 **Output:**
@@ -1443,35 +1515,35 @@ Testing RerouteNode creation/deletion/undo sequence...
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2499720782080)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2634610057472)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b015d0, parent=0x24602862a90, pos=0,84.5) at 0x0000024605610900>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b39f000, parent=0x2656b1d7d50, pos=0,84.5) at 0x000002656DED0900>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b02590, parent=0x24602862a90, pos=0,109.5) at 0x00000246056100C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b3a0200, parent=0x2656b1d7d50, pos=0,109.5) at 0x000002656DED00C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b02390, parent=0x24602862a90, pos=0,134.5) at 0x00000246056131C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b3a0140, parent=0x2656b1d7d50, pos=0,134.5) at 0x000002656DED31C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b01a10, parent=0x24602862a90, pos=0,159.5) at 0x0000024605612D80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b39fac0, parent=0x2656b1d7d50, pos=0,159.5) at 0x000002656DED2D80>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b01c50, parent=0x24602862a90, pos=0,184.5) at 0x0000024605612B80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b3a0180, parent=0x2656b1d7d50, pos=0,184.5) at 0x000002656DED2B80>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b01d50, parent=0x24602862a90, pos=250,84.5) at 0x0000024605612A40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b39f800, parent=0x2656b1d7d50, pos=250,84.5) at 0x000002656DED2A40>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b01a50, parent=0x24602862a90, pos=250,109.5) at 0x0000024605612840>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b3a0600, parent=0x2656b1d7d50, pos=250,109.5) at 0x000002656DED2840>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b02750, parent=0x24602862a90, pos=250,134.5) at 0x000002460561A780>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b39fe40, parent=0x2656b1d7d50, pos=250,134.5) at 0x000002656DEDA780>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b01f10, parent=0x24602862a90, pos=250,159.5) at 0x000002460561A500>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b39fbc0, parent=0x2656b1d7d50, pos=250,159.5) at 0x000002656DEDA500>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b02090, parent=0x24602862a90, pos=250,184.5) at 0x0000024605612AC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b39f9c0, parent=0x2656b1d7d50, pos=250,184.5) at 0x000002656DED2AC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b024d0, parent=0x24602862a90, pos=0,59.5) at 0x000002460561AEC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b3a00c0, parent=0x2656b1d7d50, pos=0,59.5) at 0x000002656DEDAEC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24602b02810, parent=0x24602862a90, pos=250,59.5) at 0x000002460561B140>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2656b3a0100, parent=0x2656b1d7d50, pos=250,59.5) at 0x000002656DEDB140>
 DEBU
 ... (output truncated)
 ```
@@ -1481,7 +1553,7 @@ DEBU
 ### [PASS] test_reroute_node_deletion.py
 
 **Status:** PASSED  
-**Duration:** 0.56 seconds  
+**Duration:** 0.59 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_reroute_node_deletion.py`
 
 **Output:**
@@ -1489,35 +1561,35 @@ DEBU
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2113304082624)
+DEBUG: Node to remove: 'Password Configuration' (ID: 1858654058688)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbdd20, parent=0x1ec07beb040, pos=0,84.5) at 0x000001EC0ABF0700>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2aad0, parent=0x1b0bdc47630, pos=0,84.5) at 0x000001B0C06C0700>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbe620, parent=0x1ec07beb040, pos=0,109.5) at 0x000001EC0ABF0040>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2b650, parent=0x1b0bdc47630, pos=0,109.5) at 0x000001B0C06C0040>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbf260, parent=0x1ec07beb040, pos=0,134.5) at 0x000001EC0ABF2EC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2b390, parent=0x1b0bdc47630, pos=0,134.5) at 0x000001B0C06C2EC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbe860, parent=0x1ec07beb040, pos=0,159.5) at 0x000001EC0ABF2CC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2a2d0, parent=0x1b0bdc47630, pos=0,159.5) at 0x000001B0C06C2CC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbf420, parent=0x1ec07beb040, pos=0,184.5) at 0x000001EC0ABF2800>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2c190, parent=0x1b0bdc47630, pos=0,184.5) at 0x000001B0C06C2800>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbf1a0, parent=0x1ec07beb040, pos=250,84.5) at 0x000001EC0ABF24C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2b850, parent=0x1b0bdc47630, pos=250,84.5) at 0x000001B0C06C24C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbea60, parent=0x1ec07beb040, pos=250,109.5) at 0x000001EC0ABF3B80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2b990, parent=0x1b0bdc47630, pos=250,109.5) at 0x000001B0C06C3B80>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbe8e0, parent=0x1ec07beb040, pos=250,134.5) at 0x000001EC0ABF3F00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2bf50, parent=0x1b0bdc47630, pos=250,134.5) at 0x000001B0C06C3F00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbf1e0, parent=0x1ec07beb040, pos=250,159.5) at 0x000001EC0ABF9CC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2bc90, parent=0x1b0bdc47630, pos=250,159.5) at 0x000001B0C06C9CC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbf160, parent=0x1ec07beb040, pos=250,184.5) at 0x000001EC0ABF2780>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2bcd0, parent=0x1b0bdc47630, pos=250,184.5) at 0x000001B0C06C2780>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbed20, parent=0x1ec07beb040, pos=0,59.5) at 0x000001EC0ABFA400>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2b4d0, parent=0x1b0bdc47630, pos=0,59.5) at 0x000001B0C06CA400>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1ec07dbf4e0, parent=0x1ec07beb040, pos=250,59.5) at 0x000001EC0ABFA940>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1b0bde2c050, parent=0x1b0bdc47630, pos=250,59.5) at 0x000001B0C06CA940>
 DEBUG: Pin cleaned up
 DEBUG: Cleared pins list
 DEBUG: Cleare
@@ -1529,7 +1601,7 @@ DEBUG: Cleare
 ### [PASS] test_reroute_undo_redo.py
 
 **Status:** PASSED  
-**Duration:** 0.56 seconds  
+**Duration:** 0.61 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_reroute_undo_redo.py`
 
 **Output:**
@@ -1537,35 +1609,35 @@ DEBUG: Cleare
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2193920976000)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2769035879552)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac82ad0, parent=0x1feccd55b40, pos=0,84.5) at 0x000001FECFE16000>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d82140, parent=0x284b2279400, pos=0,84.5) at 0x00000284B7666000>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac82d90, parent=0x1feccd55b40, pos=0,109.5) at 0x000001FECFE30580>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d804c0, parent=0x284b2279400, pos=0,109.5) at 0x00000284B7680580>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac81b10, parent=0x1feccd55b40, pos=0,134.5) at 0x000001FECFE32E00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80b80, parent=0x284b2279400, pos=0,134.5) at 0x00000284B7682E00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac83550, parent=0x1feccd55b40, pos=0,159.5) at 0x000001FECFE32D00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80f40, parent=0x284b2279400, pos=0,159.5) at 0x00000284B7682D00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac83090, parent=0x1feccd55b40, pos=0,184.5) at 0x000001FECFE32AC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80ec0, parent=0x284b2279400, pos=0,184.5) at 0x00000284B7682AC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac83790, parent=0x1feccd55b40, pos=250,84.5) at 0x000001FECFE32780>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d803c0, parent=0x284b2279400, pos=250,84.5) at 0x00000284B7682780>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac835d0, parent=0x1feccd55b40, pos=250,109.5) at 0x000001FECFE33B80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80540, parent=0x284b2279400, pos=250,109.5) at 0x00000284B7683B80>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac83910, parent=0x1feccd55b40, pos=250,134.5) at 0x000001FECFE33F00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80e80, parent=0x284b2279400, pos=250,134.5) at 0x00000284B7683F00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac836d0, parent=0x1feccd55b40, pos=250,159.5) at 0x000001FECFE39F00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80c00, parent=0x284b2279400, pos=250,159.5) at 0x00000284B7689F00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac83250, parent=0x1feccd55b40, pos=250,184.5) at 0x000001FECFE32840>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80b40, parent=0x284b2279400, pos=250,184.5) at 0x00000284B7682840>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac83310, parent=0x1feccd55b40, pos=0,59.5) at 0x000001FECFE3A880>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d806c0, parent=0x284b2279400, pos=0,59.5) at 0x00000284B768A880>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1fecac839d0, parent=0x1feccd55b40, pos=250,59.5) at 0x000001FECFE3AA40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x284b4d80740, parent=0x284b2279400, pos=250,59.5) at 0x00000284B768AA40>
 DEBUG: Pin cleaned up
 DEBUG: Cleared pins list
 DEBUG: Cleare
@@ -1577,7 +1649,7 @@ DEBUG: Cleare
 ### [PASS] test_reroute_with_connections.py
 
 **Status:** PASSED  
-**Duration:** 0.56 seconds  
+**Duration:** 0.60 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_reroute_with_connections.py`
 
 **Output:**
@@ -1585,35 +1657,35 @@ DEBUG: Cleare
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2003651937600)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2101485585728)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d2804625d0, parent=0x1d28028ac50, pos=0,84.5) at 0x000001D282F80200>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b6530, parent=0x1e9473fcfb0, pos=0,84.5) at 0x000001E94A4F0200>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463210, parent=0x1d28028ac50, pos=0,109.5) at 0x000001D282F647C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7670, parent=0x1e9473fcfb0, pos=0,109.5) at 0x000001E94A4D47C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463690, parent=0x1d28028ac50, pos=0,134.5) at 0x000001D282F82B80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b73f0, parent=0x1e9473fcfb0, pos=0,134.5) at 0x000001E94A4F2B80>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463310, parent=0x1d28028ac50, pos=0,159.5) at 0x000001D282F82980>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7a70, parent=0x1e9473fcfb0, pos=0,159.5) at 0x000001E94A4F2980>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463550, parent=0x1d28028ac50, pos=0,184.5) at 0x000001D282F82740>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7af0, parent=0x1e9473fcfb0, pos=0,184.5) at 0x000001E94A4F2740>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463610, parent=0x1d28028ac50, pos=250,84.5) at 0x000001D282F82300>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7470, parent=0x1e9473fcfb0, pos=250,84.5) at 0x000001E94A4F2300>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463c10, parent=0x1d28028ac50, pos=250,109.5) at 0x000001D282F838C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7f30, parent=0x1e9473fcfb0, pos=250,109.5) at 0x000001E94A4F38C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463750, parent=0x1d28028ac50, pos=250,134.5) at 0x000001D282F83B00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7070, parent=0x1e9473fcfb0, pos=250,134.5) at 0x000001E94A4F3B00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463790, parent=0x1d28028ac50, pos=250,159.5) at 0x000001D282F83D40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7530, parent=0x1e9473fcfb0, pos=250,159.5) at 0x000001E94A4F3D40>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280462f50, parent=0x1d28028ac50, pos=250,184.5) at 0x000001D282F82200>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b7b70, parent=0x1e9473fcfb0, pos=250,184.5) at 0x000001E94A4F2200>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280462cd0, parent=0x1d28028ac50, pos=0,59.5) at 0x000001D282F8B780>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b70b0, parent=0x1e9473fcfb0, pos=0,59.5) at 0x000001E94A4FB780>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x1d280463410, parent=0x1d28028ac50, pos=250,59.5) at 0x000001D282F8A180>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1e9477b76f0, parent=0x1e9473fcfb0, pos=250,59.5) at 0x000001E94A4FA180>
 DEBUG: Pin cleaned up
 DEBUG: Cleared pins list
 DEBUG: Cleare
@@ -1625,7 +1697,7 @@ DEBUG: Cleare
 ### [PASS] test_selection_operations.py
 
 **Status:** PASSED  
-**Duration:** 0.26 seconds  
+**Duration:** 0.28 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_selection_operations.py`
 
 **Output:**
@@ -1637,20 +1709,20 @@ DEBUG: Actual description: 'Delete 1 items'
 
 === COMPOSITE COMMAND EXECUTE START ===
 DEBUG: Executing composite command with 2 commands
-DEBUG: Executing command 1/2: <Mock name='mock.get_description()' id='2148547672528'>
+DEBUG: Executing command 1/2: <Mock name='mock.get_description()' id='3001768262160'>
 DEBUG: Command 1 returned: True
 DEBUG: Command 1 succeeded, added to executed list
-DEBUG: Executing command 2/2: <Mock name='mock.get_description()' id='2148547671184'>
+DEBUG: Executing command 2/2: <Mock name='mock.get_description()' id='3001768260816'>
 DEBUG: Command 2 returned: True
 DEBUG: Command 2 succeeded, added to executed list
 DEBUG: All 2 commands succeeded
 === COMPOSITE COMMAND EXECUTE END (SUCCESS) ===
 
 DEBUG: CompositeCommand.undo() - undoing 2 commands
-DEBUG: Undoing command 1/2: <Mock name='mock.get_description()' id='2148547671184'>
+DEBUG: Undoing command 1/2: <Mock name='mock.get_description()' id='3001768260816'>
 DEBUG: Command 1 undo returned: True
 DEBUG: Command 1 undone successfully
-DEBUG: Undoing command 2/2: <Mock name='mock.get_description()' id='2148547672528'>
+DEBUG: Undoing command 2/2: <Mock name='mock.get_description()' id='3001768262160'>
 DEBUG: Command 2 undo returned: True
 DEBUG: Command 2 undone successfully
 DEBUG: All commands undone successfully, composite marked as undone
@@ -1663,7 +1735,7 @@ DEBUG: CompositeCommand.undo() returning: True
 ### [PASS] test_undo_history_integration.py
 
 **Status:** PASSED  
-**Duration:** 0.39 seconds  
+**Duration:** 0.42 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_undo_history_integration.py`
 
 **Output:**
@@ -1739,7 +1811,7 @@ DEBUG: Command type
 ### [PASS] test_undo_history_workflow.py
 
 **Status:** PASSED  
-**Duration:** 0.21 seconds  
+**Duration:** 0.25 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_undo_history_workflow.py`
 
 ---
@@ -1747,7 +1819,7 @@ DEBUG: Command type
 ### [PASS] test_undo_ui_integration.py
 
 **Status:** PASSED  
-**Duration:** 0.39 seconds  
+**Duration:** 0.41 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_undo_ui_integration.py`
 
 **Output:**
@@ -1825,7 +1897,7 @@ DEBUG: Comma
 ### [PASS] test_user_scenario.py
 
 **Status:** PASSED  
-**Duration:** 0.56 seconds  
+**Duration:** 0.60 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_user_scenario.py`
 
 **Output:**
@@ -1833,35 +1905,35 @@ DEBUG: Comma
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2500848324992)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2548846498176)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2ac40, parent=0x24643ad2c70, pos=0,84.5) at 0x00000246462DB880>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x2517028fc60, parent=0x2517000e2d0, pos=0,84.5) at 0x000002517317B880>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2b980, parent=0x24643ad2c70, pos=0,109.5) at 0x00000246462DBA40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x251702906e0, parent=0x2517000e2d0, pos=0,109.5) at 0x000002517317BA40>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2b8c0, parent=0x24643ad2c70, pos=0,134.5) at 0x00000246462EDF00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290220, parent=0x2517000e2d0, pos=0,134.5) at 0x000002517318DF00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2c240, parent=0x24643ad2c70, pos=0,159.5) at 0x00000246462EDE00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290be0, parent=0x2517000e2d0, pos=0,159.5) at 0x000002517318DE00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2c300, parent=0x24643ad2c70, pos=0,184.5) at 0x00000246462EDBC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x251702904a0, parent=0x2517000e2d0, pos=0,184.5) at 0x000002517318DBC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2c3c0, parent=0x24643ad2c70, pos=250,84.5) at 0x00000246462ED800>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x251702908a0, parent=0x2517000e2d0, pos=250,84.5) at 0x000002517318D800>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2c4c0, parent=0x24643ad2c70, pos=250,109.5) at 0x00000246462EEFC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290ca0, parent=0x2517000e2d0, pos=250,109.5) at 0x000002517318EFC0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2ba00, parent=0x24643ad2c70, pos=250,134.5) at 0x00000246462EF000>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290760, parent=0x2517000e2d0, pos=250,134.5) at 0x000002517318F000>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2b6c0, parent=0x24643ad2c70, pos=250,159.5) at 0x00000246462EF500>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290d20, parent=0x2517000e2d0, pos=250,159.5) at 0x000002517318F500>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2be80, parent=0x24643ad2c70, pos=250,184.5) at 0x00000246462ED6C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290820, parent=0x2517000e2d0, pos=250,184.5) at 0x000002517318D6C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2bec0, parent=0x24643ad2c70, pos=0,59.5) at 0x00000246462F5180>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290de0, parent=0x2517000e2d0, pos=0,59.5) at 0x0000025173195180>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x24643d2ca80, parent=0x24643ad2c70, pos=250,59.5) at 0x00000246462F4DC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x25170290ea0, parent=0x2517000e2d0, pos=250,59.5) at 0x0000025173194DC0>
 DEBUG: Pin cleaned up
 DEBUG: Cleared pins list
 DEBUG: Cleare
@@ -1873,7 +1945,7 @@ DEBUG: Cleare
 ### [PASS] test_user_scenario_gui.py
 
 **Status:** PASSED  
-**Duration:** 0.57 seconds  
+**Duration:** 0.59 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_user_scenario_gui.py`
 
 **Output:**
@@ -1881,35 +1953,35 @@ DEBUG: Cleare
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 1477319889984)
+DEBUG: Node to remove: 'Password Configuration' (ID: 2764542874688)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7754050, parent=0x157f50b80f0, pos=0,84.5) at 0x00000157FA460080>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab413e10, parent=0x283ab310fd0, pos=0,84.5) at 0x00000283AE380080>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744b90, parent=0x157f50b80f0, pos=0,109.5) at 0x00000157FA460280>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab414b10, parent=0x283ab310fd0, pos=0,109.5) at 0x00000283AE380280>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f77446d0, parent=0x157f50b80f0, pos=0,134.5) at 0x00000157FA462700>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab414810, parent=0x283ab310fd0, pos=0,134.5) at 0x00000283AE382700>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7745450, parent=0x157f50b80f0, pos=0,159.5) at 0x00000157FA462500>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab415150, parent=0x283ab310fd0, pos=0,159.5) at 0x00000283AE382500>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744d50, parent=0x157f50b80f0, pos=0,184.5) at 0x00000157FA4623C0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab415410, parent=0x283ab310fd0, pos=0,184.5) at 0x00000283AE3823C0>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744e50, parent=0x157f50b80f0, pos=250,84.5) at 0x00000157FA462100>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab414850, parent=0x283ab310fd0, pos=250,84.5) at 0x00000283AE382100>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744a90, parent=0x157f50b80f0, pos=250,109.5) at 0x00000157FA463900>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab415450, parent=0x283ab310fd0, pos=250,109.5) at 0x00000283AE383900>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744a10, parent=0x157f50b80f0, pos=250,134.5) at 0x00000157FA463B40>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab414750, parent=0x283ab310fd0, pos=250,134.5) at 0x00000283AE383B40>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744cd0, parent=0x157f50b80f0, pos=250,159.5) at 0x00000157FA463C80>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab414a90, parent=0x283ab310fd0, pos=250,159.5) at 0x00000283AE383C80>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744c50, parent=0x157f50b80f0, pos=250,184.5) at 0x00000157FA462180>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab4151d0, parent=0x283ab310fd0, pos=250,184.5) at 0x00000283AE382180>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7744dd0, parent=0x157f50b80f0, pos=0,59.5) at 0x00000157FA46BC00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab415310, parent=0x283ab310fd0, pos=0,59.5) at 0x00000283AE38BC00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x157f7745010, parent=0x157f50b80f0, pos=250,59.5) at 0x00000157FA46A240>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x283ab4155d0, parent=0x283ab310fd0, pos=250,59.5) at 0x00000283AE38A240>
 DEBUG: Pin cleaned up
 DEBUG: Cleared pins list
 DEBUG: Cleare
@@ -1921,7 +1993,7 @@ DEBUG: Cleare
 ### [PASS] test_view_state_persistence.py
 
 **Status:** PASSED  
-**Duration:** 2.22 seconds  
+**Duration:** 2.24 seconds  
 **File Path:** `E:\HOME\PyFlowGraph\tests\test_view_state_persistence.py`
 
 **Output:**
@@ -1929,35 +2001,35 @@ DEBUG: Cleare
 
 === NODE GRAPH REMOVE_NODE START ===
 DEBUG: remove_node called with use_command=False
-DEBUG: Node to remove: 'Password Configuration' (ID: 2349940387712)
+DEBUG: Node to remove: 'Password Configuration' (ID: 1970215497600)
 DEBUG: Graph has 4 nodes before removal
 DEBUG: Scene has 82 items before removal
 DEBUG: Direct removal (bypassing command pattern)
 DEBUG: Removing 0 connections first
 DEBUG: Node has 12 pins to clean up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x223230667a0, parent=0x22322e57ee0, pos=0,84.5) at 0x00000223235E7200>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bde160, parent=0x1cab99ff1d0, pos=0,84.5) at 0x000001CABA007200>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x223230668a0, parent=0x22322e57ee0, pos=0,109.5) at 0x00000223235E5840>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bddb60, parent=0x1cab99ff1d0, pos=0,109.5) at 0x000001CABA005840>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x22323067520, parent=0x22322e57ee0, pos=0,134.5) at 0x00000223235F5880>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bddfe0, parent=0x1cab99ff1d0, pos=0,134.5) at 0x000001CABA015880>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x22323067620, parent=0x22322e57ee0, pos=0,159.5) at 0x00000223235F5680>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bde420, parent=0x1cab99ff1d0, pos=0,159.5) at 0x000001CABA015680>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x223230673a0, parent=0x22322e57ee0, pos=0,184.5) at 0x00000223235F5480>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bde460, parent=0x1cab99ff1d0, pos=0,184.5) at 0x000001CABA015480>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x22323066da0, parent=0x22322e57ee0, pos=296.75,84.5) at 0x00000223235F5140>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bdd660, parent=0x1cab99ff1d0, pos=296.75,84.5) at 0x000001CABA015140>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x223230674a0, parent=0x22322e57ee0, pos=296.75,109.5) at 0x00000223235F4E00>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bde060, parent=0x1cab99ff1d0, pos=296.75,109.5) at 0x000001CABA014E00>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x22323068720, parent=0x22322e57ee0, pos=296.75,134.5) at 0x00000223235F6080>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bdd6e0, parent=0x1cab99ff1d0, pos=296.75,134.5) at 0x000001CABA016080>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x22323067e60, parent=0x22322e57ee0, pos=296.75,159.5) at 0x00000223235F6300>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bdec20, parent=0x1cab99ff1d0, pos=296.75,159.5) at 0x000001CABA016300>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x22323067c20, parent=0x22322e57ee0, pos=296.75,184.5) at 0x00000223235F5200>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bdede0, parent=0x1cab99ff1d0, pos=296.75,184.5) at 0x000001CABA015200>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x223230679a0, parent=0x22322e57ee0, pos=0,59.5) at 0x00000223235F6900>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bdeee0, parent=0x1cab99ff1d0, pos=0,59.5) at 0x000001CABA016900>
 DEBUG: Pin cleaned up
-DEBUG: Cleaning up pin: <core.pin.Pin(0x22323067ba0, parent=0x22322e57ee0, pos=296.75,59.5) at 0x00000223235F6CC0>
+DEBUG: Cleaning up pin: <core.pin.Pin(0x1cab9bdea60, parent=0x1cab99ff1d0, pos=296.75,59.5) at 0x000001CABA016CC0>
 DEBUG: Pin cleaned up
 DEBUG: Cleared pins 
 ... (output truncated)
@@ -1975,4 +2047,4 @@ DEBUG: Cleared pins
 ---
 
 *This report is automatically generated when tests are executed through the PyFlowGraph test tool.*
-*Last updated: 2025-08-20 01:23:01*
+*Last updated: 2025-08-20 01:33:09*
