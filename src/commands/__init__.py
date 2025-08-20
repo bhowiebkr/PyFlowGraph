@@ -15,11 +15,14 @@ from .node_commands import (
 from .connection_commands import (
     CreateConnectionCommand, DeleteConnectionCommand, CreateRerouteNodeCommand
 )
+from .create_group_command import CreateGroupCommand
+from .resize_group_command import ResizeGroupCommand
 
 __all__ = [
     'CommandBase', 'CompositeCommand', 'CommandHistory',
     'CreateNodeCommand', 'DeleteNodeCommand', 'MoveNodeCommand',
     'PropertyChangeCommand', 'CodeChangeCommand', 'PasteNodesCommand',
     'MoveMultipleCommand', 'DeleteMultipleCommand',
-    'CreateConnectionCommand', 'DeleteConnectionCommand', 'CreateRerouteNodeCommand'
+    'CreateConnectionCommand', 'DeleteConnectionCommand', 'CreateRerouteNodeCommand',
+    'CreateGroupCommand', 'ResizeGroupCommand'
 ]

@@ -289,14 +289,17 @@ class TestCreateGroupCommand(unittest.TestCase):
         self.assertEqual(command.group_properties["name"], "Test Group")
         self.assertIn("creation_timestamp", command.group_properties)
     
-    @patch('src.core.group.Group')
-    def test_command_execute(self, mock_group_class):
+    @patch.object(CreateGroupCommand, '_get_group_class')
+    def test_command_execute(self, mock_get_group_class):
         """Test successful command execution."""
-        # Setup mock group instance
+        # Setup mock group class and instance
+        mock_group_class = Mock()
         mock_group = Mock()
         mock_group.name = "Test Group"
+        mock_group.member_node_uuids = ["uuid1", "uuid2"]
         mock_group.calculate_bounds_from_members = Mock()
         mock_group_class.return_value = mock_group
+        mock_get_group_class.return_value = mock_group_class
         
         command = CreateGroupCommand(self.mock_scene, self.group_properties)
         result = command.execute()
@@ -306,15 +309,18 @@ class TestCreateGroupCommand(unittest.TestCase):
         self.mock_scene.addItem.assert_called_once_with(mock_group)
         self.assertIn(mock_group, self.mock_scene.groups)
     
-    @patch('src.core.group.Group')
-    def test_command_undo(self, mock_group_class):
+    @patch.object(CreateGroupCommand, '_get_group_class')
+    def test_command_undo(self, mock_get_group_class):
         """Test successful command undo."""
         # Setup and execute command first
+        mock_group_class = Mock()
         mock_group = Mock()
         mock_group.name = "Test Group"
+        mock_group.member_node_uuids = ["uuid1", "uuid2"]
         mock_group.scene.return_value = self.mock_scene
         mock_group.calculate_bounds_from_members = Mock()
         mock_group_class.return_value = mock_group
+        mock_get_group_class.return_value = mock_group_class
         
         command = CreateGroupCommand(self.mock_scene, self.group_properties)
         command.execute()
@@ -326,15 +332,18 @@ class TestCreateGroupCommand(unittest.TestCase):
         self.mock_scene.removeItem.assert_called_with(mock_group)
         self.assertNotIn(mock_group, self.mock_scene.groups)
     
-    @patch('src.core.group.Group')
-    def test_command_redo(self, mock_group_class):
+    @patch.object(CreateGroupCommand, '_get_group_class')
+    def test_command_redo(self, mock_get_group_class):
         """Test successful command redo."""
         # Setup, execute, and undo first
+        mock_group_class = Mock()
         mock_group = Mock()
         mock_group.name = "Test Group"
+        mock_group.member_node_uuids = ["uuid1", "uuid2"]
         mock_group.scene.return_value = self.mock_scene
         mock_group.calculate_bounds_from_members = Mock()
         mock_group_class.return_value = mock_group
+        mock_get_group_class.return_value = mock_group_class
         
         command = CreateGroupCommand(self.mock_scene, self.group_properties)
         command.execute()

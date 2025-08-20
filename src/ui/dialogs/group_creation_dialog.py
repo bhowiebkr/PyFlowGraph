@@ -181,7 +181,7 @@ class GroupCreationDialog(QDialog):
             "description": self.description_edit.toPlainText().strip(),
             "member_node_uuids": [node.uuid for node in self.selected_nodes],
             "auto_size": self.auto_size_checkbox.isChecked(),
-            "padding": self.padding_spinbox.value()
+            "padding": self.padding_spinbox.value(),
         }
     
     def accept(self):
