@@ -92,6 +92,11 @@ class Node(QGraphicsItem):
         if change == QGraphicsItem.ItemPositionHasChanged:
             for pin in self.pins:
                 pin.update_connections()
+            
+            # Notify the scene that this node has moved so it can update group memberships
+            if self.scene() and hasattr(self.scene(), 'handle_node_position_changed'):
+                self.scene().handle_node_position_changed(self)
+                
         return super().itemChange(change, value)
 
     def highlight_connections(self, selected):
@@ -314,7 +319,7 @@ class Node(QGraphicsItem):
             self.width = required_width
             self.height = required_height
             self._update_layout()
-        elif DEBUG_LAYOUT:
+        elif should_debug(DEBUG_LAYOUT):
             print(f"DEBUG: No resize needed, size already meets minimum requirements")
 
     def _update_layout(self):

@@ -39,6 +39,11 @@ class NodeEditorView(QGraphicsView):
 
         self._is_panning = False
         self._pan_start_pos = QPoint()
+        
+        # Group resize state
+        self._is_resizing_group = False
+        self._resize_group = None
+        self._resize_handle = None
 
     def keyPressEvent(self, event: QKeyEvent):
         """Handle key press events for copy and paste."""
@@ -56,20 +61,19 @@ class NodeEditorView(QGraphicsView):
         scene_pos = self.mapToScene(event.pos())
         item_at_pos = self.scene().itemAt(scene_pos, self.transform())
         
-        # Find the top-level node if we clicked on a child item
-        from core.node import Node
+        # Find the top-level node if we clicked on a child item (using duck typing)
         node = None
         if item_at_pos:
             current_item = item_at_pos
-            while current_item and not isinstance(current_item, Node):
+            while current_item and type(current_item).__name__ not in ['Node', 'RerouteNode']:
                 current_item = current_item.parentItem()
-            if isinstance(current_item, Node):
+            if type(current_item).__name__ in ['Node', 'RerouteNode']:
                 node = current_item
         
         menu = QMenu(self)
         
-        # Get selected items for group operations
-        selected_items = [item for item in self.scene().selectedItems() if isinstance(item, Node)]
+        # Get selected items for group operations (using duck typing)
+        selected_items = [item for item in self.scene().selectedItems() if type(item).__name__ in ['Node', 'RerouteNode']]
         
         if node:
             # Context menu for a node
@@ -114,10 +118,20 @@ class NodeEditorView(QGraphicsView):
         if len(nodes) < 2:
             return False
         
-        # All items must be valid Node instances
-        from core.node import Node
+        # Use duck typing to validate node-like objects
         for node in nodes:
-            if not isinstance(node, Node):
+            node_type_name = type(node).__name__
+            
+            # Check if it's a Node-like object by class name
+            if node_type_name not in ['Node', 'RerouteNode']:
+                return False
+            
+            # Check for essential Node attributes
+            if not hasattr(node, 'uuid'):
+                return False
+            if not hasattr(node, 'title'):
+                return False
+            if not hasattr(node, 'pins'):
                 return False
                 
         return True
@@ -126,9 +140,42 @@ class NodeEditorView(QGraphicsView):
         """Create a group from selected nodes"""
         # Delegate to the node graph for actual group creation
         self.scene()._create_group_from_selection(selected_nodes)
+    
+    def _get_group_resize_handle_at_pos(self, scene_pos):
+        """Find if a group resize handle is at the given scene position"""
+        # Check ALL groups in the scene, regardless of Z-order
+        # This fixes the issue where groups with Z=-1 are behind other items
+        for item in self.scene().items():
+            if type(item).__name__ == 'Group' and item.isSelected():
+                # Check if the scene position is within the group's bounding rect
+                group_rect = item.sceneBoundingRect()
+                if group_rect.contains(scene_pos):
+                    # Convert scene position to item-local coordinates
+                    local_pos = item.mapFromScene(scene_pos)
+                    handle = item.get_handle_at_pos(local_pos)
+                    if handle != item.HANDLE_NONE:
+                        return item, handle
+        return None, None
 
     def mousePressEvent(self, event: QMouseEvent):
         is_pan_button = event.button() in (Qt.RightButton, Qt.MiddleButton)
+        
+        # Check for group resize handle interaction first
+        if event.button() == Qt.LeftButton:
+            scene_pos = self.mapToScene(event.pos())
+            group, handle = self._get_group_resize_handle_at_pos(scene_pos)
+            
+            if group and handle != group.HANDLE_NONE:
+                # Start group resize operation
+                self._is_resizing_group = True
+                self._resize_group = group
+                self._resize_handle = handle
+                self.setCursor(group.get_cursor_for_handle(handle))
+                self.setDragMode(QGraphicsView.NoDrag)
+                group.start_resize(handle, scene_pos)
+                event.accept()
+                return
+        
         if is_pan_button:
             self._is_panning = True
             self._pan_start_pos = event.pos()
@@ -136,10 +183,40 @@ class NodeEditorView(QGraphicsView):
             self.setDragMode(QGraphicsView.NoDrag)
             event.accept()
         else:
+            # Before letting base class handle selection, prepare all groups for potential state changes
+            if event.button() == Qt.LeftButton:
+                # Force all groups to prepare for geometry changes (in case selection changes)
+                for item in self.scene().items():
+                    if type(item).__name__ == 'Group':
+                        item.prepareGeometryChange()
+            
+            # Let the base class handle selection, which should properly clear other selections
             super().mousePressEvent(event)
+            
+            # After selection is handled, force comprehensive update of all groups
+            if event.button() == Qt.LeftButton:
+                # Get the area that needs updating (all group bounding rects)
+                update_regions = []
+                for item in self.scene().items():
+                    if type(item).__name__ == 'Group':
+                        # Update the group itself
+                        item.update()
+                        # Also update the scene area where handles might have been drawn
+                        expanded_rect = item.boundingRect()
+                        scene_rect = item.mapRectToScene(expanded_rect)
+                        update_regions.append(scene_rect)
+                
+                # Force scene updates for all affected regions to clear drawing artifacts
+                for region in update_regions:
+                    self.scene().update(region)
 
     def mouseMoveEvent(self, event: QMouseEvent):
-        if self._is_panning:
+        if self._is_resizing_group and self._resize_group:
+            # Handle group resizing
+            scene_pos = self.mapToScene(event.pos())
+            self._resize_group.update_resize(scene_pos)
+            event.accept()
+        elif self._is_panning:
             # This method simulates dragging the scrollbars for a more robust pan.
             delta = event.pos() - self._pan_start_pos
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
@@ -148,11 +225,29 @@ class NodeEditorView(QGraphicsView):
             self._pan_start_pos = event.pos()
             event.accept()
         else:
+            # Update cursor when hovering over resize handles
+            scene_pos = self.mapToScene(event.pos())
+            group, handle = self._get_group_resize_handle_at_pos(scene_pos)
+            if group and handle != group.HANDLE_NONE:
+                self.setCursor(group.get_cursor_for_handle(handle))
+            else:
+                self.setCursor(Qt.ArrowCursor)
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         is_pan_button = event.button() in (Qt.RightButton, Qt.MiddleButton)
-        if self._is_panning and is_pan_button:
+        
+        if self._is_resizing_group and event.button() == Qt.LeftButton:
+            # Finish group resize operation
+            if self._resize_group:
+                self._resize_group.finish_resize()
+            self._is_resizing_group = False
+            self._resize_group = None
+            self._resize_handle = None
+            self.setCursor(Qt.ArrowCursor)
+            self.setDragMode(QGraphicsView.RubberBandDrag)
+            event.accept()
+        elif self._is_panning and is_pan_button:
             self._is_panning = False
             self.setCursor(Qt.ArrowCursor)
             self.setDragMode(QGraphicsView.RubberBandDrag)

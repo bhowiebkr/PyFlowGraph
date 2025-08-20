@@ -143,6 +143,35 @@ class TestNode(unittest.TestCase):
 - Test one behavior per test method
 - Use setUp/tearDown for common initialization
 
+### PySide6/Qt Testing Requirements
+**CRITICAL: DO NOT USE MOCK OBJECTS WITH QT COMPONENTS**
+
+Qt widgets and QGraphicsItems require actual Qt object instantiation and cannot be mocked:
+
+```python
+# ❌ FORBIDDEN - Causes Qt constructor errors
+def test_with_mock(self):
+    mock_group = Mock()
+    pin = GroupInterfacePin(mock_group, "test", "input", "any")  # FAILS
+
+# ✅ CORRECT - Use real Qt objects or test fixtures
+def test_with_real_objects(self):
+    app = QApplication.instance() or QApplication([])
+    group = Group("TestGroup")
+    pin = GroupInterfacePin(group, "test", "input", "any")  # WORKS
+```
+
+**Why Mock Fails with Qt:**
+- Qt constructors validate argument types at C++ level
+- Mock objects don't inherit from Qt base classes
+- QGraphicsItem requires proper parent/scene relationships
+
+**Alternative Testing Strategies:**
+- Use real Qt objects with minimal initialization
+- Create test fixture classes that inherit from actual Qt classes
+- Use dependency injection to isolate business logic from Qt dependencies
+- Test Qt-independent logic separately from Qt-dependent rendering
+
 ## Error Handling
 
 ### Exception Usage

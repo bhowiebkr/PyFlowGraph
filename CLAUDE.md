@@ -65,9 +65,9 @@ PyFlowGraph/
 - `/test-health overview` - Test suite health monitoring and alerts
 
 **Direct Tool Usage**:
-- `python test_runner.py --fast --format claude` - Parallel execution with Claude-optimized output
-- `python test_analyzer.py --format claude` - Failure pattern analysis and recommendations
-- `python test_generator.py` - Generate missing tests from coverage gaps
+- `python testing/test_runner.py --fast --format claude` - Parallel execution with Claude-optimized output
+- `python testing/test_analyzer.py --format claude` - Failure pattern analysis and recommendations
+- `python testing/test_generator.py` - Generate missing tests from coverage gaps
 
 **Test Timeout Requirements**: All tests MUST complete within 10 seconds maximum. Tests that run longer indicate performance issues or infinite loops and must be fixed to complete faster, not given longer timeouts.
 

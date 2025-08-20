@@ -93,6 +93,11 @@ class RerouteNode(QGraphicsItem):
         if change == QGraphicsItem.ItemPositionHasChanged and self.scene():
             for pin in self.pins:
                 pin.update_connections()
+            
+            # Notify the scene that this reroute node has moved so it can update group memberships
+            if hasattr(self.scene(), 'handle_node_position_changed'):
+                self.scene().handle_node_position_changed(self)
+                
         return super().itemChange(change, value)
 
     def paint(self, painter: QPainter, option, widget=None):
