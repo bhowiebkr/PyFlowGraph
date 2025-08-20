@@ -59,12 +59,6 @@ Professional PySide6-based interface with modern desktop application features.
 
 ### Support Modules
 
-#### `testing/` - Professional Test Infrastructure
-- GUI-based test runners with real-time progress tracking
-- Enhanced testing with 67-81% faster execution through parallelization
-- Intelligent failure analysis and automated fix suggestions
-- Coverage-driven test generation and health monitoring
-
 #### `resources/` - Embedded Application Resources
 - Font Awesome 6 and 7 font files for scalable vector icons
 - Professional icon system integrated throughout the application
