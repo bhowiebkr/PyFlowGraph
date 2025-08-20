@@ -21,4 +21,3 @@ python testing\test_tool.py
 
 echo.
 echo Test runner GUI closed.
-pause

@@ -1,5 +1,14 @@
 # PyFlowGraph
 
+<!-- TEST-BADGES-START -->
+
+![Tests](https://img.shields.io/badge/tests-9%20failing-red?style=flat-square) ![Test Count](https://img.shields.io/badge/tests-48%20total-blue?style=flat-square) ![Success Rate](https://img.shields.io/badge/success%20rate-81%25-green?style=flat-square) ![Last Updated](https://img.shields.io/badge/last%20tested-2025---08---20-blue?style=flat-square)
+
+**[View Detailed Test Results](testing\test_results.md)**
+
+<!-- TEST-BADGES-END -->
+
+
 A universal, node-based visual scripting editor built with Python and PySide6 that bridges traditional data-flow programming with interactive application development. Create, connect, and execute Python code as nodes using either batch processing for data pipelines or live event-driven execution for interactive applications.
 
 ![Node Editor Showcase](images/gui.png)
