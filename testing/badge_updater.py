@@ -18,6 +18,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote
 
+from test_output_parser import TestOutputParser, TestFileResult, TestCaseResult
+
 
 class BadgeUpdater:
     """Handles updating README.md with test result badges."""
@@ -36,31 +38,51 @@ class BadgeUpdater:
         else:
             self.test_results_path = Path(test_results_path)
     
-    def calculate_test_stats(self, test_results: Dict[str, Dict]) -> Dict:
-        """Calculate comprehensive test statistics.
+    def calculate_test_stats(self, test_results: Dict[str, TestFileResult]) -> Dict:
+        """Calculate comprehensive test statistics from individual test cases.
         
         Args:
-            test_results: Dictionary with test file paths as keys and result dicts as values
+            test_results: Dictionary with test file paths as keys and TestFileResult objects as values
         
         Returns:
             Dictionary with comprehensive test statistics
         """
-        total_tests = len(test_results)
-        passed_tests = sum(1 for result in test_results.values() if result.get('status') == 'passed')
-        failed_tests = sum(1 for result in test_results.values() if result.get('status') == 'failed')
-        error_tests = sum(1 for result in test_results.values() if result.get('status') == 'error')
-        skipped_tests = sum(1 for result in test_results.values() if result.get('status') == 'skipped')
+        # Count individual test cases across all files
+        total_test_cases = 0
+        passed_test_cases = 0
+        failed_test_cases = 0
+        error_test_cases = 0
+        skipped_test_cases = 0
         
-        # Calculate success rate
-        if total_tests > 0:
-            success_rate = (passed_tests / total_tests) * 100
+        # Count test files
+        total_files = len(test_results)
+        passed_files = 0
+        failed_files = 0
+        
+        for file_result in test_results.values():
+            # File-level counts
+            if file_result.status == 'passed':
+                passed_files += 1
+            elif file_result.status in ['failed', 'error']:
+                failed_files += 1
+            
+            # Test case-level counts
+            total_test_cases += file_result.total_cases
+            passed_test_cases += file_result.passed_cases
+            failed_test_cases += file_result.failed_cases
+            error_test_cases += file_result.error_cases
+            skipped_test_cases += file_result.skipped_cases
+        
+        # Calculate success rate based on individual test cases
+        if total_test_cases > 0:
+            success_rate = (passed_test_cases / total_test_cases) * 100
         else:
             success_rate = 0
         
         # Determine overall status
-        if total_tests == 0:
+        if total_test_cases == 0:
             status = "unknown"
-        elif failed_tests == 0 and error_tests == 0:
+        elif failed_test_cases == 0 and error_test_cases == 0:
             status = "passing"
         else:
             status = "failing"
@@ -71,13 +93,13 @@ class BadgeUpdater:
         
         return {
             "status": status,
-            "passed": passed_tests,
-            "failed": failed_tests,
-            "errors": error_tests,
-            "skipped": skipped_tests,
+            "passed": passed_test_cases,
+            "failed": failed_test_cases,
+            "errors": error_test_cases,
+            "skipped": skipped_test_cases,
             "success_rate": int(success_rate),
-            "test_files": total_tests,
-            "total_tests": total_tests,
+            "test_files": total_files,
+            "total_tests": total_test_cases,  # Now shows individual test cases
             "warnings": 0,  # Could be enhanced to parse test output for warnings
             "last_run": last_run
         }
@@ -166,19 +188,23 @@ class BadgeUpdater:
         
         return start_idx, end_idx
     
-    def generate_detailed_test_results(self, test_results: Dict[str, Dict]) -> str:
-        """Generate detailed test results markdown content.
+    def generate_detailed_test_results(self, test_results: Dict[str, TestFileResult]) -> str:
+        """Generate detailed test results markdown content with individual test cases.
         
         Args:
-            test_results: Test results dictionary
+            test_results: Dictionary of TestFileResult objects
             
         Returns:
             Formatted markdown content for detailed test results
         """
-        total_tests = len(test_results)
-        passed_tests = sum(1 for result in test_results.values() if result.get('status') == 'passed')
-        failed_tests = total_tests - passed_tests
-        total_duration = sum(result.get('duration', 0) for result in test_results.values())
+        # Calculate overall statistics
+        total_files = len(test_results)
+        total_test_cases = sum(result.total_cases for result in test_results.values())
+        passed_test_cases = sum(result.passed_cases for result in test_results.values())
+        failed_test_cases = sum(result.failed_cases for result in test_results.values())
+        error_test_cases = sum(result.error_cases for result in test_results.values())
+        skipped_test_cases = sum(result.skipped_cases for result in test_results.values())
+        total_duration = sum(result.duration for result in test_results.values())
         
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -194,28 +220,30 @@ class BadgeUpdater:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tests** | {total_tests} |
-| **Passed** | {passed_tests} |
-| **Failed** | {failed_tests} |
-| **Success Rate** | {(passed_tests/total_tests*100) if total_tests > 0 else 0:.1f}% |
+| **Test Files** | {total_files} |
+| **Total Test Cases** | {total_test_cases} |
+| **Passed** | {passed_test_cases} |
+| **Failed** | {failed_test_cases} |
+| **Errors** | {error_test_cases} |
+| **Skipped** | {skipped_test_cases} |
+| **Success Rate** | {(passed_test_cases/total_test_cases*100) if total_test_cases > 0 else 0:.1f}% |
 | **Total Duration** | {total_duration:.2f} seconds |
-| **Average Duration** | {(total_duration/total_tests) if total_tests > 0 else 0:.2f} seconds per test |
+| **Average Duration** | {(total_duration/total_files) if total_files > 0 else 0:.2f} seconds per file |
 
 ---
 
-## Test Results Table
+## Test Results by File
 
-| Status | Test Name | Duration | Details |
-|--------|-----------|----------|---------|"""
+| Status | Test File | Cases | Passed | Failed | Duration | Details |
+|--------|-----------|-------|--------|--------|----------|---------|"""
 
-        # Sort tests by status (failed first, then passed) and then by name
-        sorted_tests = sorted(test_results.items(), key=lambda x: (x[1].get('status') != 'failed', Path(x[0]).name))
+        # Sort test files by status (failed first, then passed) and then by name
+        sorted_files = sorted(test_results.items(), key=lambda x: (x[1].status != 'failed', Path(x[0]).name))
         
-        # Add table rows
-        for test_path, result in sorted_tests:
+        # Add table rows for files
+        for test_path, file_result in sorted_files:
             test_name = Path(test_path).name
-            status = result.get('status', 'unknown')
-            duration = result.get('duration', 0)
+            status = file_result.status
             
             # Status emoji
             if status == 'passed':
@@ -227,80 +255,113 @@ class BadgeUpdater:
             else:
                 status_emoji = "❓"
             
-            # Create anchor ID for the test
+            # Create anchor ID for the test file
             anchor_id = test_name.replace('.py', '').replace('_', '-').replace(' ', '-').lower()
             
-            # Add clickable link for failed tests, plain text for passed tests
+            # Add clickable link for failed files, plain text for passed files
             if status in ['failed', 'error']:
                 test_link = f"[{test_name}](#{anchor_id})"
             else:
                 test_link = test_name
             
-            content += f"\n| {status_emoji} | {test_link} | {duration:.2f}s | {status.upper()} |"
+            content += f"\n| {status_emoji} | {test_link} | {file_result.total_cases} | {file_result.passed_cases} | {file_result.failed_cases} | {file_result.duration:.2f}s | {status.upper()} |"
 
         content += f"""
 
 ---
 
-## Detailed Test Results
+## Individual Test Cases
 
 """
         
-        for test_path, result in sorted_tests:
+        # Add individual test case details grouped by file
+        for test_path, file_result in sorted_files:
             test_name = Path(test_path).name
-            status = result.get('status', 'unknown')
-            duration = result.get('duration', 0)
-            output = result.get('output', 'No output available')
-            
-            # Create anchor ID for the test (same as in table)
             anchor_id = test_name.replace('.py', '').replace('_', '-').replace(' ', '-').lower()
             
-            # Status styling
-            if status == 'passed':
+            # File header with status
+            if file_result.status == 'passed':
                 status_badge = "[PASS]"
-            elif status == 'failed':
+            elif file_result.status == 'failed':
                 status_badge = "[FAIL]"
-            elif status == 'error':
+            elif file_result.status == 'error':
                 status_badge = "[ERROR]"
             else:
                 status_badge = "[UNKNOWN]"
             
-            # Add anchor for failed/error tests, regular heading for passed tests
-            if status in ['failed', 'error']:
+            # Add anchor for failed/error files, regular heading for passed files
+            if file_result.status in ['failed', 'error']:
                 content += f"""### <a id="{anchor_id}"></a>{status_badge} {test_name}
 
-**Status:** {status.upper()}  
-**Duration:** {duration:.2f} seconds  
+**File Status:** {file_result.status.upper()}  
+**Total Cases:** {file_result.total_cases}  
+**Passed:** {file_result.passed_cases}  
+**Failed:** {file_result.failed_cases}  
+**Errors:** {file_result.error_cases}  
+**Duration:** {file_result.duration:.2f} seconds  
 **File Path:** `{test_path}`
 
 """
             else:
                 content += f"""### {status_badge} {test_name}
 
-**Status:** {status.upper()}  
-**Duration:** {duration:.2f} seconds  
+**File Status:** {file_result.status.upper()}  
+**Total Cases:** {file_result.total_cases}  
+**Passed:** {file_result.passed_cases}  
+**Duration:** {file_result.duration:.2f} seconds  
 **File Path:** `{test_path}`
 
 """
             
-            # Add output section if there's meaningful output
-            if output and output.strip():
-                # Clean up output for markdown
-                clean_output = output.replace('\r\n', '\n').replace('\r', '\n')
-                # Limit output length for readability
-                if len(clean_output) > 2000:
-                    clean_output = clean_output[:2000] + "\n... (output truncated)"
+            # Add individual test cases
+            if file_result.test_cases:
+                content += "#### Individual Test Cases:\n\n"
                 
-                content += f"""**Output:**
-```
+                # Sort test cases by status (failed first, then passed)
+                sorted_cases = sorted(file_result.test_cases, key=lambda x: (x.status != 'failed', x.name))
+                
+                for test_case in sorted_cases:
+                    # Status indicator
+                    if test_case.status == 'passed':
+                        case_emoji = "✅"
+                    elif test_case.status == 'failed':
+                        case_emoji = "❌"
+                    elif test_case.status == 'error':
+                        case_emoji = "⚠️"
+                    elif test_case.status == 'skipped':
+                        case_emoji = "⏭️"
+                    else:
+                        case_emoji = "❓"
+                    
+                    content += f"- {case_emoji} **{test_case.name}** ({test_case.class_name}) - {test_case.status.upper()}\n"
+                    
+                    # Add error message for failed/error cases
+                    if test_case.error_message and test_case.status in ['failed', 'error']:
+                        # Truncate long error messages
+                        error_msg = test_case.error_message
+                        if len(error_msg) > 200:
+                            error_msg = error_msg[:200] + "..."
+                        content += f"  - Error: `{error_msg}`\n"
+                
+                content += "\n"
+            
+            # Add raw output section for failed files
+            if file_result.status in ['failed', 'error'] and file_result.raw_output:
+                content += "#### Raw Test Output:\n\n"
+                clean_output = file_result.raw_output.replace('\r\n', '\n').replace('\r', '\n')
+                # Limit output length for readability
+                if len(clean_output) > 1500:
+                    clean_output = clean_output[:1500] + "\n... (output truncated)"
+                
+                content += f"""```
 {clean_output}
 ```
 
 """
             
-            # Add back to top link for failed/error tests
-            if status in ['failed', 'error']:
-                content += "[↑ Back to Test Table](#test-results-table)\n\n"
+            # Add back to top link for failed/error files
+            if file_result.status in ['failed', 'error']:
+                content += "[↑ Back to Test Results](#test-results-by-file)\n\n"
             
             content += "---\n\n"
         
@@ -310,11 +371,12 @@ class BadgeUpdater:
 - **Python Version:** {self._get_python_version()}
 - **Test Runner:** PyFlowGraph Professional GUI Test Tool
 - **Test Directory:** `tests/`
-- **Generated By:** Badge Updater v1.0
+- **Generated By:** Badge Updater v2.0 (Individual Test Case Support)
 
 ---
 
 *This report is automatically generated when tests are executed through the PyFlowGraph test tool.*
+*Now showing individual test case results for more detailed analysis.*
 *Last updated: {timestamp}*
 """
         
@@ -325,7 +387,7 @@ class BadgeUpdater:
         import sys
         return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     
-    def save_detailed_test_results(self, test_results: Dict[str, Dict]) -> bool:
+    def save_detailed_test_results(self, test_results: Dict[str, TestFileResult]) -> bool:
         """Save detailed test results to markdown file.
         
         Args:
@@ -351,7 +413,7 @@ class BadgeUpdater:
             print(f"Error saving detailed test results: {e}")
             return False
     
-    def update_readme_badges(self, test_results: Dict[str, Dict]) -> bool:
+    def update_readme_badges(self, test_results: Dict[str, TestFileResult]) -> bool:
         """Update README.md with test result badges.
         
         Args:
@@ -422,7 +484,7 @@ class BadgeUpdater:
             print(f"Error updating README badges: {e}")
             return False
     
-    def generate_summary_report(self, test_results: Dict[str, Dict]) -> str:
+    def generate_summary_report(self, test_results: Dict[str, TestFileResult]) -> str:
         """Generate a summary report of test results.
         
         Args:
@@ -431,35 +493,39 @@ class BadgeUpdater:
         Returns:
             Formatted summary report string
         """
-        total_tests = len(test_results)
-        passed_tests = sum(1 for result in test_results.values() if result.get('status') == 'passed')
-        failed_tests = total_tests - passed_tests
+        total_files = len(test_results)
+        total_test_cases = sum(result.total_cases for result in test_results.values())
+        passed_test_cases = sum(result.passed_cases for result in test_results.values())
+        failed_test_cases = sum(result.failed_cases for result in test_results.values())
+        error_test_cases = sum(result.error_cases for result in test_results.values())
         
         # Calculate total duration
-        total_duration = sum(result.get('duration', 0) for result in test_results.values())
+        total_duration = sum(result.duration for result in test_results.values())
         
-        # Get failed test names
-        failed_test_names = [
+        # Get failed test file names
+        failed_file_names = [
             Path(test_path).name for test_path, result in test_results.items() 
-            if result.get('status') != 'passed'
+            if result.status in ['failed', 'error']
         ]
         
         report = f"""
 Test Execution Summary
 {'=' * 50}
-Total Tests: {total_tests}
-Passed: {passed_tests}
-Failed: {failed_tests}
-Success Rate: {(passed_tests/total_tests*100) if total_tests > 0 else 0:.1f}%
+Test Files: {total_files}
+Total Test Cases: {total_test_cases}
+Passed: {passed_test_cases}
+Failed: {failed_test_cases}
+Errors: {error_test_cases}
+Success Rate: {(passed_test_cases/total_test_cases*100) if total_test_cases > 0 else 0:.1f}%
 Total Duration: {total_duration:.2f} seconds
-Average Duration: {(total_duration/total_tests) if total_tests > 0 else 0:.2f} seconds per test
+Average Duration: {(total_duration/total_files) if total_files > 0 else 0:.2f} seconds per file
 
 """
         
-        if failed_test_names:
-            report += "Failed Tests:\n"
-            for test_name in failed_test_names:
-                report += f"  - {test_name}\n"
+        if failed_file_names:
+            report += "Failed Test Files:\n"
+            for file_name in failed_file_names:
+                report += f"  - {file_name}\n"
         
         report += f"\nBadges updated in: {self.readme_path}\n"
         report += f"Updated at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"

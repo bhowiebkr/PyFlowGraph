@@ -43,8 +43,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, QThread, QObject, Signal, QSize, QRect
 from PySide6.QtGui import QFont, QIcon, QPalette, QColor, QPixmap, QPainter, QBrush
 
-# Import badge updater module
+# Import badge updater module and test parser
 from badge_updater import BadgeUpdater
+from test_output_parser import TestOutputParser, TestFileResult
 
 
 class TestResult:
@@ -62,13 +63,14 @@ class TestExecutor(QObject):
     """Background test executor that runs tests and emits results."""
 
     test_started = Signal(str)
-    test_finished = Signal(str, str, str, float)  # name, status, output, duration
+    test_finished = Signal(str, TestFileResult)  # file_path, TestFileResult object
     all_finished = Signal()
 
     def __init__(self, test_files: List[str]):
         super().__init__()
         self.test_files = test_files
         self.should_stop = False
+        self.parser = TestOutputParser()
 
     def run_tests(self):
         """Run all specified test files."""
@@ -80,27 +82,55 @@ class TestExecutor(QObject):
             start_time = time.time()
 
             try:
-                # Run the test file as a subprocess
-                result = subprocess.run([sys.executable, test_file], capture_output=True, text=True, cwd=Path(__file__).parent.parent, timeout=10)  # 10 second timeout per test
+                # Run the test file with verbose unittest output to get individual test cases
+                result = subprocess.run(
+                    [sys.executable, "-m", "unittest", "-v", test_file], 
+                    capture_output=True, text=True, 
+                    cwd=Path(__file__).parent.parent, 
+                    timeout=10
+                )
 
                 duration = time.time() - start_time
+                combined_output = result.stdout + "\n" + result.stderr
 
-                if result.returncode == 0:
-                    status = "passed"
-                    output = result.stdout
-                else:
-                    status = "failed"
-                    output = result.stdout + "\n" + result.stderr
+                # Parse the output to get individual test cases
+                file_result = self.parser.parse_test_file_output(test_file, combined_output, duration)
 
-                self.test_finished.emit(test_file, status, output, duration)
+                self.test_finished.emit(test_file, file_result)
 
             except subprocess.TimeoutExpired:
                 duration = time.time() - start_time
-                self.test_finished.emit(test_file, "failed", "Test timed out after 10 seconds", duration)
+                # Create a failed TestFileResult for timeout
+                timeout_result = TestFileResult(
+                    file_path=test_file,
+                    status="failed",
+                    duration=duration,
+                    total_cases=0,
+                    passed_cases=0,
+                    failed_cases=1,
+                    error_cases=0,
+                    skipped_cases=0,
+                    test_cases=[],
+                    raw_output="Test timed out after 10 seconds"
+                )
+                self.test_finished.emit(test_file, timeout_result)
 
             except Exception as e:
                 duration = time.time() - start_time
-                self.test_finished.emit(test_file, "error", f"Execution error: {str(e)}", duration)
+                # Create an error TestFileResult for execution errors
+                error_result = TestFileResult(
+                    file_path=test_file,
+                    status="error",
+                    duration=duration,
+                    total_cases=0,
+                    passed_cases=0,
+                    failed_cases=0,
+                    error_cases=1,
+                    skipped_cases=0,
+                    test_cases=[],
+                    raw_output=f"Execution error: {str(e)}"
+                )
+                self.test_finished.emit(test_file, error_result)
 
         self.all_finished.emit()
 
@@ -147,7 +177,7 @@ class TestTreeWidget(QTreeWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
 
-        self.test_results: Dict[str, TestResult] = {}
+        self.test_results: Dict[str, TestFileResult] = {}
 
     def add_test_file(self, file_path: str) -> QTreeWidgetItem:
         """Add a test file to the tree."""
@@ -159,25 +189,45 @@ class TestTreeWidget(QTreeWidget):
         # Make item checkable
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
 
-        # Store the test result
-        self.test_results[file_path] = TestResult(file_path)
+        # Store a placeholder test result that will be updated when test runs
+        self.test_results[file_path] = TestFileResult(
+            file_path=file_path,
+            status="pending",
+            duration=0.0,
+            total_cases=0,
+            passed_cases=0,
+            failed_cases=0,
+            error_cases=0,
+            skipped_cases=0,
+            test_cases=[],
+            raw_output=""
+        )
 
         return item
 
-    def update_test_status(self, file_path: str, status: str, duration: float = 0.0):
-        """Update the status of a test."""
-        if file_path in self.test_results:
-            self.test_results[file_path].status = status
-            self.test_results[file_path].duration = duration
+    def update_test_status(self, file_path: str, file_result: TestFileResult):
+        """Update the status of a test with full TestFileResult data."""
+        # Store the complete test result
+        self.test_results[file_path] = file_result
 
         # Find and update the tree item
         for i in range(self.topLevelItemCount()):
             item = self.topLevelItem(i)
             if item.data(0, Qt.UserRole) == file_path:
-                item.setText(1, status.title())
-                if duration > 0:
-                    item.setText(2, f"{duration:.2f}s")
-                item.setIcon(0, StatusIcon.create_icon(status))
+                item.setText(1, file_result.status.title())
+                item.setText(2, f"{file_result.duration:.2f}s")
+                item.setIcon(0, StatusIcon.create_icon(file_result.status))
+                
+                # Update tooltip to show individual test case counts
+                if file_result.total_cases > 0:
+                    tooltip = f"Total: {file_result.total_cases} test cases\n"
+                    tooltip += f"Passed: {file_result.passed_cases}\n"
+                    tooltip += f"Failed: {file_result.failed_cases}\n"
+                    if file_result.error_cases > 0:
+                        tooltip += f"Errors: {file_result.error_cases}\n"
+                    if file_result.skipped_cases > 0:
+                        tooltip += f"Skipped: {file_result.skipped_cases}"
+                    item.setToolTip(0, tooltip)
                 break
 
     def get_selected_tests(self) -> List[str]:
@@ -220,14 +270,14 @@ class TestOutputWidget(QTextEdit):
         palette.setColor(QPalette.Text, QColor("#d4d4d4"))
         self.setPalette(palette)
 
-    def set_test_output(self, file_path: str, result: TestResult):
-        """Display the output for a specific test."""
+    def set_test_output(self, file_path: str, result: TestFileResult):
+        """Display the output for a specific test file."""
         self.clear()
 
         # Header
         html = f"""
         <h3 style="color: #569cd6; margin-bottom: 10px;">
-            Test: {Path(file_path).name}
+            Test File: {Path(file_path).name}
         </h3>
         """
 
@@ -236,7 +286,7 @@ class TestOutputWidget(QTextEdit):
 
         status_color = status_colors.get(result.status, "#777777")
         html += f"""
-        <p><strong>Status:</strong> 
+        <p><strong>File Status:</strong> 
         <span style="color: {status_color}; font-weight: bold;">
             {result.status.upper()}
         </span></p>
@@ -245,31 +295,55 @@ class TestOutputWidget(QTextEdit):
         if result.duration > 0:
             html += f"<p><strong>Duration:</strong> {result.duration:.2f} seconds</p>"
 
+        # Test case summary
+        if result.total_cases > 0:
+            html += f"""
+            <p><strong>Test Cases:</strong> {result.total_cases} total</p>
+            <p><strong>Passed:</strong> {result.passed_cases} | 
+               <strong>Failed:</strong> {result.failed_cases} | 
+               <strong>Errors:</strong> {result.error_cases} | 
+               <strong>Skipped:</strong> {result.skipped_cases}</p>
+            """
+
         html += "<hr style='border: 1px solid #333; margin: 15px 0;'>"
 
-        # Output
-        if result.output:
+        # Individual test cases
+        if result.test_cases:
+            html += "<h4 style='color: #569cd6;'>Individual Test Cases:</h4>"
+            for test_case in result.test_cases:
+                case_color = status_colors.get(test_case.status, "#777777")
+                html += f"""
+                <p style="margin: 5px 0;">
+                    <span style="color: {case_color}; font-weight: bold;">[{test_case.status.upper()}]</span>
+                    <strong>{test_case.name}</strong> ({test_case.class_name})
+                </p>
+                """
+                
+                # Show error message for failed cases
+                if test_case.error_message and test_case.status in ['failed', 'error']:
+                    error_preview = test_case.error_message[:150] + "..." if len(test_case.error_message) > 150 else test_case.error_message
+                    html += f"""
+                    <p style="margin-left: 20px; color: #f44336; font-size: 12px;">
+                        {error_preview}
+                    </p>
+                    """
+
+        html += "<hr style='border: 1px solid #333; margin: 15px 0;'>"
+
+        # Raw output
+        if result.raw_output:
             # Convert plain text output to HTML with basic formatting
-            output_html = result.output.replace("\n", "<br>")
-            output_html = output_html.replace("PASSED", "<span style='color: #4CAF50;'>PASSED</span>")
-            output_html = output_html.replace("FAILED", "<span style='color: #f44336;'>FAILED</span>")
+            output_html = result.raw_output.replace("\n", "<br>")
+            output_html = output_html.replace("ok", "<span style='color: #4CAF50;'>ok</span>")
+            output_html = output_html.replace("FAIL", "<span style='color: #f44336;'>FAIL</span>")
             output_html = output_html.replace("ERROR", "<span style='color: #9C27B0;'>ERROR</span>")
 
             html += f"""
-            <h4 style="color: #569cd6;">Output:</h4>
+            <h4 style="color: #569cd6;">Raw Test Output:</h4>
             <pre style="background: #2d2d2d; padding: 10px; border-radius: 5px; 
-                        color: #d4d4d4; white-space: pre-wrap; font-family: 'Consolas', monospace;">
+                        color: #d4d4d4; white-space: pre-wrap; font-family: 'Consolas', monospace; 
+                        font-size: 11px; max-height: 300px; overflow-y: auto;">
             {output_html}
-            </pre>
-            """
-
-        # Error details
-        if result.error:
-            html += f"""
-            <h4 style="color: #f44336;">Error Details:</h4>
-            <pre style="background: #2d2d2d; padding: 10px; border-radius: 5px; 
-                        color: #f44336; white-space: pre-wrap; font-family: 'Consolas', monospace;">
-            {result.error}
             </pre>
             """
 
@@ -528,10 +602,20 @@ class TestRunnerMainWindow(QMainWindow):
 
         # Reset all test statuses
         for test_file in test_files:
-            self.test_tree.update_test_status(test_file, "pending")
-            if test_file in self.test_tree.test_results:
-                self.test_tree.test_results[test_file].output = ""
-                self.test_tree.test_results[test_file].error = ""
+            # Create a pending TestFileResult
+            pending_result = TestFileResult(
+                file_path=test_file,
+                status="pending",
+                duration=0.0,
+                total_cases=0,
+                passed_cases=0,
+                failed_cases=0,
+                error_cases=0,
+                skipped_cases=0,
+                test_cases=[],
+                raw_output=""
+            )
+            self.test_tree.update_test_status(test_file, pending_result)
 
         # Set up progress bar
         self.progress_bar.setMaximum(len(test_files))
@@ -561,33 +645,47 @@ class TestRunnerMainWindow(QMainWindow):
 
     def on_test_started(self, file_path: str):
         """Handle test start event."""
-        self.test_tree.update_test_status(file_path, "running")
+        # Create a temporary running result
+        running_result = TestFileResult(
+            file_path=file_path,
+            status="running",
+            duration=0.0,
+            total_cases=0,
+            passed_cases=0,
+            failed_cases=0,
+            error_cases=0,
+            skipped_cases=0,
+            test_cases=[],
+            raw_output=""
+        )
+        self.test_tree.update_test_status(file_path, running_result)
         test_name = Path(file_path).name
         self.statusBar().showMessage(f"Running: {test_name}")
 
-    def on_test_finished(self, file_path: str, status: str, output: str, duration: float):
+    def on_test_finished(self, file_path: str, file_result: TestFileResult):
         """Handle test completion event."""
-        self.test_tree.update_test_status(file_path, status, duration)
-
-        # Update test result with output
-        if file_path in self.test_tree.test_results:
-            result = self.test_tree.test_results[file_path]
-            result.status = status
-            result.output = output
-            result.duration = duration
+        self.test_tree.update_test_status(file_path, file_result)
             
-            # Auto-refresh output panel if this test is currently selected
-            if file_path == self.currently_selected_test:
-                self.output_widget.set_test_output(file_path, result)
+        # Auto-refresh output panel if this test is currently selected
+        if file_path == self.currently_selected_test:
+            self.output_widget.set_test_output(file_path, file_result)
 
-        # Print failed tests to terminal
-        if status in ["failed", "error"]:
+        # Print failed tests to terminal with individual test case details
+        if file_result.status in ["failed", "error"]:
             test_name = Path(file_path).name
             print(f"\nFAILED: {test_name}")
-            print(f"Duration: {duration:.2f}s")
-            if output:
-                print("Output:")
-                print(output)
+            print(f"Duration: {file_result.duration:.2f}s")
+            print(f"Test Cases: {file_result.total_cases} total, {file_result.failed_cases} failed, {file_result.error_cases} errors")
+            
+            # Print failed individual test cases
+            failed_cases = [tc for tc in file_result.test_cases if tc.status in ['failed', 'error']]
+            if failed_cases:
+                print("Failed test cases:")
+                for case in failed_cases:
+                    print(f"  - {case.name} ({case.class_name}): {case.status}")
+                    if case.error_message:
+                        print(f"    Error: {case.error_message[:100]}...")
+            
             print("-" * 60)
 
         # Update progress
@@ -596,7 +694,10 @@ class TestRunnerMainWindow(QMainWindow):
 
         # Update status message
         test_name = Path(file_path).name
-        self.statusBar().showMessage(f"Completed: {test_name} ({status})")
+        if file_result.total_cases > 0:
+            self.statusBar().showMessage(f"Completed: {test_name} ({file_result.status}) - {file_result.passed_cases}/{file_result.total_cases} test cases passed")
+        else:
+            self.statusBar().showMessage(f"Completed: {test_name} ({file_result.status})")
 
     def on_all_tests_finished(self):
         """Handle completion of all tests."""
@@ -608,41 +709,47 @@ class TestRunnerMainWindow(QMainWindow):
         # Hide progress bar
         self.progress_bar.setVisible(False)
 
-        # Calculate summary
-        total_tests = 0
-        passed_tests = 0
-        failed_tests = 0
-        failed_test_names = []
+        # Calculate summary from individual test cases
+        total_files = 0
+        total_test_cases = 0
+        passed_test_cases = 0
+        failed_test_cases = 0
+        error_test_cases = 0
+        failed_file_names = []
 
-        for result in self.test_tree.test_results.values():
+        for file_path, result in self.test_tree.test_results.items():
             if result.status in ["passed", "failed", "error"]:
-                total_tests += 1
-                if result.status == "passed":
-                    passed_tests += 1
-                else:
-                    failed_tests += 1
-                    failed_test_names.append(Path(result.name).name)
+                total_files += 1
+                total_test_cases += result.total_cases
+                passed_test_cases += result.passed_cases
+                failed_test_cases += result.failed_cases
+                error_test_cases += result.error_cases
+                
+                if result.status in ["failed", "error"]:
+                    failed_file_names.append(Path(file_path).name)
 
         # Print summary to terminal
         print(f"\n{'='*60}")
         print(f"TEST SUMMARY")
         print(f"{'='*60}")
-        print(f"Total tests: {total_tests}")
-        print(f"Passed: {passed_tests}")
-        print(f"Failed: {failed_tests}")
+        print(f"Test files: {total_files}")
+        print(f"Total test cases: {total_test_cases}")
+        print(f"Passed: {passed_test_cases}")
+        print(f"Failed: {failed_test_cases}")
+        print(f"Errors: {error_test_cases}")
         
-        if failed_test_names:
-            print(f"\nFailed tests:")
-            for test_name in failed_test_names:
-                print(f"  - {test_name}")
+        if failed_file_names:
+            print(f"\nFailed test files:")
+            for file_name in failed_file_names:
+                print(f"  - {file_name}")
         
         print(f"{'='*60}")
 
         # Update status message
-        self.statusBar().showMessage(f"Tests completed: {passed_tests} passed, {failed_tests} failed, {total_tests} total")
+        self.statusBar().showMessage(f"Tests completed: {passed_test_cases} passed, {failed_test_cases + error_test_cases} failed, {total_test_cases} total test cases")
         
         # Enable badge update button if tests were executed
-        if total_tests > 0:
+        if total_test_cases > 0:
             self.update_badges_btn.setEnabled(True)
 
         # Clean up thread
@@ -665,14 +772,21 @@ class TestRunnerMainWindow(QMainWindow):
         for i in range(self.test_tree.topLevelItemCount()):
             item = self.test_tree.topLevelItem(i)
             file_path = item.data(0, Qt.UserRole)
-            self.test_tree.update_test_status(file_path, "pending", 0.0)
-
-            if file_path in self.test_tree.test_results:
-                result = self.test_tree.test_results[file_path]
-                result.status = "pending"
-                result.output = ""
-                result.error = ""
-                result.duration = 0.0
+            
+            # Create a fresh pending result
+            pending_result = TestFileResult(
+                file_path=file_path,
+                status="pending",
+                duration=0.0,
+                total_cases=0,
+                passed_cases=0,
+                failed_cases=0,
+                error_cases=0,
+                skipped_cases=0,
+                test_cases=[],
+                raw_output=""
+            )
+            self.test_tree.update_test_status(file_path, pending_result)
 
         # Clear output widget
         self.output_widget.clear()
@@ -685,17 +799,13 @@ class TestRunnerMainWindow(QMainWindow):
     def update_readme_badges(self):
         """Update README.md with test result badges."""
         try:
-            # Prepare test results in the format expected by BadgeUpdater
+            # Prepare test results in the format expected by BadgeUpdater (TestFileResult objects)
             test_results = {}
             
             for file_path, result in self.test_tree.test_results.items():
                 # Only include tests that have been executed
                 if result.status in ["passed", "failed", "error"]:
-                    test_results[file_path] = {
-                        "status": result.status,
-                        "duration": result.duration,
-                        "output": result.output
-                    }
+                    test_results[file_path] = result
             
             if not test_results:
                 self.statusBar().showMessage("No test results to update badges with")
@@ -709,10 +819,11 @@ class TestRunnerMainWindow(QMainWindow):
                 summary = self.badge_updater.generate_summary_report(test_results)
                 print(summary)
                 
-                # Update status message
-                total_tests = len(test_results)
-                passed_tests = sum(1 for r in test_results.values() if r["status"] == "passed")
-                self.statusBar().showMessage(f"README badges and detailed test results updated: {passed_tests}/{total_tests} tests passed")
+                # Update status message with individual test case counts
+                total_test_cases = sum(r.total_cases for r in test_results.values())
+                passed_test_cases = sum(r.passed_cases for r in test_results.values())
+                total_files = len(test_results)
+                self.statusBar().showMessage(f"README badges updated: {passed_test_cases}/{total_test_cases} test cases passed across {total_files} files")
             else:
                 self.statusBar().showMessage("Failed to update README badges")
                 

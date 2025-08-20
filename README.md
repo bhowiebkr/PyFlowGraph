@@ -4,15 +4,15 @@
 
 <div align="center">
 
-![Tests](https://img.shields.io/badge/Tests-39%20passed-green)
-![Failed](https://img.shields.io/badge/Failed-9-red)
-![Success Rate](https://img.shields.io/badge/Success%20Rate-81%25-green)
+![Tests](https://img.shields.io/badge/Tests-319%20passed-green)
+![Failed](https://img.shields.io/badge/Failed-6-red)
+![Success Rate](https://img.shields.io/badge/Success%20Rate-93%25-green)
 ![Test Files](https://img.shields.io/badge/Test%20Files-48-blue)
-![Total Tests](https://img.shields.io/badge/Total%20Tests-48-lightgrey)
-![Skipped](https://img.shields.io/badge/Skipped-0-yellow)
-![Errors](https://img.shields.io/badge/Errors-0-orange)
+![Total Tests](https://img.shields.io/badge/Total%20Tests-340-lightgrey)
+![Skipped](https://img.shields.io/badge/Skipped-8-yellow)
+![Errors](https://img.shields.io/badge/Errors-9-orange)
 ![Warnings](https://img.shields.io/badge/Warnings-0-lightgrey)
-![Last Run](https://img.shields.io/badge/Last%20Run-2025--08--20%2001%3A33%3A09-lightblue)
+![Last Run](https://img.shields.io/badge/Last%20Run-2025--08--20%2001%3A49%3A54-lightblue)
 
 </div>
 
