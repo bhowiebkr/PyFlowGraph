@@ -380,11 +380,13 @@ class DeleteMultipleCommand(CompositeCommand):
         from core.node import Node
         from core.reroute_node import RerouteNode
         from core.connection import Connection
+        from core.group import Group
         
         # Create individual delete commands
         commands = []
         node_count = 0
         connection_count = 0
+        group_count = 0
         
         for item in selected_items:
             if isinstance(item, (Node, RerouteNode)):
@@ -394,17 +396,42 @@ class DeleteMultipleCommand(CompositeCommand):
                 from commands.connection_commands import DeleteConnectionCommand
                 commands.append(DeleteConnectionCommand(node_graph, item))
                 connection_count += 1
+            elif isinstance(item, Group):
+                from commands.delete_group_command import DeleteGroupCommand
+                commands.append(DeleteGroupCommand(node_graph, item))
+                group_count += 1
         
-        # Generate description
-        if node_count > 0 and connection_count > 0:
-            description = f"Delete {node_count} nodes and {connection_count} connections"
-        elif node_count > 1:
-            description = f"Delete {node_count} nodes"
-        elif node_count == 1:
-            node_title = getattr(selected_items[0], 'title', 'node')
-            description = f"Delete '{node_title}'"
-        elif connection_count > 1:
-            description = f"Delete {connection_count} connections"
+        # Generate description based on what's being deleted
+        description_parts = []
+        if node_count > 0:
+            if node_count == 1:
+                # Try to get the node title for single node deletion
+                node_item = None
+                for item in selected_items:
+                    if isinstance(item, (Node, RerouteNode)):
+                        node_item = item
+                        break
+                node_title = getattr(node_item, 'title', 'node')
+                description_parts.append(f"'{node_title}'")
+            else:
+                description_parts.append(f"{node_count} nodes")
+        
+        if group_count > 0:
+            if group_count == 1 and len(selected_items) == 1:
+                # Single group deletion
+                group_name = getattr(selected_items[0], 'name', 'group')
+                description_parts.append(f"group '{group_name}'")
+            else:
+                description_parts.append(f"{group_count} groups")
+        
+        if connection_count > 0:
+            if connection_count == 1 and len(selected_items) == 1:
+                description_parts.append("connection")
+            else:
+                description_parts.append(f"{connection_count} connections")
+        
+        if description_parts:
+            description = f"Delete {' and '.join(description_parts)}"
         else:
             description = f"Delete {len(selected_items)} items"
         

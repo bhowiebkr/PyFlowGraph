@@ -145,14 +145,13 @@ class NodeGraph(QGraphicsScene):
             if selected_items:
                 commands = []
                 
-                # Create delete commands for selected items
-                for item in selected_items:
-                    if isinstance(item, (Node, RerouteNode)):
-                        print(f"DEBUG: Creating DeleteNodeCommand for {getattr(item, 'title', 'Unknown')} (ID: {id(item)})")
-                        commands.append(DeleteNodeCommand(self, item))
-                    elif isinstance(item, Connection):
-                        print(f"DEBUG: Creating DeleteConnectionCommand for connection {id(item)}")
-                        commands.append(DeleteConnectionCommand(self, item))
+                # Use the improved DeleteMultipleCommand that handles all item types including Groups
+                from commands.node.batch_operations import DeleteMultipleCommand
+                delete_cmd = DeleteMultipleCommand(self, selected_items)
+                print(f"DEBUG: Using DeleteMultipleCommand: {delete_cmd.get_description()}")
+                result = self.execute_command(delete_cmd)
+                print(f"DEBUG: DeleteMultipleCommand returned: {result}")
+                return
                 
                 print(f"DEBUG: Created {len(commands)} delete commands")
                 
