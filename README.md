@@ -51,6 +51,8 @@ The core architecture follows a **"Code as Nodes"** philosophy where each node c
   * **Batch Mode**: Traditional execution where the entire graph runs sequentially based on data dependencies
   * **Live Mode**: Interactive execution with real-time event handling and persistent state for building interactive applications
 * **Event-Driven Interactive System**: Built-in event system supporting button clicks, timers, value changes, and user input for creating interactive experiences
+* **Node Grouping System**: Visual containers for organizing related nodes with customizable colors, sizes, and transparency. Groups support dynamic membership, resizing, full CRUD operations with Delete key support, and complete undo/redo functionality.
+* **Complete Undo/Redo System**: Command pattern implementation across all operations including node creation/deletion, connections, moves, property changes, and group operations. Multi-level undo with memory management and composite command support.
 * **Isolated Execution Environment**: Each node runs in its own subprocess with isolated virtual environments for maximum security and dependency management
 * **Mini-IDE Code Editor**:
   * A modal dialog provides a spacious and professional coding environment.
@@ -62,14 +64,15 @@ The core architecture follows a **"Code as Nodes"** philosophy where each node c
   * **Connection Replacement**: Dragging a new wire to an already connected input pin automatically replaces the old connection.
   * **Type-Safe Connections**: Pin colors indicate data types for visual type checking.
 * **Intelligent Clipboard System**:
-  * Copy (`Ctrl+C`) and paste (`Ctrl+V`) multiple nodes with preserved relationships.
+  * Copy (`Ctrl+C`) and paste (`Ctrl+V`) multiple nodes and groups with preserved relationships.
   * Internal connections between copied nodes are maintained automatically.
   * Smart positioning system offsets pasted nodes based on cursor location.
+  * Group-aware copy/paste operations maintain group membership.
 * **Professional UI/UX**:
   * **Custom Dark Theme**: Consistent, modern QSS stylesheet throughout the application.
   * **Font Awesome Integration**: Professional iconography for all UI elements.
   * **Blueprint-Style Navigation**: Industry-standard node editor interaction patterns.
-* **Robust Persistence**: Graphs serialize to human-readable Markdown format with embedded metadata, making files both machine-readable and easily editable by humans. Full state preservation including node positions, connections, code, and environment requirements. All file operations use UTF-8 encoding for proper international character support.
+* **Robust Persistence**: Graphs serialize to human-readable Markdown format with embedded metadata, making files both machine-readable and easily editable by humans. Full state preservation including node positions, connections, code, group definitions, and environment requirements. All file operations use UTF-8 encoding for proper international character support.
 * **Dynamic Interface**: Window title automatically updates to display the current graph name for better project identification.
 
 ---
@@ -90,6 +93,7 @@ The `examples/` directory contains sample graphs demonstrating various capabilit
 * [`file_organizer_automation.md`](examples/file_organizer_automation.md) - Automated file organization system
 * [`interactive_game_engine.md`](examples/interactive_game_engine.md) - Interactive game with event-driven execution
 * [`password_generator_tool.md`](examples/password_generator_tool.md) - Secure password generation utility
+* [`password_generator_tool_group.md`](examples/password_generator_tool_group.md) - Password generator with group organization demonstration
 * [`personal_finance_tracker.md`](examples/personal_finance_tracker.md) - Personal finance management system
 * [`recipe_nutrition_calculator.md`](examples/recipe_nutrition_calculator.md) - Recipe analysis and nutrition calculator
 * [`social_media_scheduler.md`](examples/social_media_scheduler.md) - Social media content scheduling tool
@@ -123,29 +127,33 @@ The Python Environment Manager dialog enables sophisticated dependency managemen
 The project is organized into modular, single-responsibility Python files:
 
 ### Core Application Files
-* `main.py`: The main entry point for the application. Handles application setup and loads the stylesheet.
+* `src/main.py`: The main entry point for the application. Handles application setup and loads the stylesheet.
 * `dark_theme.qss`: The global Qt Style Sheet that defines the application's dark theme.
-* `node_editor_window.py`: The main `QMainWindow` that hosts all UI elements.
-* `node_editor_view.py`: The `QGraphicsView` responsible for rendering the scene and handling all mouse/keyboard interactions (panning, zooming, copy/paste).
-* `node_graph.py`: The `QGraphicsScene` that manages all nodes, connections, and the core clipboard logic.
 
-### Node System
-* `node.py`: Defines the main Node class, including its visual appearance and the logic for parsing Python code to generate pins.
-* `pin.py`: Defines the input/output pins on a node.
-* `connection.py`: Defines the visual Bezier curve connection between two pins.
-* `reroute_node.py`: A special, simple node for organizing connections.
+### Core Engine (`src/core/`)
+* `node_graph.py`: The `QGraphicsScene` that manages all nodes, connections, groups, and clipboard logic.
+* `node.py`: Defines the main Node class, including visual appearance and Python code parsing for pin generation.
+* `pin.py`: Defines the input/output pins on nodes with type-safe connections.
+* `connection.py`: Defines the visual Bezier curve connections between pins.
+* `reroute_node.py`: Special organizational nodes for managing connection routing.
+* `group.py`: Visual container system for organizing related nodes with customizable appearance.
 
-### Execution & Code Management
-* `graph_executor.py`: The engine that intelligently executes the node graph based on data dependencies.
-* `code_editor_dialog.py`: The modal dialog window that contains the advanced code editor.
-* `python_code_editor.py`: The core code editor widget, featuring line numbers and smart indentation.
-* `python_syntax_highlighter.py`: Implements syntax highlighting for the code editor.
-* `event_system.py`: Event-driven system for live mode and interactive execution.
+### User Interface (`src/ui/`)
+* `editor/node_editor_window.py`: Main `QMainWindow` hosting all UI elements.
+* `editor/node_editor_view.py`: `QGraphicsView` handling mouse/keyboard interactions (pan, zoom, copy/paste).
+* `dialogs/`: All dialog components including code editor, settings, node properties, and group management.
+* `code_editing/`: Python code editor with syntax highlighting and smart indentation.
 
-### Command System
-* `commands/`: Directory containing command pattern implementation for undo/redo functionality
-  * Command base classes and specific command implementations
-  * Node, connection, and reroute operations
+### Execution & Environment (`src/execution/`)
+* `graph_executor.py`: Engine that executes node graphs based on data dependencies.
+* `environment_manager.py`: Virtual environment management for graph-specific dependencies.
+* `execution_controller.py`: Controls batch and live mode execution with subprocess isolation.
+
+### Command System (`src/commands/`)
+* Command pattern implementation for comprehensive undo/redo functionality
+* `node/`: Node-specific operations (create, delete, move, property changes)
+* Group commands: create, delete, resize, property management
+* Connection and reroute commands with full state preservation
 
 ### Utilities & Configuration
 * `color_utils.py`: Color manipulation utilities for the interface.
@@ -222,7 +230,7 @@ This is the easiest way to run the application without needing to install Python
   * **Pan**: Right-click + drag or middle-click + drag
   * **Zoom**: Mouse wheel scroll
   * **Select/Move**: Left-click to select and drag nodes
-* **Delete Items**: Select any node, reroute node, or connection and press `Delete`
+* **Delete Items**: Select any node, reroute node, connection, or group and press `Delete`
 * **Execute Graph**:
   * **Batch Mode**: Press `F5` or use "Run > Execute Graph" menu
   * **Live Mode**: Select "Live" mode and click "Start Live Mode" for interactive execution
@@ -235,8 +243,10 @@ This is the easiest way to run the application without needing to install Python
 
 ### Advanced Features
 
+* **Node Grouping**: Right-click to create groups for organizing nodes with custom colors and properties
 * **Reroute Connections**: Double-click any connection to create an organizational reroute node
-* **Copy/Paste**: Use `Ctrl+C` and `Ctrl+V` to duplicate node selections with preserved connections
+* **Copy/Paste**: Use `Ctrl+C` and `Ctrl+V` to duplicate node selections and groups with preserved connections
+* **Undo/Redo**: Full `Ctrl+Z` and `Ctrl+Y` support for all operations including groups, moves, and property changes
 * **Environment Management**: Access "Run > Manage Environment" to configure pip dependencies
 * **Save/Load**: Use "File" menu to save graphs as Markdown or load example projects
 * **Dynamic Window Titles**: Window title automatically updates to show the current graph name
@@ -355,12 +365,13 @@ python tests/test_name.py
 ### Test Coverage
 
 The test suite includes 18+ test files covering:
-* **Core Components**: Node system, pins, connections, graph management
-* **Execution Engine**: Code execution, data flow, subprocess isolation
-* **File Formats**: Markdown/JSON parsing, serialization, file operations
-* **Command System**: Undo/redo functionality with command pattern
+* **Core Components**: Node system, pins, connections, group management
+* **Execution Engine**: Code execution, data flow, subprocess isolation  
+* **File Formats**: Markdown/JSON parsing, serialization, file operations with group support
+* **Command System**: Comprehensive undo/redo functionality with command pattern
+* **Group System**: Group creation, deletion, resizing, property management
 * **Integration**: End-to-end workflows and real-world usage scenarios
-* **GUI Operations**: Node deletion, view state persistence, user interactions
+* **GUI Operations**: Node/group deletion, copy/paste, view state persistence
 
 ---
 
@@ -385,16 +396,17 @@ Comprehensive documentation is available in the `docs/` directory:
 
 ## Development Roadmap
 
-### Priority 1: Feature Parity
-* **Undo/Redo System** - Multi-level undo/redo with Command Pattern (partially implemented)
-* **Node Grouping** - Collapsible subgraphs for managing complexity
+### Recently Completed
+* **Undo/Redo System** - Complete multi-level undo/redo with Command Pattern ✅
+* **Node Grouping** - Visual containers for organizing nodes with full CRUD operations ✅
 
-### Priority 2: Performance & Usability
+### Priority 1: Performance & Usability
 * **Shared Subprocess Execution** - 10-100x performance improvement
 * **Pin Type Visibility** - Type badges and connection compatibility highlighting
 
-### Priority 3: Advanced Features
+### Priority 2: Advanced Features
 * **Enhanced Debugging** - Breakpoints, step-through execution, live data inspection
+* **Group Templates** - Save and reuse common node group patterns
 
 See [full roadmap](docs/roadmap.md) for complete details.
 
