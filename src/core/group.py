@@ -507,6 +507,55 @@ class Group(QGraphicsRectItem):
         for x, y in handles:
             handle_rect = QRectF(x - handle_size/2, y - handle_size/2, handle_size, handle_size)
             painter.drawRect(handle_rect)
+
+    
+    def contextMenuEvent(self, event):
+        """Handle right-click context menu events."""
+        try:
+            from PySide6.QtWidgets import QMenu
+            
+            # Create context menu
+            menu = QMenu()
+            properties_action = menu.addAction("Properties")
+            
+            # Execute menu and handle selection
+            action = menu.exec(event.screenPos())
+            if action == properties_action:
+                self.show_properties_dialog()
+                
+        except Exception as e:
+            print(f"Error showing group context menu: {e}")
+    
+    def show_properties_dialog(self):
+        """Show the group properties dialog."""
+        try:
+            # Get the main window as parent
+            parent = None
+            if self.scene() and self.scene().views():
+                parent = self.scene().views()[0].window()
+            
+            # Import and show properties dialog
+            from ui.dialogs.group_properties_dialog import show_group_properties_dialog
+            
+            changed_properties = show_group_properties_dialog(self, parent)
+            
+            if changed_properties:
+                # Apply changes using command pattern for undo/redo
+                if self.scene() and hasattr(self.scene(), 'execute_command'):
+                    from commands.group_property_command import GroupPropertyChangeCommand
+                    
+                    command = GroupPropertyChangeCommand(self.scene(), self, changed_properties)
+                    success = self.scene().execute_command(command)
+                    
+                    if success:
+                        print(f"Updated properties for group '{self.name}'")
+                    else:
+                        print(f"Failed to update properties for group '{self.name}'")
+                else:
+                    print("Warning: No command system available, changes not applied")
+                    
+        except Exception as e:
+            print(f"Error showing group properties dialog: {e}")
     
     def serialize(self) -> Dict[str, Any]:
         """Serialize group data for persistence"""
