@@ -27,7 +27,9 @@ class CreateNodeCommand(CommandBase):
     """Command for creating nodes with full state preservation."""
     
     def __init__(self, node_graph, title: str, position: QPointF, 
-                 node_id: str = None, code: str = "", description: str = ""):
+             node_id: str = None, code: str = "", description: str = "",
+             size: list = None, colors: dict = None, gui_state: dict = None,
+             gui_code: str = "", gui_get_values_code: str = "", is_reroute: bool = False):
         """
         Initialize create node command.
         
@@ -38,6 +40,12 @@ class CreateNodeCommand(CommandBase):
             node_id: Optional specific node ID (for undo consistency)
             code: Initial code for the node
             description: Node description
+            size: Node size as [width, height]
+            colors: Node colors as {"title": "#color", "body": "#color"}
+            gui_state: GUI widget states
+            gui_code: GUI definition code
+            gui_get_values_code: GUI state handler code
+            is_reroute: Whether this is a reroute node
         """
         super().__init__(f"Create '{title}' node")
         self.node_graph = node_graph
@@ -46,27 +54,69 @@ class CreateNodeCommand(CommandBase):
         self.node_id = node_id or str(uuid.uuid4())
         self.code = code
         self.node_description = description
+        self.size = size or [200, 150]
+        self.colors = colors or {}
+        self.gui_state = gui_state or {}
+        self.gui_code = gui_code
+        self.gui_get_values_code = gui_get_values_code
+        self.is_reroute = is_reroute
         self.created_node = None
     
     def execute(self) -> bool:
         """Create the node and add to graph."""
         try:
-            # Import here to avoid circular imports
-            from core.node import Node
-            
-            # Create the node
-            self.created_node = Node(self.title)
-            self.created_node.uuid = self.node_id
-            self.created_node.description = self.node_description
-            self.created_node.setPos(self.position)
-            
-            if self.code:
-                self.created_node.code = self.code
-                self.created_node.update_pins_from_code()
-            
-            # Add to graph
-            self.node_graph.addItem(self.created_node)
-            self.node_graph.nodes.append(self.created_node)
+            if self.is_reroute:
+                # Create reroute node
+                self.created_node = self.node_graph.create_node("", pos=(self.position.x(), self.position.y()), is_reroute=True, use_command=False)
+                self.created_node.uuid = self.node_id
+            else:
+                # Import here to avoid circular imports
+                from core.node import Node
+                
+                # Create the node
+                self.created_node = Node(self.title)
+                self.created_node.uuid = self.node_id
+                self.created_node.description = self.node_description
+                self.created_node.setPos(self.position)
+                
+                # Set code first so pins are generated
+                if self.code:
+                    self.created_node.code = self.code
+                    self.created_node.update_pins_from_code()
+                
+                # Set GUI code
+                if self.gui_code:
+                    self.created_node.set_gui_code(self.gui_code)
+                if self.gui_get_values_code:
+                    self.created_node.set_gui_get_values_code(self.gui_get_values_code)
+                
+                # Apply size - use minimum size calculation for validation
+                if self.size and len(self.size) >= 2:
+                    # Get minimum size for this node
+                    min_width, min_height = self.created_node.calculate_absolute_minimum_size()
+                    
+                    # Apply size with minimum validation
+                    self.created_node.width = max(self.size[0], min_width)
+                    self.created_node.height = max(self.size[1], min_height)
+                
+                # Apply colors
+                if self.colors:
+                    from PySide6.QtGui import QColor
+                    if "title" in self.colors:
+                        self.created_node.color_title_bar = QColor(self.colors["title"])
+                    if "body" in self.colors:
+                        self.created_node.color_body = QColor(self.colors["body"])
+                
+                # Update visual representation
+                self.created_node.update()
+                
+                # Apply GUI state after GUI is created
+                if self.gui_state:
+                    self.created_node.apply_gui_state(self.gui_state)
+                
+                # Add to graph
+                self.node_graph.addItem(self.created_node)
+                self.node_graph.nodes.append(self.created_node)
             
             self._mark_executed()
             return True
@@ -743,28 +793,35 @@ class PasteNodesCommand(CompositeCommand):
         
         Args:
             node_graph: The NodeGraph instance
-            clipboard_data: Data from clipboard containing nodes and connections
+            clipboard_data: Data from clipboard containing nodes, groups, and connections
             paste_position: Position to paste nodes at
         """
         # Parse clipboard data to determine operation description
         node_count = len(clipboard_data.get('nodes', []))
+        group_count = len(clipboard_data.get('groups', []))
         connection_count = len(clipboard_data.get('connections', []))
         
-        if node_count == 1 and connection_count == 0:
+        if node_count == 1 and group_count == 0 and connection_count == 0:
             description = f"Paste '{clipboard_data['nodes'][0].get('title', 'node')}'"
-        elif node_count > 1 and connection_count == 0:
+        elif node_count > 1 and group_count == 0 and connection_count == 0:
             description = f"Paste {node_count} nodes"
-        elif node_count == 1 and connection_count > 0:
-            description = f"Paste '{clipboard_data['nodes'][0].get('title', 'node')}' with {connection_count} connections"
+        elif node_count == 0 and group_count == 1 and connection_count == 0:
+            description = f"Paste group '{clipboard_data['groups'][0].get('name', 'Group')}'"
+        elif node_count > 0 and group_count > 0:
+            description = f"Paste {node_count} nodes and {group_count} groups"
+        elif group_count > 1:
+            description = f"Paste {group_count} groups"
         else:
-            description = f"Paste {node_count} nodes with {connection_count} connections"
+            total_items = node_count + group_count
+            description = f"Paste {total_items} items with {connection_count} connections"
         
-        # Store data for execute method to handle connection creation
+        # Store data for execute method to handle connection and group creation
         self.node_graph = node_graph
         self.clipboard_data = clipboard_data
         self.paste_position = paste_position
         self.uuid_mapping = {}  # Map old UUIDs to new UUIDs
         self.created_nodes = []
+        self.created_groups = []
         
         # Create only node creation commands initially
         commands = []
@@ -783,14 +840,20 @@ class PasteNodesCommand(CompositeCommand):
                 paste_position.y() + offset_y
             )
             
-            # Create node command
+            # Create node command with all properties
             create_cmd = CreateNodeCommand(
                 node_graph=node_graph,
                 title=node_data.get('title', 'Pasted Node'),
                 position=node_position,
                 node_id=new_uuid,
                 code=node_data.get('code', ''),
-                description=node_data.get('description', '')
+                description=node_data.get('description', ''),
+                size=node_data.get('size', [200, 150]),
+                colors=node_data.get('colors', {}),
+                gui_state=node_data.get('gui_state', {}),
+                gui_code=node_data.get('gui_code', ''),
+                gui_get_values_code=node_data.get('gui_get_values_code', ''),
+                is_reroute=node_data.get('is_reroute', False)
             )
             commands.append(create_cmd)
             self.created_nodes.append((create_cmd, node_data))
@@ -798,7 +861,7 @@ class PasteNodesCommand(CompositeCommand):
         super().__init__(description, commands)
     
     def execute(self) -> bool:
-        """Execute node creation first, then create connections."""
+        """Execute node creation first, then create connections and groups."""
         # First execute node creation commands
         if not super().execute():
             return False
@@ -849,6 +912,101 @@ class PasteNodesCommand(CompositeCommand):
                 self.executed_commands.append(conn_cmd)
             else:
                 print(f"Failed to create connection: {conn_cmd.get_description()}")
+        
+        # Create groups after nodes and connections are established
+        groups_data = self.clipboard_data.get('groups', [])
+        group_commands = []
+        
+        for group_data in groups_data:
+            # Generate new UUID for the group
+            old_group_uuid = group_data.get('uuid', str(uuid.uuid4()))
+            new_group_uuid = str(uuid.uuid4())
+            
+            # Update member node UUIDs to use new UUIDs
+            old_member_uuids = group_data.get('member_node_uuids', [])
+            new_member_uuids = []
+            for old_member_uuid in old_member_uuids:
+                new_member_uuid = self.uuid_mapping.get(old_member_uuid)
+                if new_member_uuid:  # Only include nodes that were pasted
+                    new_member_uuids.append(new_member_uuid)
+            
+            # Only create group if it has member nodes that were pasted
+            if new_member_uuids:
+                # Offset group position similar to nodes
+                group_position = group_data.get('position', {'x': 0, 'y': 0})
+                offset_position = QPointF(
+                    group_position['x'] + self.paste_position.x(),
+                    group_position['y'] + self.paste_position.y()
+                )
+                
+                # Create modified group properties for the command
+                group_properties = {
+                    'name': group_data.get('name', 'Pasted Group'),
+                    'description': group_data.get('description', ''),
+                    'member_node_uuids': new_member_uuids,
+                    'auto_size': False,  # Keep original size
+                    'padding': group_data.get('padding', 20)
+                }
+                
+                # Import here to avoid circular imports  
+                from commands.create_group_command import CreateGroupCommand
+                
+                group_cmd = CreateGroupCommand(self.node_graph, group_properties)
+                # Override the UUID to use our new one
+                group_cmd.group_uuid = new_group_uuid
+                
+                result = group_cmd.execute()
+                if result:
+                    group_cmd._mark_executed()
+                    self.commands.append(group_cmd)
+                    self.executed_commands.append(group_cmd)
+                    
+                    # Apply additional properties (position, size, colors)
+                    created_group = group_cmd.created_group
+                    if created_group:
+                        created_group.setPos(offset_position)
+                        
+                        # Restore size
+                        size = group_data.get('size', {'width': 200, 'height': 150})
+                        created_group.width = size['width']
+                        created_group.height = size['height']
+                        created_group.setRect(0, 0, created_group.width, created_group.height)
+                        
+                        # Restore colors if present
+                        colors = group_data.get('colors', {})
+                        if colors:
+                            from PySide6.QtGui import QColor, QPen, QBrush
+                            
+                            if 'background' in colors:
+                                bg = colors['background']
+                                created_group.color_background = QColor(bg['r'], bg['g'], bg['b'], bg['a'])
+                                created_group.brush_background = QBrush(created_group.color_background)
+                            
+                            if 'border' in colors:
+                                border = colors['border']
+                                created_group.color_border = QColor(border['r'], border['g'], border['b'], border['a'])
+                                created_group.pen_border = QPen(created_group.color_border, 2.0)
+                            
+                            if 'title_bg' in colors:
+                                title_bg = colors['title_bg']
+                                created_group.color_title_bg = QColor(title_bg['r'], title_bg['g'], title_bg['b'], title_bg['a'])
+                                created_group.brush_title = QBrush(created_group.color_title_bg)
+                            
+                            if 'title_text' in colors:
+                                title_text = colors['title_text']
+                                created_group.color_title_text = QColor(title_text['r'], title_text['g'], title_text['b'], title_text['a'])
+                            
+                            if 'selection' in colors:
+                                selection = colors['selection']
+                                created_group.color_selection = QColor(selection['r'], selection['g'], selection['b'], selection['a'])
+                                created_group.pen_selected = QPen(created_group.color_selection, 3.0)
+                        
+                        created_group.update()
+                    
+                    self.created_groups.append(group_cmd)
+                    print(f"Pasted group '{group_properties['name']}' with {len(new_member_uuids)} members")
+                else:
+                    print(f"Failed to create group: {group_properties['name']}")
         
         return True
     

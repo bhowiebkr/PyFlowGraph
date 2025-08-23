@@ -215,14 +215,18 @@ class NodeGraph(QGraphicsScene):
             self.execute_command(command)
 
     def copy_selected(self):
-        """Copies selected nodes, their connections, and the graph's requirements to the clipboard."""
+        """Copies selected nodes, their connections, and groups to the clipboard."""
         selected_nodes = [item for item in self.selectedItems() if isinstance(item, (Node, RerouteNode))]
-        if not selected_nodes:
-            return {"requirements": [], "nodes": [], "connections": []}
+        selected_groups = [item for item in self.selectedItems() if type(item).__name__ == 'Group']
+        
+        if not selected_nodes and not selected_groups:
+            return {"requirements": [], "nodes": [], "groups": [], "connections": []}
 
         nodes_data = [node.serialize() for node in selected_nodes]
+        groups_data = [group.serialize() for group in selected_groups]
         connections_data = []
         selected_node_uuids = {node.uuid for node in selected_nodes}
+        
         for conn in self.connections:
             if hasattr(conn.start_pin.node, "uuid") and hasattr(conn.end_pin.node, "uuid") and conn.start_pin.node.uuid in selected_node_uuids and conn.end_pin.node.uuid in selected_node_uuids:
                 connections_data.append(conn.serialize())
@@ -234,19 +238,26 @@ class NodeGraph(QGraphicsScene):
             main_window = views[0].window()
             requirements = main_window.current_requirements if hasattr(main_window, "current_requirements") else []
 
-        clipboard_data = {"requirements": requirements, "nodes": nodes_data, "connections": connections_data}
+        clipboard_data = {
+            "requirements": requirements, 
+            "nodes": nodes_data, 
+            "groups": groups_data,
+            "connections": connections_data
+        }
 
         # Convert to markdown format for clipboard
         try:
             from data.flow_format import FlowFormatHandler
             handler = FlowFormatHandler()
-            clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes from PyFlowGraph")
+            clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes and groups from PyFlowGraph")
             QApplication.clipboard().setText(clipboard_markdown)
         except ImportError:
             # Fallback to JSON format if FlowFormatHandler is not available (e.g., during testing)
             import json
             QApplication.clipboard().setText(json.dumps(clipboard_data, indent=2))
-        print(f"Copied {len(nodes_data)} nodes to clipboard as markdown.")
+        
+        total_items = len(nodes_data) + len(groups_data)
+        print(f"Copied {len(nodes_data)} nodes and {len(groups_data)} groups ({total_items} items total) to clipboard as markdown.")
         
         return clipboard_data
 
@@ -304,19 +315,31 @@ class NodeGraph(QGraphicsScene):
         """Convert deserialize format to PasteNodesCommand format."""
         clipboard_data = {
             'nodes': [],
+            'groups': [],
             'connections': []
         }
         
-        # Convert nodes
+        # Convert nodes - preserve ALL properties
         for node_data in data.get('nodes', []):
             converted_node = {
                 'id': node_data.get('uuid', ''),
                 'title': node_data.get('title', 'Unknown'),
                 'description': node_data.get('description', ''),
                 'code': node_data.get('code', ''),
-                'pos': node_data.get('pos', [0, 0])
+                'pos': node_data.get('pos', [0, 0]),
+                'size': node_data.get('size', [200, 150]),
+                'colors': node_data.get('colors', {}),
+                'gui_state': node_data.get('gui_state', {}),
+                'gui_code': node_data.get('gui_code', ''),
+                'gui_get_values_code': node_data.get('gui_get_values_code', ''),
+                'is_reroute': node_data.get('is_reroute', False)
             }
             clipboard_data['nodes'].append(converted_node)
+        
+        # Convert groups
+        for group_data in data.get('groups', []):
+            # Groups use their full serialized data for pasting
+            clipboard_data['groups'].append(group_data)
         
         # Convert connections
         for conn_data in data.get('connections', []):
