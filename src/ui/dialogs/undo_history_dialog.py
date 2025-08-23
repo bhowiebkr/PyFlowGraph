@@ -119,7 +119,7 @@ class UndoHistoryDialog(QDialog):
             
             # Color coding for visual clarity
             if i <= current_index:
-                item.setForeground(Qt.GlobalColor.black)
+                item.setForeground(Qt.GlobalColor.white)
                 if i == current_index:
                     # Current position - make it bold
                     font = item.font()
