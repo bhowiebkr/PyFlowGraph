@@ -37,13 +37,15 @@ class NodeGraph(QGraphicsScene):
         self.setBackgroundBrush(Qt.darkGray)
         self.setSceneRect(-10000, -10000, 20000, 20000)
         self.nodes, self.connections = [], []
+        self.groups = []  # Initialize groups list
         self._drag_connection, self._drag_start_pin = None, None
         self.graph_title = "Untitled Graph"
         self.graph_description = ""
+        self._is_pasting = False  # Flag to prevent Group.itemChange during paste operations
         
         # Command system integration
         self.command_history = CommandHistory()
-        self._tracking_moves = {}  # Track node movements for command batching
+        self._tracking_moves = {}  # Track node movements for command batching  # Track node movements for command batching  # Track node movements for command batching
     
     def get_node_by_id(self, node_id):
         """Find node by UUID - helper for command restoration."""
@@ -92,7 +94,7 @@ class NodeGraph(QGraphicsScene):
         return self.command_history.get_redo_description()
 
     def clear_graph(self):
-        """Removes all nodes and connections from the scene."""
+        """Removes all nodes, connections, and groups from the scene."""
         # Remove all connections first
         for connection in list(self.connections):
             self.remove_connection(connection, use_command=False)
@@ -100,6 +102,12 @@ class NodeGraph(QGraphicsScene):
         # Remove all nodes directly (bypass command pattern for clearing)
         for node in list(self.nodes):
             self.remove_node(node, use_command=False)
+        
+        # Remove all groups
+        if hasattr(self, 'groups'):
+            for group in list(self.groups):
+                self.removeItem(group)
+            self.groups.clear()
         
         self.update()
 
@@ -137,14 +145,13 @@ class NodeGraph(QGraphicsScene):
             if selected_items:
                 commands = []
                 
-                # Create delete commands for selected items
-                for item in selected_items:
-                    if isinstance(item, (Node, RerouteNode)):
-                        print(f"DEBUG: Creating DeleteNodeCommand for {getattr(item, 'title', 'Unknown')} (ID: {id(item)})")
-                        commands.append(DeleteNodeCommand(self, item))
-                    elif isinstance(item, Connection):
-                        print(f"DEBUG: Creating DeleteConnectionCommand for connection {id(item)}")
-                        commands.append(DeleteConnectionCommand(self, item))
+                # Use the improved DeleteMultipleCommand that handles all item types including Groups
+                from commands.node.batch_operations import DeleteMultipleCommand
+                delete_cmd = DeleteMultipleCommand(self, selected_items)
+                print(f"DEBUG: Using DeleteMultipleCommand: {delete_cmd.get_description()}")
+                result = self.execute_command(delete_cmd)
+                print(f"DEBUG: DeleteMultipleCommand returned: {result}")
+                return
                 
                 print(f"DEBUG: Created {len(commands)} delete commands")
                 
@@ -208,14 +215,18 @@ class NodeGraph(QGraphicsScene):
             self.execute_command(command)
 
     def copy_selected(self):
-        """Copies selected nodes, their connections, and the graph's requirements to the clipboard."""
+        """Copies selected nodes, their connections, and groups to the clipboard."""
         selected_nodes = [item for item in self.selectedItems() if isinstance(item, (Node, RerouteNode))]
-        if not selected_nodes:
-            return {"requirements": [], "nodes": [], "connections": []}
+        selected_groups = [item for item in self.selectedItems() if type(item).__name__ == 'Group']
+        
+        if not selected_nodes and not selected_groups:
+            return {"requirements": [], "nodes": [], "groups": [], "connections": []}
 
         nodes_data = [node.serialize() for node in selected_nodes]
+        groups_data = [group.serialize() for group in selected_groups]
         connections_data = []
         selected_node_uuids = {node.uuid for node in selected_nodes}
+        
         for conn in self.connections:
             if hasattr(conn.start_pin.node, "uuid") and hasattr(conn.end_pin.node, "uuid") and conn.start_pin.node.uuid in selected_node_uuids and conn.end_pin.node.uuid in selected_node_uuids:
                 connections_data.append(conn.serialize())
@@ -227,31 +238,42 @@ class NodeGraph(QGraphicsScene):
             main_window = views[0].window()
             requirements = main_window.current_requirements if hasattr(main_window, "current_requirements") else []
 
-        clipboard_data = {"requirements": requirements, "nodes": nodes_data, "connections": connections_data}
+        clipboard_data = {
+            "requirements": requirements, 
+            "nodes": nodes_data, 
+            "groups": groups_data,
+            "connections": connections_data
+        }
 
         # Convert to markdown format for clipboard
         try:
             from data.flow_format import FlowFormatHandler
             handler = FlowFormatHandler()
-            clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes from PyFlowGraph")
+            clipboard_markdown = handler.data_to_markdown(clipboard_data, "Clipboard Content", "Copied nodes and groups from PyFlowGraph")
             QApplication.clipboard().setText(clipboard_markdown)
         except ImportError:
             # Fallback to JSON format if FlowFormatHandler is not available (e.g., during testing)
             import json
             QApplication.clipboard().setText(json.dumps(clipboard_data, indent=2))
-        print(f"Copied {len(nodes_data)} nodes to clipboard as markdown.")
+        
+        total_items = len(nodes_data) + len(groups_data)
+        print(f"Copied {len(nodes_data)} nodes and {len(groups_data)} groups ({total_items} items total) to clipboard as markdown.")
         
         return clipboard_data
 
-    def paste(self):
-        """Pastes nodes and connections from the clipboard using command pattern."""
+    def paste(self, mouse_position=None):
+        """Pastes nodes and connections from clipboard at mouse position or viewport center."""
         clipboard_text = QApplication.clipboard().text()
         
-        # Determine paste position
-        paste_pos = QPointF(0, 0)  # Default position
-        views = self.views()
-        if views:
-            paste_pos = views[0].mapToScene(views[0].viewport().rect().center())
+        # Use mouse position if provided, otherwise fall back to viewport center
+        if mouse_position is not None:
+            paste_pos = mouse_position
+        else:
+            # Existing fallback logic
+            paste_pos = QPointF(0, 0)  # Default position
+            views = self.views()
+            if views:
+                paste_pos = views[0].mapToScene(views[0].viewport().rect().center())
         
         try:
             # Try to parse as markdown first
@@ -285,31 +307,50 @@ class NodeGraph(QGraphicsScene):
         # Convert data format to match PasteNodesCommand expectations
         clipboard_data = self._convert_data_format(data)
         
-        # Create and execute paste command
-        from commands.node_commands import PasteNodesCommand
-        paste_cmd = PasteNodesCommand(self, clipboard_data, paste_pos)
-        result = self.execute_command(paste_cmd)
+        # Set paste operation flag to prevent Group.itemChange from moving nodes automatically
+        self._is_pasting = True
         
-        if not result:
-            print("Failed to paste nodes.")
+        try:
+            # Create and execute paste command
+            from commands.node_commands import PasteNodesCommand
+            paste_cmd = PasteNodesCommand(self, clipboard_data, paste_pos)
+            result = self.execute_command(paste_cmd)
+            
+            if not result:
+                print("Failed to paste nodes.")
+        finally:
+            # Always clear the paste flag
+            self._is_pasting = False
     
     def _convert_data_format(self, data):
         """Convert deserialize format to PasteNodesCommand format."""
         clipboard_data = {
             'nodes': [],
+            'groups': [],
             'connections': []
         }
         
-        # Convert nodes
+        # Convert nodes - preserve ALL properties
         for node_data in data.get('nodes', []):
             converted_node = {
-                'id': node_data.get('uuid', ''),
+                'id': node_data.get('uuid', node_data.get('id', '')),  # Try 'uuid' first, then 'id'
                 'title': node_data.get('title', 'Unknown'),
                 'description': node_data.get('description', ''),
                 'code': node_data.get('code', ''),
-                'pos': node_data.get('pos', [0, 0])
+                'pos': node_data.get('pos', [0, 0]),
+                'size': node_data.get('size', [200, 150]),
+                'colors': node_data.get('colors', {}),
+                'gui_state': node_data.get('gui_state', {}),
+                'gui_code': node_data.get('gui_code', ''),
+                'gui_get_values_code': node_data.get('gui_get_values_code', ''),
+                'is_reroute': node_data.get('is_reroute', False)
             }
             clipboard_data['nodes'].append(converted_node)
+        
+        # Convert groups
+        for group_data in data.get('groups', []):
+            # Groups use their full serialized data for pasting
+            clipboard_data['groups'].append(group_data)
         
         # Convert connections
         for conn_data in data.get('connections', []):
@@ -324,18 +365,20 @@ class NodeGraph(QGraphicsScene):
         return clipboard_data
 
     def serialize(self):
-        """Serializes all nodes and their connections."""
+        """Serializes all nodes, connections, and groups."""
         nodes_data = [node.serialize() for node in self.nodes]
         connections_data = [conn.serialize() for conn in self.connections if conn.serialize()]
+        groups_data = [group.serialize() for group in self.groups] if hasattr(self, 'groups') else []
         return {
             "graph_title": self.graph_title,
             "graph_description": self.graph_description,
             "nodes": nodes_data, 
-            "connections": connections_data
+            "connections": connections_data,
+            "groups": groups_data
         }
 
     def deserialize(self, data, offset=QPointF(0, 0)):
-        """Deserializes graph data, creating all nodes and applying custom properties."""
+        """Deserializes graph data, creating all nodes, connections, and groups."""
         if not data:
             return
         if offset == QPointF(0, 0):
@@ -347,6 +390,7 @@ class NodeGraph(QGraphicsScene):
         uuid_to_node_map = {}
         nodes_to_update = []
 
+        # First, deserialize nodes
         for node_data in data.get("nodes", []):
             original_pos = QPointF(node_data["pos"][0], node_data["pos"][1])
             new_pos = original_pos + offset
@@ -401,6 +445,7 @@ class NodeGraph(QGraphicsScene):
                 
             uuid_to_node_map[old_uuid] = node
 
+        # Then, deserialize connections
         for conn_data in data.get("connections", []):
             start_node = uuid_to_node_map.get(conn_data["start_node_uuid"])
             end_node = uuid_to_node_map.get(conn_data["end_node_uuid"])
@@ -409,6 +454,29 @@ class NodeGraph(QGraphicsScene):
                 end_pin = end_node.get_pin_by_name(conn_data["end_pin_name"])
                 if start_pin and end_pin:
                     self.create_connection(start_pin, end_pin, use_command=False)
+
+        # Finally, deserialize groups (only for complete graph loading, not copy/paste)
+        if offset == QPointF(0, 0) and "groups" in data:
+            try:
+                # Import Group class for deserialization
+                from core.group import Group
+                
+                for group_data in data.get("groups", []):
+                    # Deserialize the group
+                    group = Group.deserialize(group_data)
+                    
+                    # Add to scene and groups list
+                    self.addItem(group)
+                    if not hasattr(self, 'groups'):
+                        self.groups = []
+                    self.groups.append(group)
+                    
+                    print(f"Restored group '{group.name}' with {len(group.member_node_uuids)} members")
+                    
+            except ImportError as e:
+                print(f"Warning: Could not import Group class for deserialization: {e}")
+            except Exception as e:
+                print(f"Warning: Failed to deserialize groups: {e}")
 
         # --- Definitive Resizing Fix ---
         # Defer the final layout calculation. This allows the Qt event loop to

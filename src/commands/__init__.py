@@ -17,6 +17,7 @@ from .connection_commands import (
 )
 from .create_group_command import CreateGroupCommand
 from .resize_group_command import ResizeGroupCommand
+from .delete_group_command import DeleteGroupCommand
 
 __all__ = [
     'CommandBase', 'CompositeCommand', 'CommandHistory',
@@ -24,5 +25,5 @@ __all__ = [
     'PropertyChangeCommand', 'CodeChangeCommand', 'PasteNodesCommand',
     'MoveMultipleCommand', 'DeleteMultipleCommand',
     'CreateConnectionCommand', 'DeleteConnectionCommand', 'CreateRerouteNodeCommand',
-    'CreateGroupCommand', 'ResizeGroupCommand'
+    'CreateGroupCommand', 'ResizeGroupCommand', 'DeleteGroupCommand'
 ]

@@ -52,7 +52,11 @@ class NodeEditorView(QGraphicsView):
             self.scene().copy_selected()
             event.accept()
         elif event.key() == Qt.Key_V and event.modifiers() == Qt.ControlModifier:
-            self.scene().paste()
+            # Get current mouse cursor position in scene coordinates
+            global_mouse_pos = QCursor.pos()
+            local_mouse_pos = self.mapFromGlobal(global_mouse_pos)  
+            scene_mouse_pos = self.mapToScene(local_mouse_pos)
+            self.scene().paste(scene_mouse_pos)  # Pass actual mouse position
             event.accept()
         else:
             super().keyPressEvent(event)
@@ -61,21 +65,34 @@ class NodeEditorView(QGraphicsView):
         scene_pos = self.mapToScene(event.pos())
         item_at_pos = self.scene().itemAt(scene_pos, self.transform())
         
-        # Find the top-level node if we clicked on a child item (using duck typing)
+        # Find the top-level item if we clicked on a child item (using duck typing)
         node = None
+        group = None
         if item_at_pos:
             current_item = item_at_pos
-            while current_item and type(current_item).__name__ not in ['Node', 'RerouteNode']:
+            while current_item:
+                if type(current_item).__name__ in ['Node', 'RerouteNode']:
+                    node = current_item
+                    break
+                elif type(current_item).__name__ == 'Group':
+                    group = current_item
+                    break
                 current_item = current_item.parentItem()
-            if type(current_item).__name__ in ['Node', 'RerouteNode']:
-                node = current_item
         
         menu = QMenu(self)
         
         # Get selected items for group operations (using duck typing)
         selected_items = [item for item in self.scene().selectedItems() if type(item).__name__ in ['Node', 'RerouteNode']]
         
-        if node:
+        if group:
+            # Context menu for a group
+            properties_action = menu.addAction("Group Properties")
+            
+            action = menu.exec(event.globalPos())
+            if action == properties_action:
+                group.show_properties_dialog()
+                
+        elif node:
             # Context menu for a node
             properties_action = menu.addAction("Properties")
             
@@ -104,6 +121,12 @@ class NodeEditorView(QGraphicsView):
                 if not self._can_group_nodes(selected_items):
                     group_action.setEnabled(False)
             
+            # Add group properties option if a group is selected (but not clicked directly)
+            selected_groups = [item for item in self.scene().selectedItems() if type(item).__name__ == 'Group']
+            group_properties_action = None
+            if len(selected_groups) == 1:
+                group_properties_action = menu.addAction("Group Properties")
+            
             action = menu.exec(event.globalPos())
             if action == add_node_action:
                 main_window = self.window()
@@ -111,6 +134,8 @@ class NodeEditorView(QGraphicsView):
                     main_window.on_add_node(scene_pos=scene_pos)
             elif action == group_action and group_action:
                 self._create_group_from_selection(selected_items)
+            elif action == group_properties_action and group_properties_action:
+                selected_groups[0].show_properties_dialog()
     
     def _can_group_nodes(self, nodes):
         """Basic validation for group creation"""
