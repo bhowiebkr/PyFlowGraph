@@ -104,12 +104,6 @@ The `examples/` directory contains sample graphs demonstrating various capabilit
 
 ## Screenshots
 
-### Main Interface
-
-The main PyFlowGraph interface showcasing a complete text adventure game implementation. This example demonstrates the node-based visual scripting approach with interconnected nodes handling game logic, user input processing, and narrative flow. Notice the clean dark theme, type-colored connection pins, and the intuitive layout of the node graph canvas.
-
-![Node Editor Showcase](images/scifi_world_generator.png)
-
 ### Mini-IDE Code Editor
 
 The integrated Python code editor provides a professional development environment within PyFlowGraph. Features include syntax highlighting with custom color schemes, line numbering, smart auto-indentation, and tab support. The modal dialog design gives developers ample space to write and edit node logic while maintaining the visual context of the graph workflow.
@@ -121,6 +115,18 @@ The integrated Python code editor provides a professional development environmen
 The Python Environment Manager dialog enables sophisticated dependency management for each graph project. Users can specify custom pip requirements that are automatically installed in isolated virtual environments. This ensures each graph has its own clean dependency space, preventing conflicts between different projects while maintaining security through subprocess isolation.
 
 ![Python Environment Manager](images/environment_manager.png)
+
+### Node Properties Dialog
+
+The Node Properties dialog provides comprehensive configuration options for individual nodes. Users can modify node appearance, behavior settings, and metadata through an intuitive interface. This dialog supports real-time property updates and integrates seamlessly with the undo/redo system for reliable editing workflows.
+
+![Node Properties Dialog](images/node_properties_dialog.png)
+
+### Node History Dialog
+
+The Node History dialog provides complete visibility into node evolution and changes over time. Users can review edit history, compare different versions of node code, and track modifications through an intuitive timeline interface. This feature supports development workflow tracking and enables easy rollback to previous node states.
+
+![Node History Dialog](images/node_history_dialog.png)
 
 ## Project Structure
 
