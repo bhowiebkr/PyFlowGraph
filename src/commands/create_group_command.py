@@ -76,10 +76,13 @@ class CreateGroupCommand(CommandBase):
             # Add to graph first (needed for connection analysis)
             self.node_graph.addItem(self.created_group)
             
-            # Store reference in node graph (groups list will be added to NodeGraph)
+            # Store reference in node graph groups list
             if not hasattr(self.node_graph, 'groups'):
                 self.node_graph.groups = []
-            self.node_graph.groups.append(self.created_group)
+            
+            # Check if group is already in the list to prevent duplicates
+            if self.created_group not in self.node_graph.groups:
+                self.node_graph.groups.append(self.created_group)
             
             # Groups no longer generate interface pins - they keep original connections
             
@@ -124,6 +127,8 @@ class CreateGroupCommand(CommandBase):
                 # Add back to groups list
                 if not hasattr(self.node_graph, 'groups'):
                     self.node_graph.groups = []
+                
+                # Check if group is already in the list to prevent duplicates
                 if self.created_group not in self.node_graph.groups:
                     self.node_graph.groups.append(self.created_group)
                 

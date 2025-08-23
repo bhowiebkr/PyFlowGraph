@@ -37,13 +37,14 @@ class NodeGraph(QGraphicsScene):
         self.setBackgroundBrush(Qt.darkGray)
         self.setSceneRect(-10000, -10000, 20000, 20000)
         self.nodes, self.connections = [], []
+        self.groups = []  # Initialize groups list
         self._drag_connection, self._drag_start_pin = None, None
         self.graph_title = "Untitled Graph"
         self.graph_description = ""
         
         # Command system integration
         self.command_history = CommandHistory()
-        self._tracking_moves = {}  # Track node movements for command batching
+        self._tracking_moves = {}  # Track node movements for command batching  # Track node movements for command batching
     
     def get_node_by_id(self, node_id):
         """Find node by UUID - helper for command restoration."""
@@ -92,7 +93,7 @@ class NodeGraph(QGraphicsScene):
         return self.command_history.get_redo_description()
 
     def clear_graph(self):
-        """Removes all nodes and connections from the scene."""
+        """Removes all nodes, connections, and groups from the scene."""
         # Remove all connections first
         for connection in list(self.connections):
             self.remove_connection(connection, use_command=False)
@@ -100,6 +101,12 @@ class NodeGraph(QGraphicsScene):
         # Remove all nodes directly (bypass command pattern for clearing)
         for node in list(self.nodes):
             self.remove_node(node, use_command=False)
+        
+        # Remove all groups
+        if hasattr(self, 'groups'):
+            for group in list(self.groups):
+                self.removeItem(group)
+            self.groups.clear()
         
         self.update()
 
@@ -324,18 +331,20 @@ class NodeGraph(QGraphicsScene):
         return clipboard_data
 
     def serialize(self):
-        """Serializes all nodes and their connections."""
+        """Serializes all nodes, connections, and groups."""
         nodes_data = [node.serialize() for node in self.nodes]
         connections_data = [conn.serialize() for conn in self.connections if conn.serialize()]
+        groups_data = [group.serialize() for group in self.groups] if hasattr(self, 'groups') else []
         return {
             "graph_title": self.graph_title,
             "graph_description": self.graph_description,
             "nodes": nodes_data, 
-            "connections": connections_data
+            "connections": connections_data,
+            "groups": groups_data
         }
 
     def deserialize(self, data, offset=QPointF(0, 0)):
-        """Deserializes graph data, creating all nodes and applying custom properties."""
+        """Deserializes graph data, creating all nodes, connections, and groups."""
         if not data:
             return
         if offset == QPointF(0, 0):
@@ -347,6 +356,7 @@ class NodeGraph(QGraphicsScene):
         uuid_to_node_map = {}
         nodes_to_update = []
 
+        # First, deserialize nodes
         for node_data in data.get("nodes", []):
             original_pos = QPointF(node_data["pos"][0], node_data["pos"][1])
             new_pos = original_pos + offset
@@ -401,6 +411,7 @@ class NodeGraph(QGraphicsScene):
                 
             uuid_to_node_map[old_uuid] = node
 
+        # Then, deserialize connections
         for conn_data in data.get("connections", []):
             start_node = uuid_to_node_map.get(conn_data["start_node_uuid"])
             end_node = uuid_to_node_map.get(conn_data["end_node_uuid"])
@@ -409,6 +420,29 @@ class NodeGraph(QGraphicsScene):
                 end_pin = end_node.get_pin_by_name(conn_data["end_pin_name"])
                 if start_pin and end_pin:
                     self.create_connection(start_pin, end_pin, use_command=False)
+
+        # Finally, deserialize groups (only for complete graph loading, not copy/paste)
+        if offset == QPointF(0, 0) and "groups" in data:
+            try:
+                # Import Group class for deserialization
+                from core.group import Group
+                
+                for group_data in data.get("groups", []):
+                    # Deserialize the group
+                    group = Group.deserialize(group_data)
+                    
+                    # Add to scene and groups list
+                    self.addItem(group)
+                    if not hasattr(self, 'groups'):
+                        self.groups = []
+                    self.groups.append(group)
+                    
+                    print(f"Restored group '{group.name}' with {len(group.member_node_uuids)} members")
+                    
+            except ImportError as e:
+                print(f"Warning: Could not import Group class for deserialization: {e}")
+            except Exception as e:
+                print(f"Warning: Failed to deserialize groups: {e}")
 
         # --- Definitive Resizing Fix ---
         # Defer the final layout calculation. This allows the Qt event loop to
