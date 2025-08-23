@@ -252,6 +252,10 @@ class Group(QGraphicsRectItem):
     def itemChange(self, change, value):
         """Handle item changes, particularly position changes to move member nodes."""
         if change == QGraphicsItem.ItemPositionChange and self.scene() and not self.is_resizing:
+            # Skip automatic node movement during paste operations to prevent double transformation
+            if hasattr(self.scene(), '_is_pasting') and self.scene()._is_pasting:
+                return super().itemChange(change, value)
+            
             # Only move member nodes during group movement, not during resize
             # Calculate the delta movement
             old_pos = self.pos()

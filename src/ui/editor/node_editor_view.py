@@ -52,7 +52,11 @@ class NodeEditorView(QGraphicsView):
             self.scene().copy_selected()
             event.accept()
         elif event.key() == Qt.Key_V and event.modifiers() == Qt.ControlModifier:
-            self.scene().paste()
+            # Get current mouse cursor position in scene coordinates
+            global_mouse_pos = QCursor.pos()
+            local_mouse_pos = self.mapFromGlobal(global_mouse_pos)  
+            scene_mouse_pos = self.mapToScene(local_mouse_pos)
+            self.scene().paste(scene_mouse_pos)  # Pass actual mouse position
             event.accept()
         else:
             super().keyPressEvent(event)

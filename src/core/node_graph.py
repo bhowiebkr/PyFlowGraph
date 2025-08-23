@@ -41,10 +41,11 @@ class NodeGraph(QGraphicsScene):
         self._drag_connection, self._drag_start_pin = None, None
         self.graph_title = "Untitled Graph"
         self.graph_description = ""
+        self._is_pasting = False  # Flag to prevent Group.itemChange during paste operations
         
         # Command system integration
         self.command_history = CommandHistory()
-        self._tracking_moves = {}  # Track node movements for command batching  # Track node movements for command batching
+        self._tracking_moves = {}  # Track node movements for command batching  # Track node movements for command batching  # Track node movements for command batching
     
     def get_node_by_id(self, node_id):
         """Find node by UUID - helper for command restoration."""
@@ -261,15 +262,19 @@ class NodeGraph(QGraphicsScene):
         
         return clipboard_data
 
-    def paste(self):
-        """Pastes nodes and connections from the clipboard using command pattern."""
+    def paste(self, mouse_position=None):
+        """Pastes nodes and connections from clipboard at mouse position or viewport center."""
         clipboard_text = QApplication.clipboard().text()
         
-        # Determine paste position
-        paste_pos = QPointF(0, 0)  # Default position
-        views = self.views()
-        if views:
-            paste_pos = views[0].mapToScene(views[0].viewport().rect().center())
+        # Use mouse position if provided, otherwise fall back to viewport center
+        if mouse_position is not None:
+            paste_pos = mouse_position
+        else:
+            # Existing fallback logic
+            paste_pos = QPointF(0, 0)  # Default position
+            views = self.views()
+            if views:
+                paste_pos = views[0].mapToScene(views[0].viewport().rect().center())
         
         try:
             # Try to parse as markdown first
@@ -303,13 +308,20 @@ class NodeGraph(QGraphicsScene):
         # Convert data format to match PasteNodesCommand expectations
         clipboard_data = self._convert_data_format(data)
         
-        # Create and execute paste command
-        from commands.node_commands import PasteNodesCommand
-        paste_cmd = PasteNodesCommand(self, clipboard_data, paste_pos)
-        result = self.execute_command(paste_cmd)
+        # Set paste operation flag to prevent Group.itemChange from moving nodes automatically
+        self._is_pasting = True
         
-        if not result:
-            print("Failed to paste nodes.")
+        try:
+            # Create and execute paste command
+            from commands.node_commands import PasteNodesCommand
+            paste_cmd = PasteNodesCommand(self, clipboard_data, paste_pos)
+            result = self.execute_command(paste_cmd)
+            
+            if not result:
+                print("Failed to paste nodes.")
+        finally:
+            # Always clear the paste flag
+            self._is_pasting = False
     
     def _convert_data_format(self, data):
         """Convert deserialize format to PasteNodesCommand format."""
@@ -322,7 +334,7 @@ class NodeGraph(QGraphicsScene):
         # Convert nodes - preserve ALL properties
         for node_data in data.get('nodes', []):
             converted_node = {
-                'id': node_data.get('uuid', ''),
+                'id': node_data.get('uuid', node_data.get('id', '')),  # Try 'uuid' first, then 'id'
                 'title': node_data.get('title', 'Unknown'),
                 'description': node_data.get('description', ''),
                 'code': node_data.get('code', ''),
