@@ -291,7 +291,70 @@ def set_initial_state(widgets, state):
 - The function's return values are passed to `set_values()` for display
 - Widget state is automatically saved to `gui_state` in the node's metadata
 
-### 3.5 Connections Section
+### 3.5 Groups Section (Optional)
+
+Files MAY contain a Groups section for organizing nodes visually:
+
+```markdown
+## Groups
+```json
+[
+    {
+        "uuid": "group-1",
+        "name": "Data Processing",
+        "description": "Processes input data through multiple stages",
+        "member_node_uuids": ["node1", "node2", "node3"],
+        "position": {"x": 150, "y": 200},
+        "size": {"width": 400, "height": 300},
+        "padding": 20,
+        "is_expanded": true,
+        "colors": {
+            "background": {"r": 45, "g": 45, "b": 55, "a": 120},
+            "border": {"r": 100, "g": 150, "b": 200, "a": 180},
+            "title_bg": {"r": 60, "g": 60, "b": 70, "a": 200},
+            "title_text": {"r": 220, "g": 220, "b": 220, "a": 255},
+            "selection": {"r": 255, "g": 165, "b": 0, "a": 100}
+        }
+    }
+]
+```
+
+**Group Properties:**
+
+**Required Fields:**
+- `uuid`: Unique identifier for the group (string)
+- `name`: Human-readable group name (string)
+- `member_node_uuids`: Array of UUIDs for nodes contained in this group
+
+**Optional Fields:**
+- `description`: Group description (string, default: "")
+- `position`: Group position as {x, y} coordinates (object, default: {x: 0, y: 0})
+- `size`: Group dimensions as {width, height} (object, default: {width: 200, height: 150})
+- `padding`: Internal padding around member nodes (number, default: 20)
+- `is_expanded`: Whether group is visually expanded (boolean, default: true)
+- `colors`: Visual appearance colors with RGBA values (object)
+  - `background`: Semi-transparent group background color
+  - `border`: Group border outline color
+  - `title_bg`: Title bar background color  
+  - `title_text`: Title text color
+  - `selection`: Selection highlight color when group is selected
+
+**Color Format:**
+Each color in the `colors` object uses RGBA format:
+```json
+{"r": 255, "g": 165, "b": 0, "a": 100}
+```
+Where r, g, b are 0-255 and a (alpha/transparency) is 0-255 (0 = fully transparent, 255 = fully opaque).
+
+**Group Behavior:**
+- Groups are organizational containers that visually group related nodes
+- Member nodes move when the group is moved
+- Groups can be resized, automatically updating membership based on contained nodes
+- Groups support transparency for better visual layering
+- Groups maintain their own undo/redo history for property changes
+- Groups can be collapsed/expanded to manage visual complexity
+
+### 3.6 Connections Section
 
 The file MUST contain exactly one Connections section:
 
@@ -337,7 +400,7 @@ The file MUST contain exactly one Connections section:
 ]
 ```
 
-### 3.6 GUI Integration & Data Flow
+### 3.7 GUI Integration & Data Flow
 
 When a node has both GUI components and pin connections, the data flows as follows:
 
@@ -392,7 +455,7 @@ This state is:
 - Restored when the graph is loaded via `set_initial_state()`
 - Updated whenever widget values change
 
-### 3.7 Reroute Nodes
+### 3.8 Reroute Nodes
 
 Reroute nodes are special organizational nodes that help manage connection routing and graph layout without affecting data flow.
 
@@ -442,7 +505,7 @@ Reroute nodes are special organizational nodes that help manage connection routi
 ]
 ```
 
-### 3.8 Execution Modes
+### 3.9 Execution Modes
 
 PyFlowGraph supports two distinct execution modes that determine how the graph processes data:
 
@@ -476,7 +539,7 @@ PyFlowGraph supports two distinct execution modes that determine how the graph p
 - GUI buttons in nodes are inactive in batch mode
 - Live mode enables event handlers in node GUIs
 
-### 3.9 Virtual Environments
+### 3.10 Virtual Environments
 
 PyFlowGraph uses isolated Python virtual environments to manage dependencies for each graph:
 
@@ -506,7 +569,7 @@ PyFlowGraph/
 - Flexibility: Different graphs can use different package versions
 - Portability: Environments can be recreated from requirements
 
-### 3.10 Subprocess Data Transfer
+### 3.11 Subprocess Data Transfer
 
 PyFlowGraph executes each node in an isolated subprocess for security and stability. Understanding how data flows between these processes is crucial for working with the system.
 
@@ -618,7 +681,7 @@ The execution system maintains a `pin_values` dictionary that:
 - Data is duplicated, not shared
 - Large datasets consume memory in both processes
 
-### 3.11 Error Handling
+### 3.12 Error Handling
 
 The system provides comprehensive error handling during graph execution:
 
@@ -842,6 +905,30 @@ def set_initial_state(widgets, state):
     widgets['operation'].setCurrentText(state.get('operation', 'add'))
 ```
 
+## Groups
+
+```json
+[
+    {
+        "uuid": "calc-group",
+        "name": "Calculator Components", 
+        "description": "All calculator-related functionality",
+        "member_node_uuids": ["calc-node"],
+        "position": {"x": 150, "y": 150},
+        "size": {"width": 350, "height": 300},
+        "padding": 25,
+        "is_expanded": true,
+        "colors": {
+            "background": {"r": 45, "g": 45, "b": 55, "a": 120},
+            "border": {"r": 100, "g": 150, "b": 200, "a": 180}, 
+            "title_bg": {"r": 60, "g": 60, "b": 70, "a": 200},
+            "title_text": {"r": 220, "g": 220, "b": 220, "a": 255},
+            "selection": {"r": 255, "g": 165, "b": 0, "a": 100}
+        }
+    }
+]
+```
+
 ## Connections
 
 ```json
@@ -858,7 +945,7 @@ A parser should use markdown-it-py to tokenize the document:
 2. **State Machine**: Track current node and component being parsed
 3. **Section Detection**:
    - `h1`: Graph title
-   - `h2`: Node header (regex: `Node: (.*) \(ID: (.*)\)`) or "Connections"
+   - `h2`: Node header (regex: `Node: (.*) \(ID: (.*)\)`), "Groups", or "Connections"
    - `h3`: Component type (Metadata, Logic, etc.)
 4. **Data Extraction**: Extract `content` from `fence` tokens based on `info` language tag
 5. **@node_entry Function Identification**:
@@ -886,7 +973,10 @@ A parser should use markdown-it-py to tokenize the document:
 - The `@node_entry` function must have valid Python syntax
 - Type hints on the `@node_entry` function should be valid for pin generation
 - Connections section is required
-- JSON must be valid in metadata and connections
+- Groups section is optional; if present, must contain valid JSON
+- JSON must be valid in metadata, groups, and connections
+- Group UUIDs must be unique across all groups
+- Group member_node_uuids must reference existing nodes
 
 **GUI-Specific Rules (when GUI components are present):**
 - GUI Definition must be valid Python code that creates PySide6 widgets
@@ -941,6 +1031,7 @@ Both formats represent identical graph information:
 | ### Logic | "code" field | Execution code |
 | ### GUI Definition | "gui_code" field | Widget creation |
 | ### GUI State Handler | "gui_get_values_code" | State management |
+| ## Groups | "groups" array | Group definitions |
 | ## Connections | "connections" array | Graph edges |
 
 ### 7.3 Use Cases

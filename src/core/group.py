@@ -563,12 +563,43 @@ class Group(QGraphicsRectItem):
             "uuid": self.uuid,
             "name": self.name,
             "description": self.description,
-            "creation_timestamp": self.creation_timestamp,
             "member_node_uuids": self.member_node_uuids,
             "is_expanded": self.is_expanded,
             "position": {"x": self.pos().x(), "y": self.pos().y()},
             "size": {"width": self.width, "height": self.height},
-            "padding": self.padding
+            "padding": self.padding,
+            "colors": {
+                "background": {
+                    "r": self.color_background.red(),
+                    "g": self.color_background.green(), 
+                    "b": self.color_background.blue(),
+                    "a": self.color_background.alpha()
+                },
+                "border": {
+                    "r": self.color_border.red(),
+                    "g": self.color_border.green(),
+                    "b": self.color_border.blue(),
+                    "a": self.color_border.alpha()
+                },
+                "title_bg": {
+                    "r": self.color_title_bg.red(),
+                    "g": self.color_title_bg.green(),
+                    "b": self.color_title_bg.blue(),
+                    "a": self.color_title_bg.alpha()
+                },
+                "title_text": {
+                    "r": self.color_title_text.red(),
+                    "g": self.color_title_text.green(),
+                    "b": self.color_title_text.blue(),
+                    "a": self.color_title_text.alpha()
+                },
+                "selection": {
+                    "r": self.color_selection.red(),
+                    "g": self.color_selection.green(),
+                    "b": self.color_selection.blue(),
+                    "a": self.color_selection.alpha()
+                }
+            }
         }
     
     @classmethod
@@ -582,7 +613,6 @@ class Group(QGraphicsRectItem):
         # Restore properties
         group.uuid = data.get("uuid", str(uuid.uuid4()))
         group.description = data.get("description", "")
-        group.creation_timestamp = data.get("creation_timestamp", "")
         group.is_expanded = data.get("is_expanded", True)
         
         # Restore position and size
@@ -595,6 +625,33 @@ class Group(QGraphicsRectItem):
         group.setRect(0, 0, group.width, group.height)
         
         group.padding = data.get("padding", 20.0)
+        
+        # Restore colors if present
+        colors = data.get("colors", {})
+        if colors:
+            if "background" in colors:
+                bg = colors["background"]
+                group.color_background = QColor(bg["r"], bg["g"], bg["b"], bg["a"])
+                group.brush_background = QBrush(group.color_background)
+            
+            if "border" in colors:
+                border = colors["border"] 
+                group.color_border = QColor(border["r"], border["g"], border["b"], border["a"])
+                group.pen_border = QPen(group.color_border, 2.0)
+            
+            if "title_bg" in colors:
+                title_bg = colors["title_bg"]
+                group.color_title_bg = QColor(title_bg["r"], title_bg["g"], title_bg["b"], title_bg["a"])
+                group.brush_title = QBrush(group.color_title_bg)
+            
+            if "title_text" in colors:
+                title_text = colors["title_text"]
+                group.color_title_text = QColor(title_text["r"], title_text["g"], title_text["b"], title_text["a"])
+            
+            if "selection" in colors:
+                selection = colors["selection"]
+                group.color_selection = QColor(selection["r"], selection["g"], selection["b"], selection["a"])
+                group.pen_selected = QPen(group.color_selection, 3.0)
         
         return group
 

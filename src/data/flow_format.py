@@ -14,7 +14,7 @@ class FlowFormatHandler:
         self.md = MarkdownIt()
     
     def data_to_markdown(self, graph_data: Dict[str, Any], title: str = "Untitled Graph", 
-                        description: str = "") -> str:
+                    description: str = "") -> str:
         """Convert graph data to .md markdown format."""
         
         flow_content = f"# {title}\n\n"
@@ -25,6 +25,14 @@ class FlowFormatHandler:
         for node in graph_data.get("nodes", []):
             flow_content += self._node_to_flow(node)
             flow_content += "\n"
+        
+        # Add groups (if any)
+        groups = graph_data.get("groups", [])
+        if groups:
+            flow_content += "## Groups\n\n"
+            flow_content += "```json\n"
+            flow_content += json.dumps(groups, indent=2)
+            flow_content += "\n```\n\n"
         
         # Add connections
         flow_content += "## Connections\n\n"
@@ -103,6 +111,7 @@ class FlowFormatHandler:
             "graph_title": "Untitled Graph",
             "graph_description": "",
             "nodes": [],
+            "groups": [],
             "connections": [],
             "requirements": []
         }
@@ -146,6 +155,9 @@ class FlowFormatHandler:
                         if heading_text == "Connections":
                             current_section = "connections"
                             current_node = None
+                        elif heading_text == "Groups":
+                            current_section = "groups"
+                            current_node = None
                         else:
                             # Node header: "Node: Title (ID: uuid)"
                             match = re.match(r"Node:\s*(.*?)\s*\(ID:\s*(.*?)\)", heading_text)
@@ -184,6 +196,12 @@ class FlowFormatHandler:
                 if current_section == "connections" and language == "json":
                     try:
                         graph_data["connections"] = json.loads(content)
+                    except json.JSONDecodeError:
+                        pass  # Skip invalid JSON
+                
+                elif current_section == "groups" and language == "json":
+                    try:
+                        graph_data["groups"] = json.loads(content)
                     except json.JSONDecodeError:
                         pass  # Skip invalid JSON
                 
