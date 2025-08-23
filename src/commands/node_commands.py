@@ -826,19 +826,30 @@ class PasteNodesCommand(CompositeCommand):
         # Create only node creation commands initially
         commands = []
         nodes_data = clipboard_data.get('nodes', [])
+        groups_data = clipboard_data.get('groups', [])
+        
+        # Check if we're pasting groups with nodes - use different positioning logic
+        has_groups = len(groups_data) > 0
+        
         for i, node_data in enumerate(nodes_data):
             # Generate new UUID for this node
             old_uuid = node_data.get('id', str(uuid.uuid4()))
             new_uuid = str(uuid.uuid4())
             self.uuid_mapping[old_uuid] = new_uuid
             
-            # Calculate offset position for multiple nodes
-            offset_x = (i % 3) * 200  # Arrange in grid pattern
-            offset_y = (i // 3) * 150
-            node_position = QPointF(
-                paste_position.x() + offset_x,
-                paste_position.y() + offset_y
-            )
+            if has_groups:
+                # When pasting groups, preserve original absolute positions
+                # The group will handle positioning itself and its members
+                original_pos = node_data.get('pos', [0, 0])
+                node_position = QPointF(original_pos[0], original_pos[1])
+            else:
+                # When pasting nodes only, arrange in grid pattern
+                offset_x = (i % 3) * 200  # Arrange in grid pattern
+                offset_y = (i // 3) * 150
+                node_position = QPointF(
+                    paste_position.x() + offset_x,
+                    paste_position.y() + offset_y
+                )
             
             # Create node command with all properties
             create_cmd = CreateNodeCommand(
@@ -913,6 +924,13 @@ class PasteNodesCommand(CompositeCommand):
             else:
                 print(f"Failed to create connection: {conn_cmd.get_description()}")
         
+        # DEBUG: Check node positions before group processing
+        print("DEBUG: Node positions after creation, before group processing:")
+        for cmd, node_data in self.created_nodes:
+            if cmd.created_node:
+                pos = cmd.created_node.pos()
+                print(f"  {cmd.created_node.title}: ({pos.x()}, {pos.y()})")
+        
         # Create groups after nodes and connections are established
         groups_data = self.clipboard_data.get('groups', [])
         group_commands = []
@@ -932,12 +950,27 @@ class PasteNodesCommand(CompositeCommand):
             
             # Only create group if it has member nodes that were pasted
             if new_member_uuids:
-                # Offset group position similar to nodes
+                # Calculate transformation needed to move group to paste position
                 group_position = group_data.get('position', {'x': 0, 'y': 0})
-                offset_position = QPointF(
-                    group_position['x'] + self.paste_position.x(),
-                    group_position['y'] + self.paste_position.y()
-                )
+                original_group_pos = QPointF(group_position['x'], group_position['y'])
+                transform_offset = self.paste_position - original_group_pos
+                
+                # Position group at paste position
+                offset_position = self.paste_position
+                
+                # Transform all member nodes by the same offset to maintain relative positions
+                print(f"DEBUG: Applying transform offset ({transform_offset.x()}, {transform_offset.y()}) to nodes")
+                for node_uuid in new_member_uuids:
+                    found_node = None
+                    for cmd, _ in self.created_nodes:
+                        if hasattr(cmd, 'created_node') and cmd.created_node and cmd.created_node.uuid == node_uuid:
+                            found_node = cmd.created_node
+                            break
+                    if found_node:
+                        current_pos = found_node.pos()
+                        new_pos = current_pos + transform_offset
+                        print(f"  {found_node.title}: ({current_pos.x()}, {current_pos.y()}) -> ({new_pos.x()}, {new_pos.y()})")
+                        found_node.setPos(new_pos)
                 
                 # Create modified group properties for the command
                 group_properties = {
@@ -966,10 +999,11 @@ class PasteNodesCommand(CompositeCommand):
                     if created_group:
                         created_group.setPos(offset_position)
                         
-                        # Restore size
+                        # Use original group size since we preserved relative layout
                         size = group_data.get('size', {'width': 200, 'height': 150})
                         created_group.width = size['width']
                         created_group.height = size['height']
+                        
                         created_group.setRect(0, 0, created_group.width, created_group.height)
                         
                         # Restore colors if present
@@ -1008,6 +1042,21 @@ class PasteNodesCommand(CompositeCommand):
                 else:
                     print(f"Failed to create group: {group_properties['name']}")
         
+        # Schedule deferred GUI update for pasted nodes - similar to file loading
+        # This ensures GUI widgets refresh properly for nodes with GUI code
+        nodes_to_update = []
+        for cmd, _ in self.created_nodes:
+            if cmd.created_node:
+                # Check if it's a reroute node by checking for is_reroute attribute
+                is_reroute = hasattr(cmd.created_node, 'is_reroute') and cmd.created_node.is_reroute
+                if not is_reroute:
+                    # Only update regular nodes that might have GUI widgets
+                    nodes_to_update.append(cmd.created_node)
+        
+        if nodes_to_update:
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(0, lambda: self._final_paste_update(nodes_to_update))
+        
         return True
     
     def _find_node_by_id(self, node_id: str):
@@ -1023,6 +1072,29 @@ class PasteNodesCommand(CompositeCommand):
         data_size = len(str(self.clipboard_data)) * 2
         mapping_size = len(self.uuid_mapping) * 100
         return base_size + data_size + mapping_size
+
+    def _final_paste_update(self, nodes_to_update):
+        """Final update pass for pasted nodes - ensures GUI widgets refresh properly."""
+        for node in nodes_to_update:
+            try:
+                if node.scene() is None:
+                    continue  # Node has been removed from scene
+                
+                # Force complete layout rebuild like file loading does
+                node._update_layout()
+                
+                # Update all pin connections
+                for pin in node.pins:
+                    pin.update_connections()
+                
+                # Force node visual update
+                node.update()
+            except RuntimeError:
+                # Node has been deleted, skip
+                continue
+        
+        # Force scene update
+        self.node_graph.update()
 
 
 class MoveMultipleCommand(CompositeCommand):
