@@ -237,9 +237,9 @@ so that I can see what operations are available to undo and choose specific poin
 4. Status bar feedback showing current operation result
 5. Disabled state handling when no operations available
 
-## Epic 3 Core Node Grouping System
+## Epic 3 Single Process Execution Architecture
 
-Implement fundamental grouping functionality allowing users to organize and manage complex graphs through collapsible node containers.
+Replace the current isolated subprocess-per-node execution model with a single shared Python interpreter, enabling direct object passing and 100-1000x performance improvements for ML/data science workflows while respecting GPU memory constraints.
 
 ### Story 3.1 Basic Group Creation and Selection
 
@@ -255,107 +255,163 @@ so that I can organize related functionality into manageable containers.
 4. Group creation validation preventing invalid selections (isolated nodes, etc.)
 5. Automatic group naming with user override option in creation dialog
 
-### Story 3.2 Group Interface Pin Generation
+### Story 3.2 Single Shared Python Interpreter
 
-As a user,
-I want groups to automatically create appropriate input/output pins,
-so that grouped functionality integrates seamlessly with the rest of my graph.
-
-#### Acceptance Criteria
-
-1. Analyze external connections to determine required group interface pins
-2. Auto-generate input pins for connections entering the group
-3. Auto-generate output pins for connections leaving the group
-4. Pin type inference based on connected pin types
-5. Group interface pins maintain connection relationships with internal nodes
-
-### Story 3.3 Group Collapse and Visual Representation
-
-As a user,
-I want groups to display as single nodes when collapsed,
-so that I can reduce visual complexity while maintaining functionality.
+As a developer,
+I want all nodes to execute in a single persistent Python interpreter,
+so that objects can be passed directly without any serialization or process boundaries.
 
 #### Acceptance Criteria
 
-1. Collapsed groups render as single nodes with group-specific styling
-2. Group title and description displayed prominently
-3. Interface pins arranged logically on group node boundaries
-4. Visual indication of group status (collapsed/expanded) with appropriate icons
-5. Group nodes support standard node operations (movement, selection, etc.)
+1. Single Python interpreter shared across all node executions
+2. Persistent namespace allowing imports and variables to remain loaded
+3. Direct function calls replacing subprocess communication
+4. Shared memory space for all Python objects
+5. Zero startup overhead between node executions
 
-### Story 3.4 Group Expansion and Internal Navigation
+### Story 3.3 Native Object Passing System
 
 As a user,
-I want to expand groups to see and edit internal nodes,
-so that I can modify grouped functionality when needed.
+I want to pass Python objects directly between nodes without any serialization,
+so that I can work with large tensors and DataFrames at maximum performance.
 
 #### Acceptance Criteria
 
-1. Double-click or context menu option to expand groups
-2. Breadcrumb navigation showing current group hierarchy
-3. Internal nodes restore to original positions within group boundary
-4. Visual boundary indication showing group extent when expanded
-5. Ability to exit group view and return to parent graph level
+1. Direct Python object references passed between nodes (no copying)
+2. Support for all Python types including PyTorch tensors, NumPy arrays, Pandas DataFrames
+3. Memory-mapped sharing for objects already in RAM
+4. Reference counting system for automatic cleanup
+5. No type restrictions or JSON fallbacks ever
 
-## Epic 4 Advanced Grouping & Templates
-
-Deliver nested grouping capabilities and reusable template system, enabling professional-grade graph organization and workflow acceleration.
-
-### Story 4.1 Group Ungrouping and Undo Integration
+### Story 3.4 Intelligent Sequential Execution Scheduler
 
 As a user,
-I want to ungroup nodes and have all grouping operations be undoable,
-so that I can freely experiment with different organizational structures.
+I want nodes to execute sequentially with intelligent resource-aware scheduling,
+so that GPU memory constraints are respected and execution is optimized.
 
 #### Acceptance Criteria
 
-1. Ungroup operation (Ctrl+Shift+G) restores nodes to original positions
-2. External connections rerouted back to individual nodes correctly
-3. GroupCommand and UngroupCommand for full undo/redo support
-4. Group operations integrate seamlessly with existing undo history
-5. Ungrouping preserves all internal node states and properties
+1. Sequential execution following data dependency graph (no parallel execution)
+2. VRAM-aware scheduling preventing GPU out-of-memory conditions
+3. Memory threshold monitoring before executing memory-intensive nodes
+4. Execution queue management for optimal resource utilization
+5. Node priority system based on resource requirements
 
-### Story 4.2 Nested Groups and Hierarchy Management
+### Story 3.5 GPU Memory Management System
 
-As a user,
-I want to create groups within groups,
-so that I can organize complex graphs with multiple levels of abstraction.
-
-#### Acceptance Criteria
-
-1. Groups can contain other groups up to configured depth limit (default 10)
-2. Breadcrumb navigation shows full hierarchy path
-3. Pin interface generation works correctly across nested levels
-4. Group expansion/collapse behavior consistent at all nesting levels
-5. Circular dependency detection prevents invalid nested structures
-
-### Story 4.3 Group Templates and Saving
-
-As a user,
-I want to save groups as reusable templates,
-so that I can quickly replicate common functionality patterns across projects.
+As a user working with ML models,
+I want intelligent GPU memory management,
+so that I can work with large models and datasets without running out of VRAM.
 
 #### Acceptance Criteria
 
-1. "Save as Template" option in group context menu
-2. Template metadata dialog (name, description, tags, category)
-3. Template file format preserving group structure and interface definition
-4. Template validation ensuring completeness and usability
-5. Template storage in user-accessible templates directory
+1. Real-time VRAM usage tracking per GPU device
+2. Pre-execution memory requirement estimation for GPU nodes
+3. Automatic tensor cleanup and garbage collection between executions
+4. GPU memory pooling and reuse strategies for common tensor sizes
+5. Warning system and graceful failure for potential OOM situations
 
-### Story 4.4 Template Management and Loading
+### Story 3.6 Performance Profiling Infrastructure
 
-As a user,
-I want to browse and load group templates,
-so that I can leverage pre-built functionality patterns and accelerate development.
+As a developer and power user,
+I want detailed performance profiling of node execution,
+so that I can identify bottlenecks and optimize my workflows.
 
 #### Acceptance Criteria
 
-1. Template Manager dialog with categorized template browsing
-2. Template preview showing interface pins and internal complexity
-3. Template loading with automatic pin type compatibility checking
-4. Template instantiation at cursor position or graph center
-5. Template metadata display (description, creation date, complexity metrics)
+1. Nanosecond-precision timing for individual node executions
+2. Memory usage tracking for both RAM and VRAM consumption
+3. Data transfer metrics showing object sizes and access patterns
+4. Bottleneck identification with visual indicators in the graph
+5. Performance regression detection comparing execution runs
+
+### Story 3.7 Debugging and Development Tools
+
+As a developer,
+I want interactive debugging capabilities within the shared execution environment,
+so that I can inspect and debug node logic effectively.
+
+#### Acceptance Criteria
+
+1. Breakpoint support within node execution with interactive debugging
+2. Variable inspection showing object contents between nodes
+3. Step-through execution mode for debugging data flow
+4. Live data visualization on connection lines during execution
+5. Python debugger (pdb) integration for advanced debugging
+
+### Story 3.8 Migration and Testing Framework
+
+As a user,
+I want a clean migration path and comprehensive testing,
+so that the transition to single-process execution is reliable and performant.
+
+#### Acceptance Criteria
+
+1. One-time migration removing subprocess dependencies from existing graphs
+2. Performance benchmarks demonstrating 100-1000x speedup for ML workflows
+3. ML framework testing (PyTorch, TensorFlow, JAX compatibility)
+4. Large data pipeline testing (Pandas, Polars, DuckDB integration)
+5. Memory leak detection and long-running execution stability tests
+
+## Epic 4 ML/Data Science Optimization
+
+Deliver specialized optimizations and integrations for machine learning and data science workflows, leveraging the single-process architecture for maximum performance with popular frameworks and libraries.
+
+### Story 4.1 ML Framework Integration
+
+As a data scientist or ML engineer,
+I want first-class integration with popular ML frameworks,
+so that I can build high-performance model training and inference pipelines.
+
+#### Acceptance Criteria
+
+1. First-class PyTorch tensor support with automatic device management
+2. TensorFlow/Keras compatibility with session and graph management
+3. JAX array handling with JIT compilation support
+4. Automatic gradient tape and computation graph management
+5. Model state persistence and checkpointing between nodes
+
+### Story 4.2 Data Pipeline Optimization
+
+As a data engineer,
+I want optimized data processing capabilities for large datasets,
+so that I can build efficient ETL and analysis workflows.
+
+#### Acceptance Criteria
+
+1. Pandas DataFrame zero-copy operations and view-based processing
+2. Polars lazy evaluation integration with query optimization
+3. DuckDB query planning and execution for analytical workloads
+4. Streaming data support with configurable buffering for large datasets
+5. Batch processing with intelligent chunk size optimization
+
+### Story 4.3 Resource-Aware Execution Management
+
+As a power user,
+I want intelligent resource management and monitoring,
+so that I can maximize hardware utilization while preventing system overload.
+
+#### Acceptance Criteria
+
+1. CPU core affinity settings and NUMA-aware execution
+2. GPU device selection and multi-GPU workload distribution
+3. Memory pressure monitoring with automatic cleanup strategies
+4. Disk I/O optimization for data loading and model checkpoints
+5. Network I/O handling for remote data sources and model serving
+
+### Story 4.4 Advanced Visualization and Monitoring
+
+As a developer and data scientist,
+I want comprehensive visualization of data flow and system performance,
+so that I can optimize workflows and debug issues effectively.
+
+#### Acceptance Criteria
+
+1. Real-time tensor shape and data type visualization on connections
+2. DataFrame schema and sample data preview during execution
+3. GPU utilization graphs and VRAM usage monitoring
+4. Memory allocation timeline with garbage collection events
+5. Interactive execution DAG with performance hotspot highlighting
 
 ## Checklist Results Report
 
