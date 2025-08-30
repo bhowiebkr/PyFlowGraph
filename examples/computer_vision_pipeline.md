@@ -2,24 +2,6 @@
 
 Computer vision pipeline using PyTorch with native object passing for maximum performance. Demonstrates zero-copy tensor operations, GPU acceleration, and ML framework integration.
 
-## Dependencies
-
-```json
-{
-  "requirements": [
-    "torch>=1.9.0",
-    "torchvision>=0.13.0",
-    "Pillow>=8.0.0",
-    "numpy>=1.21.0"
-  ],
-  "optional": [
-    "cuda-toolkit>=11.0"
-  ],
-  "python": ">=3.8",
-  "notes": "CUDA support requires compatible NVIDIA GPU and drivers. Models will download automatically on first run (~100MB for ResNet-50)."
-}
-```
-
 ## Node: Image Path Input (ID: image-path-input)
 
 Provides image file path input through GUI text field for computer vision pipeline processing.
@@ -30,8 +12,14 @@ Provides image file path input through GUI text field for computer vision pipeli
 {
   "uuid": "image-path-input",
   "title": "Image Path Input",
-  "pos": [50, 200],
-  "size": [280, 180],
+  "pos": [
+    -80.65488953258898,
+    225.50975587232142
+  ],
+  "size": [
+    280,
+    222
+  ],
   "colors": {
     "title": "#007bff",
     "body": "#0056b3"
@@ -93,8 +81,14 @@ Loads image from file path and converts to PyTorch tensor for processing pipelin
 {
   "uuid": "image-loader",
   "title": "Image Loader",
-  "pos": [400, 100],
-  "size": [250, 200],
+  "pos": [
+    295.11921614151817,
+    233.7609997035711
+  ],
+  "size": [
+    250,
+    200
+  ],
   "colors": {
     "title": "#28a745",
     "body": "#1e7e34"
@@ -143,10 +137,16 @@ Preprocesses image tensor for ResNet model input with standardization and resizi
 
 ```json
 {
-  "uuid": "image-preprocessor", 
+  "uuid": "image-preprocessor",
   "title": "Image Preprocessor",
-  "pos": [750, 100],
-  "size": [250, 200],
+  "pos": [
+    667.9193865455359,
+    101.52001136026786
+  ],
+  "size": [
+    250,
+    200
+  ],
   "colors": {
     "title": "#fd7e14",
     "body": "#e8590c"
@@ -194,8 +194,14 @@ Extracts features using pre-trained ResNet-50 backbone with GPU acceleration.
 {
   "uuid": "feature-extractor",
   "title": "Feature Extractor",
-  "pos": [1100, 100], 
-  "size": [250, 200],
+  "pos": [
+    1029.2203405718747,
+    88.96339577544643
+  ],
+  "size": [
+    250,
+    200
+  ],
   "colors": {
     "title": "#6f42c1",
     "body": "#563d7c"
@@ -254,8 +260,14 @@ Performs image classification using ResNet-50 with top-5 predictions.
 {
   "uuid": "classifier",
   "title": "Classifier",
-  "pos": [750, 350],
-  "size": [250, 200],
+  "pos": [
+    1330.3139023700876,
+    119.48697284285765
+  ],
+  "size": [
+    250,
+    200
+  ],
   "colors": {
     "title": "#dc3545",
     "body": "#bd2130"
@@ -300,21 +312,26 @@ def classify_image(preprocessed_tensor: torch.Tensor) -> Tuple[Dict[str, float],
     top5_probs = top5_probs.cpu().squeeze()
     top5_indices = top5_indices.cpu().squeeze()
     
-    # Create simplified class labels (in real use, load from ImageNet labels)
-    predictions = {}
-    class_names = [
-        "tabby_cat", "egyptian_cat", "persian_cat", "tiger_cat", "siamese_cat",
-        "golden_retriever", "labrador", "german_shepherd", "poodle", "beagle"
-    ]
+    # ImageNet class labels (subset of most common ones)
+    imagenet_classes = {
+        281: "tabby_cat", 282: "tiger_cat", 283: "persian_cat", 284: "siamese_cat", 285: "egyptian_cat",
+        207: "golden_retriever", 208: "labrador_retriever", 235: "german_shepherd", 265: "toy_poodle",
+        162: "beagle", 161: "basset", 167: "walker_hound", 169: "borzoi", 173: "kerry_blue_terrier",
+        151: "chihuahua", 268: "mexican_hairless", 279: "arctic_fox", 291: "lion", 292: "tiger",
+        293: "leopard", 294: "snow_leopard", 295: "jaguar", 285: "lynx", 287: "cougar",
+        # Add more common classes
+        0: "background", 1: "person", 2: "bicycle", 3: "car", 4: "motorcycle", 5: "airplane",
+        # Animals
+        16: "bird", 17: "cat", 18: "dog", 19: "horse", 20: "sheep", 21: "cow", 22: "elephant",
+        23: "bear", 24: "zebra", 25: "giraffe"
+    }
     
+    predictions = {}
     for i in range(5):
         class_idx = top5_indices[i].item()
         confidence = top5_probs[i].item()
-        # Use simplified names or generic class names
-        if class_idx < len(class_names):
-            class_name = class_names[class_idx]
-        else:
-            class_name = f"class_{class_idx}"
+        # Use ImageNet class name if available, otherwise generic name
+        class_name = imagenet_classes.get(class_idx, f"class_{class_idx}")
         predictions[class_name] = confidence
     
     top_class = max(predictions, key=predictions.get)
@@ -336,9 +353,15 @@ Displays classification results with metadata and performance information.
 ```json
 {
   "uuid": "results-display",
-  "title": "Results Display", 
-  "pos": [400, 450],
-  "size": [300, 350],
+  "title": "Results Display",
+  "pos": [
+    1718.3690543504435,
+    245.83350327678613
+  ],
+  "size": [
+    369.78662279999867,
+    638.3108937473194
+  ],
   "colors": {
     "title": "#17a2b8",
     "body": "#117a8b"
@@ -471,92 +494,122 @@ def set_initial_state(widgets, state):
 [
   {
     "start_node_uuid": "image-path-input",
+    "start_pin_uuid": "578b8bb3-4c41-4cda-bf92-8cc78ca7ec38",
     "start_pin_name": "exec_out",
     "end_node_uuid": "image-loader",
+    "end_pin_uuid": "54f56d8a-512b-47a7-9727-370a680bf57f",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "image-path-input",
+    "start_pin_uuid": "721b621b-de32-4b4e-89b3-71298c2c658d",
     "start_pin_name": "output_1",
-    "end_node_uuid": "image-loader", 
+    "end_node_uuid": "image-loader",
+    "end_pin_uuid": "6d8be62e-ddb8-447d-93f8-fee9b1a2feed",
     "end_pin_name": "image_path"
   },
   {
     "start_node_uuid": "image-loader",
+    "start_pin_uuid": "21ec1f40-732b-4cfc-b615-063f9dd50bc5",
     "start_pin_name": "exec_out",
     "end_node_uuid": "image-preprocessor",
+    "end_pin_uuid": "73a92ef8-3950-451c-9e42-53fba5162540",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "image-loader",
+    "start_pin_uuid": "97a73c7d-d993-4c77-ae5b-bd2b97ff8fcc",
     "start_pin_name": "output_1",
     "end_node_uuid": "image-preprocessor",
+    "end_pin_uuid": "5491bc59-e999-4ddb-bdba-06aff632a9bd",
     "end_pin_name": "image_tensor"
   },
   {
     "start_node_uuid": "image-preprocessor",
-    "start_pin_name": "exec_out", 
+    "start_pin_uuid": "3d71c763-19e7-490b-ba9a-c210f47fd396",
+    "start_pin_name": "exec_out",
     "end_node_uuid": "feature-extractor",
+    "end_pin_uuid": "254d72ce-c914-4b8c-a2e2-a3f1c67e793a",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "image-preprocessor",
+    "start_pin_uuid": "7b9d79a9-8f11-4edd-9c3b-1b2aed9bbd39",
     "start_pin_name": "output_1",
     "end_node_uuid": "feature-extractor",
+    "end_pin_uuid": "f6e0d65e-8a41-4f0a-9ed7-648742896464",
     "end_pin_name": "preprocessed_tensor"
   },
   {
     "start_node_uuid": "image-preprocessor",
+    "start_pin_uuid": "7b9d79a9-8f11-4edd-9c3b-1b2aed9bbd39",
     "start_pin_name": "output_1",
     "end_node_uuid": "classifier",
+    "end_pin_uuid": "56e59097-e8e8-4c48-a1b9-306c745d2a94",
     "end_pin_name": "preprocessed_tensor"
   },
   {
     "start_node_uuid": "feature-extractor",
+    "start_pin_uuid": "ef2f8cf6-ca00-425a-afc3-33ec016b3b4a",
     "start_pin_name": "exec_out",
     "end_node_uuid": "classifier",
+    "end_pin_uuid": "386b6449-a0b1-4fa0-bc4e-bd443700e34f",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "classifier",
+    "start_pin_uuid": "ee4e4270-d060-42be-b72d-30d3455f115b",
     "start_pin_name": "exec_out",
     "end_node_uuid": "results-display",
+    "end_pin_uuid": "d99bad64-36df-41ab-a364-1a5439789617",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "classifier",
+    "start_pin_uuid": "267aa2d1-2da4-4905-be62-1428f89119c1",
     "start_pin_name": "output_1",
     "end_node_uuid": "results-display",
+    "end_pin_uuid": "d78cd96e-a61f-47a5-adde-ab25bbcaeeb7",
     "end_pin_name": "predictions"
   },
   {
     "start_node_uuid": "classifier",
+    "start_pin_uuid": "d375ceda-2c11-40d9-8218-9ccabacbcec1",
     "start_pin_name": "output_2",
     "end_node_uuid": "results-display",
+    "end_pin_uuid": "974ada93-b0d1-46e5-8d3f-7c085c25b549",
     "end_pin_name": "top_class"
   },
   {
     "start_node_uuid": "classifier",
+    "start_pin_uuid": "cf83b358-403b-487e-a455-1f75a7414e23",
     "start_pin_name": "output_3",
     "end_node_uuid": "results-display",
+    "end_pin_uuid": "916151d9-e3e8-4cb1-a597-a9f3a845ebec",
     "end_pin_name": "top_confidence"
   },
   {
     "start_node_uuid": "image-loader",
+    "start_pin_uuid": "b0c69da9-d1b8-4386-b7b5-ca289c44a444",
     "start_pin_name": "output_2",
     "end_node_uuid": "results-display",
+    "end_pin_uuid": "ccaf27a6-7e0a-4dd1-b863-ac13d0f0db38",
     "end_pin_name": "original_size"
   },
   {
-    "start_node_uuid": "image-loader", 
+    "start_node_uuid": "image-loader",
+    "start_pin_uuid": "66b37842-debd-4074-8d92-e6aabb196e25",
     "start_pin_name": "output_3",
     "end_node_uuid": "results-display",
+    "end_pin_uuid": "dae48807-e32a-4acd-a275-9c1455de3abd",
     "end_pin_name": "channels"
   },
   {
     "start_node_uuid": "image-preprocessor",
+    "start_pin_uuid": "5b0f7ec3-18e6-4cd0-aacf-f072fccc10c8",
     "start_pin_name": "output_3",
     "end_node_uuid": "results-display",
+    "end_pin_uuid": "17729284-46e4-4fa3-a6f6-a92beb65feab",
     "end_pin_name": "device_info"
   }
 ]
