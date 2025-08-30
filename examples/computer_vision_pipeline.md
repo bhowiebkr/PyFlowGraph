@@ -106,6 +106,7 @@ Loads image from file path and converts to PyTorch tensor for processing pipelin
 ### Logic
 
 ```python
+import os
 from typing import Tuple, Dict, Any
 from PIL import Image
 import torch
@@ -113,6 +114,13 @@ import torchvision.transforms as transforms
 
 @node_entry
 def load_image(image_path: str) -> Tuple[torch.Tensor, Tuple[int, int], int]:
+    # Handle relative paths by making them absolute from project root
+    if not os.path.isabs(image_path):
+        # Get project root directory
+        import sys
+        project_root = os.path.dirname(os.path.dirname(sys.modules['__main__'].__file__)) if hasattr(sys.modules['__main__'], '__file__') else os.getcwd()
+        image_path = os.path.join(project_root, image_path)
+    
     # Load image
     image = Image.open(image_path).convert('RGB')
     
