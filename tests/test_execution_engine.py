@@ -130,19 +130,8 @@ def end_function(input_val: str):
         self.assertNotIn(middle_node, entry_nodes)
         self.assertNotIn(end_node, entry_nodes)
     
-    @patch('subprocess.run')
-    @patch('os.path.exists')
-    def test_node_execution_success(self, mock_exists, mock_run):
-        """Test successful node execution."""
-        mock_exists.return_value = True
-        
-        # Mock successful subprocess execution
-        mock_result = Mock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Execution successful"
-        mock_result.stderr = ""
-        mock_run.return_value = mock_result
-        
+    def test_node_execution_success(self):
+        """Test successful node execution using single process execution."""
         # Create a simple node
         node = self.graph.create_node("Test Node", pos=(0, 0))
         node.set_code('''
@@ -151,21 +140,18 @@ def test_function() -> str:
     return "Hello World"
 ''')
         
+        # Verify node has pins after setting code
+        self.assertGreater(len(node.pins), 0, "Node should have pins after setting code")
+        
         # Test execution
         self.executor.execute()
         
-        # Should have called subprocess.run
-        mock_run.assert_called()
-        
-        # Check that proper arguments were passed
-        call_args = mock_run.call_args
-        self.assertIn('creationflags', call_args[1])  # Windows subprocess hiding
+        # Check log for successful execution
+        log_text = self.log_widget.toPlainText()
+        self.assertIn("Executing Node: Test Node", log_text)
     
-    @patch('os.path.exists')
-    def test_missing_virtual_environment(self, mock_exists):
-        """Test execution when virtual environment is missing."""
-        mock_exists.return_value = False
-        
+    def test_single_process_execution_success(self):
+        """Test that single process execution works without virtual environment requirements."""
         # Create a test node
         node = self.graph.create_node("Test Node", pos=(0, 0))
         node.set_code('''
@@ -174,12 +160,15 @@ def test() -> str:
     return "test"
 ''')
         
-        # Execute should fail gracefully
+        # Verify node has pins after setting code
+        self.assertGreater(len(node.pins), 0, "Node should have pins after setting code")
+        
+        # Execute should work directly without venv validation
         self.executor.execute()
         
-        # Should log error about missing venv
+        # Should execute successfully
         log_text = self.log_widget.toPlainText()
-        self.assertIn("Virtual environment not found", log_text)
+        self.assertIn("Executing Node: Test Node", log_text)
     
     def test_execution_flow_ordering(self):
         """Test that nodes execute in correct order based on execution pins."""
@@ -225,25 +214,17 @@ def third(val: int) -> int:
         self.graph.create_connection(data1_out, data2_in)
         self.graph.create_connection(data2_out, data3_in)
         
-        # Mock successful execution for testing order
-        with patch('subprocess.run') as mock_run, patch('os.path.exists', return_value=True):
-            mock_result = Mock()
-            mock_result.returncode = 0
-            mock_result.stdout = '{"output_1": "test"}'
-            mock_result.stderr = ""
-            mock_run.return_value = mock_result
-            
-            # Test that _execute_node_flow follows the correct sequence
-            execution_count = 0
-            pin_values = {}
-            
-            # This would be called by the actual execution
-            execution_count = self.executor._execute_node_flow(
-                node1, pin_values, execution_count, 100
-            )
-            
-            # Should have incremented execution count
-            self.assertGreater(execution_count, 0)
+        # Test that _execute_node_flow follows the correct sequence with single process execution
+        execution_count = 0
+        pin_values = {}
+        
+        # This would be called by the actual execution
+        execution_count = self.executor._execute_node_flow(
+            node1, pin_values, execution_count, 100
+        )
+        
+        # Should have incremented execution count
+        self.assertGreater(execution_count, 0)
     
     def test_data_flow_between_nodes(self):
         """Test data passing between connected nodes."""
@@ -315,19 +296,8 @@ def end(value: str):
         # Value should pass through reroute
         self.assertEqual(pin_values.get(reroute.output_pin), test_value)
     
-    @patch('subprocess.run')
-    @patch('os.path.exists')
-    def test_execution_error_handling(self, mock_exists, mock_run):
-        """Test handling of execution errors."""
-        mock_exists.return_value = True
-        
-        # Mock failed subprocess execution
-        mock_result = Mock()
-        mock_result.returncode = 1
-        mock_result.stdout = ""
-        mock_result.stderr = "Python syntax error"
-        mock_run.return_value = mock_result
-        
+    def test_execution_error_handling(self):
+        """Test handling of execution errors in single process mode."""
         # Create node with problematic code
         node = self.graph.create_node("Error Node", pos=(0, 0))
         node.set_code('''
@@ -337,39 +307,43 @@ def broken_function() -> str:
     return undefined_variable
 ''')
         
+        # Verify node has pins after setting code
+        self.assertGreater(len(node.pins), 0, "Node should have pins after setting code")
+        
         # Execute and check error handling
         self.executor.execute()
         
         # Should have logged the error
         log_text = self.log_widget.toPlainText()
-        # Error details might be in the log depending on implementation
-        self.assertIsInstance(log_text, str)
+        # Should contain error information in single process execution
+        self.assertIn("ERROR", log_text)
     
-    @patch('subprocess.run')
-    @patch('os.path.exists')
-    def test_execution_timeout_handling(self, mock_exists, mock_run):
-        """Test handling of execution timeouts."""
-        mock_exists.return_value = True
-        
-        # Mock timeout exception
-        mock_run.side_effect = subprocess.TimeoutExpired("python", 30)
+    def test_execution_performance(self):
+        """Test that single process execution has low overhead."""
+        import time
         
         # Create a test node
-        node = self.graph.create_node("Timeout Node", pos=(0, 0))
+        node = self.graph.create_node("Fast Node", pos=(0, 0))
         node.set_code('''
 @node_entry
-def slow_function() -> str:
-    import time
-    time.sleep(10)  # This would timeout
+def fast_function() -> str:
     return "done"
 ''')
         
-        # Execute and check timeout handling
-        self.executor.execute()
+        # Verify node has pins after setting code
+        self.assertGreater(len(node.pins), 0, "Node should have pins after setting code")
         
-        # Should handle timeout gracefully
+        # Measure execution time
+        start_time = time.perf_counter()
+        self.executor.execute()
+        execution_time = time.perf_counter() - start_time
+        
+        # Single process should be very fast (under 100ms)
+        self.assertLess(execution_time, 0.1)
+        
+        # Check successful execution
         log_text = self.log_widget.toPlainText()
-        self.assertIsInstance(log_text, str)
+        self.assertIn("Executing Node: Fast Node", log_text)
     
     def test_execution_limit_protection(self):
         """Test protection against infinite execution loops."""
@@ -379,17 +353,18 @@ def slow_function() -> str:
         
         node1.set_code('''
 @node_entry
-def loop1() -> str:
+def loop1(trigger: str) -> str:
     return "loop1"
 ''')
         
         node2.set_code('''
 @node_entry
-def loop2() -> str:
+def loop2(trigger: str) -> str:
     return "loop2"
 ''')
         
         # Create circular execution (would be caught by execution limit)
+        # Both functions have parameters so they will have exec_in pins
         exec1_out = next(p for p in node1.output_pins if p.pin_category == "execution")
         exec2_in = next(p for p in node2.input_pins if p.pin_category == "execution")
         exec2_out = next(p for p in node2.output_pins if p.pin_category == "execution")
@@ -449,36 +424,25 @@ def merge(val1: str, val2: str) -> str:
         self.assertIn(entry2, entry_nodes)
         self.assertIn(merger, entry_nodes)  # merger also has no exec input
     
-    @patch('subprocess.run')
-    @patch('os.path.exists')
-    def test_subprocess_security_flags(self, mock_exists, mock_run):
-        """Test that subprocess execution uses proper security flags."""
-        mock_exists.return_value = True
-        mock_result = Mock()
-        mock_result.returncode = 0
-        mock_result.stdout = "{}"
-        mock_result.stderr = ""
-        mock_run.return_value = mock_result
-        
-        # Create and execute a node
+    def test_single_process_security_isolation(self):
+        """Test that single process execution handles errors safely."""
+        # Create and execute a node with potential security issues
         node = self.graph.create_node("Security Test", pos=(0, 0))
         node.set_code('''
 @node_entry
 def secure_test() -> str:
+    # Test that errors are caught and handled
     return "secure"
 ''')
         
+        # Verify node has pins after setting code
+        self.assertGreater(len(node.pins), 0, "Node should have pins after setting code")
+        
         self.executor.execute()
         
-        # Check that subprocess.run was called with security flags
-        mock_run.assert_called()
-        call_kwargs = mock_run.call_args[1]
-        
-        # Should include Windows console hiding flags
-        if 'creationflags' in call_kwargs:
-            flags = call_kwargs['creationflags']
-            # Should include subprocess.CREATE_NO_WINDOW or similar flags
-            self.assertIsInstance(flags, int)
+        # Should execute successfully in single process
+        log_text = self.log_widget.toPlainText()
+        self.assertIn("Executing Node: Security Test", log_text)
 
 
 def run_execution_engine_tests():

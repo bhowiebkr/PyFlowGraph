@@ -10,14 +10,13 @@ import time
 import gc
 from unittest.mock import Mock, MagicMock
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Add src directory to path
+src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
+sys.path.insert(0, src_path)
 
-from src.execution.single_process_executor import SingleProcessExecutor
-from src.core.node import Node
-from src.core.pin import Pin
+from execution.single_process_executor import SingleProcessExecutor
+from core.node import Node
+from core.pin import Pin
 
 
 class TestSingleProcessExecutor(unittest.TestCase):

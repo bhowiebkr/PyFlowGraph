@@ -16,8 +16,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from src.core.node import Node
-from src.core.reroute_node import RerouteNode
+from core.node import Node
+from core.reroute_node import RerouteNode
 
 
 class SingleProcessExecutor:
