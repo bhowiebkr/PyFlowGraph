@@ -1,9 +1,7 @@
 # graph_executor.py
-# Executes the graph by running each node's code in an isolated subprocess.
-# Now hides the subprocess console window on Windows.
+# Executes the graph using direct function calls in a single shared Python interpreter.
+# Replaced subprocess isolation with single process execution for maximum performance.
 
-import subprocess
-import json
 import os
 import sys
 
@@ -14,6 +12,7 @@ if project_root not in sys.path:
 
 from core.node import Node
 from core.reroute_node import RerouteNode
+from .single_process_executor import SingleProcessExecutor
 
 # Debug configuration
 # Set to True to enable detailed execution flow debugging
@@ -25,22 +24,27 @@ class GraphExecutor:
         self.graph = graph
         self.log = log_widget
         self.get_venv_path = venv_path_callback
+        
+        # Initialize single process executor
+        self.single_process_executor = SingleProcessExecutor(log_widget)
 
     def get_python_executable(self):
-        """Returns the path to the Python executable in the venv."""
-        venv_path = self.get_venv_path()
-        if sys.platform == "win32":
-            return os.path.join(venv_path, "Scripts", "python.exe")
-        else:
-            return os.path.join(venv_path, "bin", "python")
+        """Get the Python executable path for the virtual environment."""
+        venv_path = self.get_venv_path() if self.get_venv_path else None
+        if venv_path and os.path.exists(venv_path):
+            if sys.platform == "win32":
+                return os.path.join(venv_path, "Scripts", "python.exe")
+            else:
+                return os.path.join(venv_path, "bin", "python")
+        return sys.executable
 
     def execute(self):
-        """Execute the graph using flow control with execution pins."""
-        python_exe = self.get_python_executable()
-        if not os.path.exists(python_exe):
-            self.log.append("EXECUTION ERROR: Virtual environment not found. Please set it up via the 'Run > Manage Environment' menu.")
-            return
+        """Execute the graph using single process execution with direct object references."""
+        # Single process execution doesn't require venv validation - it runs in current process
+        if DEBUG_EXECUTION:
+            self.log.append("DEBUG: Starting single process execution")
 
+        # Pin values now store direct Python object references (no JSON serialization)
         pin_values = {}
         
         # Find entry point nodes (nodes with no execution input connections)
@@ -67,20 +71,26 @@ class GraphExecutor:
         for entry_node in entry_nodes:
             if execution_count >= execution_limit:
                 break
-            self._execute_node_flow(entry_node, pin_values, execution_count, execution_limit)
+            execution_count = self._execute_node_flow(entry_node, pin_values, execution_count, execution_limit)
 
         if execution_count >= execution_limit:
             self.log.append("EXECUTION ERROR: Execution limit reached. Check for infinite loops in execution flow.")
+        
+        # Log performance statistics
+        stats = self.single_process_executor.get_performance_stats()
+        if stats and DEBUG_EXECUTION:
+            self.log.append(f"DEBUG: Execution completed. Total time: {stats.get('total_time', 0):.4f}s, "
+                          f"Average per node: {stats.get('average_time', 0):.4f}s")
 
     def _execute_node_flow(self, node, pin_values, execution_count, execution_limit):
-        """Execute a node and follow its execution outputs."""
+        """Execute a node using direct function calls and follow its execution outputs."""
         if execution_count >= execution_limit:
             return execution_count
             
         execution_count += 1
 
         if isinstance(node, RerouteNode):
-            # Handle reroute nodes
+            # Handle reroute nodes - direct object reference passing
             if node.input_pin.connections:
                 source_pin = node.input_pin.connections[0].start_pin
                 pin_values[node.output_pin] = pin_values.get(source_pin)
@@ -93,12 +103,13 @@ class GraphExecutor:
 
         self.log.append(f"--- Executing Node: {node.title} ---")
 
-        # Gather input data from data pins only
+        # Gather input data from data pins - now using direct object references
         inputs_for_function = {}
         data_input_pins = [p for p in node.input_pins if p.pin_category == "data"]
         for pin in data_input_pins:
             if pin.connections:
                 source_pin = pin.connections[0].start_pin
+                # Direct object reference - no JSON serialization
                 inputs_for_function[pin.name] = pin_values.get(source_pin)
         
         if hasattr(node, "get_gui_values"):
@@ -110,58 +121,33 @@ class GraphExecutor:
             self._follow_execution_outputs(node, pin_values, execution_count, execution_limit)
             return execution_count
 
-        # Execute the node's function
-        python_exe = self.get_python_executable()
-        runner_script = (
-            f"import json, sys, io\n"
-            f"from contextlib import redirect_stdout\n"
-            f"def node_entry(func): return func\n"
-            f"{node.code}\n"
-            f"input_str = sys.stdin.read()\n"
-            f"inputs = json.loads(input_str) if input_str else {{}}\n"
-            f"stdout_capture = io.StringIO()\n"
-            f"return_value = None\n"
-            f"with redirect_stdout(stdout_capture):\n"
-            f"    return_value = {node.function_name}(**inputs)\n"
-            f"printed_output = stdout_capture.getvalue()\n"
-            f"final_output = {{'result': return_value, 'stdout': printed_output}}\n"
-            f"json.dump(final_output, sys.stdout)\n"
-        )
-
+        # Execute the node using SingleProcessExecutor (direct function call)
         try:
-            creation_flags = 0
-            if sys.platform == "win32":
-                creation_flags = subprocess.CREATE_NO_WINDOW
-
-            process = subprocess.run([python_exe, "-c", runner_script], 
-                                   input=json.dumps(inputs_for_function), 
-                                   capture_output=True, text=True, check=True, 
-                                   creationflags=creation_flags)
-
-            response = json.loads(process.stdout)
-            result, printed_output = response.get("result"), response.get("stdout")
-            if printed_output:
-                self.log.append(printed_output.strip())
-            if process.stderr:
-                self.log.append(f"STDERR: {process.stderr.strip()}")
+            result, output_message = self.single_process_executor.execute_node(node, inputs_for_function)
+            
+            if output_message:
+                self.log.append(output_message)
+                
         except Exception as e:
-            self.log.append(f"ERROR in node '{node.title}': {e}")
-            if hasattr(e, "stderr"):
-                self.log.append(e.stderr)
+            self.log.append(str(e))
             return execution_count
 
-        # Store results in data output pins
+        # Store results in data output pins using direct object references
         data_output_pins = [p for p in node.output_pins if p.pin_category == "data"]
         output_values = {}
+        
         if len(data_output_pins) == 1:
+            # Single output - store result directly (no JSON conversion)
             pin_values[data_output_pins[0]] = result
             output_values[data_output_pins[0].name] = result
         elif len(data_output_pins) > 1 and isinstance(result, (list, tuple)):
+            # Multiple outputs - distribute tuple/list items
             for i, pin in enumerate(data_output_pins):
                 if i < len(result):
                     pin_values[pin] = result[i]
                     output_values[pin.name] = result[i]
 
+        # Update GUI with output values
         if hasattr(node, "set_gui_values"):
             if DEBUG_EXECUTION:
                 print(f"DEBUG: Execution completed for '{node.title}', calling set_gui_values with: {output_values}")
@@ -175,14 +161,10 @@ class GraphExecutor:
         return execution_count
 
     def _follow_execution_outputs(self, node, pin_values, execution_count, execution_limit):
-        """Follow execution output pins to trigger next nodes."""
+        """Follow execution output connections to continue the flow."""
         exec_output_pins = [p for p in node.output_pins if p.pin_category == "execution"]
-        
         for pin in exec_output_pins:
             for conn in pin.connections:
                 downstream_node = conn.end_pin.node
                 execution_count = self._execute_node_flow(downstream_node, pin_values, execution_count, execution_limit)
-                if execution_count >= execution_limit:
-                    break
-        
         return execution_count

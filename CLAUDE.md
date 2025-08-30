@@ -18,7 +18,8 @@ PyFlowGraph: Universal node-based visual scripting editor built with Python and 
 - `node_editor_window.py` - Main QMainWindow
 - `node_editor_view.py` - QGraphicsView (pan/zoom/copy/paste)
 - `node_graph.py` - QGraphicsScene (nodes/connections/clipboard)
-- `graph_executor.py` - Execution engine with subprocess isolation
+- `execution/graph_executor.py` - Execution engine with single process architecture
+- `execution/single_process_executor.py` - Direct Python interpreter execution management
 - `commands/` - Command pattern for undo/redo system
 
 **Node System**: `node.py`, `pin.py`, `connection.py`, `reroute_node.py`
@@ -28,7 +29,7 @@ PyFlowGraph: Universal node-based visual scripting editor built with Python and 
 ## Key Concepts
 
 **Node Function Parsing**: Automatic pin generation from Python function signatures with type hints
-**Data Flow Execution**: Data-driven (not control-flow), subprocess isolation, JSON serialization
+**Data Flow Execution**: Data-driven (not control-flow), single process architecture, direct object references
 **Graph Persistence**: Clean JSON format, saved to `examples/` directory
 
 ## File Organization

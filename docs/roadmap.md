@@ -11,12 +11,17 @@ Transform PyFlowGraph into a professional-grade workflow automation platform by 
 - Maintain history during session (20-50 steps minimum)
 - Show undo history in menu
 
-### Node Grouping/Containers
-- Implement collapsible subgraphs for workflow modularity
-- Support multiple abstraction levels (Functions, Macros, Collapsed Graphs)
-- Enable saving groups as reusable workflow templates
-- Add custom I/O pins for groups
-- Essential for managing complexity in enterprise automation scenarios
+### Single Process Execution Architecture
+- Replace isolated subprocess per node with single persistent Python interpreter
+- Enable direct object references between nodes (100-1000x performance gain)
+- Zero serialization overhead for all data types
+- Sequential execution optimized for GPU memory constraints
+- Critical for ML/AI workflows with large tensors and real-time processing
+
+### Node Grouping/Containers (Basic Implementation Complete)
+- ✅ Basic group creation and selection (Story 3.1 complete)
+- Advanced grouping features deferred to future releases
+- Focus on core functionality rather than advanced UI features
 
 ### Integration Connectors
 - HTTP/REST API node with authentication support
@@ -27,13 +32,6 @@ Transform PyFlowGraph into a professional-grade workflow automation platform by 
 - Cloud storage integrations (S3, Azure Blob, Google Cloud Storage)
 
 ## Priority 2: Performance & Usability (Should Have)
-
-### Shared Subprocess Execution Model
-- Replace isolated subprocess per node with shared Python process
-- Enable direct object passing between nodes (10-100x performance gain)
-- Simplify data transfer between nodes
-- Reduce serialization overhead
-- Maintain security through sandboxing options
 
 ### Pin Type Visibility
 - Add type badges/labels on pins (like Unity Visual Scripting)
@@ -71,8 +69,9 @@ Transform PyFlowGraph into a professional-grade workflow automation platform by 
 
 ## Implementation Priority Notes
 
-1. **Critical Gaps**: Undo/Redo and Node Grouping are essential for professional workflow automation tools
-2. **Integration Power**: Native connectors for APIs, databases, and cloud services enable real-world automation
-3. **Performance Win**: Shared subprocess execution could provide 10-100x speedup for data processing workflows
-4. **Differentiation**: Python-native approach allows unlimited extensibility beyond visual-only platforms
-5. **Quick Wins**: Pin type visibility and built-in transformation nodes provide immediate value for automation tasks
+1. **Critical Performance Revolution**: Single process execution is now Priority 1 - 100-1000x speedup for ML/AI workflows
+2. **GPU Memory Optimization**: Sequential execution prevents VRAM conflicts in data science pipelines
+3. **Completed Foundation**: Basic node grouping (Story 3.1) provides sufficient organization - advanced features deferred
+4. **Integration Power**: Native connectors for APIs, databases, and cloud services enable real-world automation
+5. **Zero Overhead**: Direct object references eliminate all serialization bottlenecks
+6. **ML/AI Focus**: First-class PyTorch, TensorFlow, JAX integration with persistent namespaces

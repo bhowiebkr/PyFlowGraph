@@ -631,12 +631,21 @@ class Node(QGraphicsItem):
             if name not in current_data_outputs:
                 self.add_data_pin(name, "output", type_name)
 
-        # Add default execution pins if they don't exist
+        # Add execution pins based on function parameters
         current_exec_inputs = {pin.name: pin for pin in self.input_pins if pin.pin_category == "execution"}
         current_exec_outputs = {pin.name: pin for pin in self.output_pins if pin.pin_category == "execution"}
         
-        if "exec_in" not in current_exec_inputs:
+        # Only add execution input if the function has input parameters
+        # Functions without parameters are entry points and shouldn't have exec_in
+        function_has_inputs = len(new_data_inputs) > 0
+        
+        if function_has_inputs and "exec_in" not in current_exec_inputs:
             self.add_execution_pin("exec_in", "input")
+        elif not function_has_inputs and "exec_in" in current_exec_inputs:
+            # Remove exec_in for entry point functions
+            self.remove_pin(current_exec_inputs["exec_in"])
+            
+        # Always add execution output for functions
         if "exec_out" not in current_exec_outputs:
             self.add_execution_pin("exec_out", "output")
             

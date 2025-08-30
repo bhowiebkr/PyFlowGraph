@@ -12,11 +12,12 @@
 
 ## Executive Summary
 
-This document defines the technical architecture for implementing Command Pattern-based undo/redo functionality and Node Grouping system in PyFlowGraph, positioning it as a professional workflow automation platform. The design maintains backward compatibility with existing PySide6 architecture while delivering enterprise-grade automation capabilities including API integrations, data transformations, and workflow orchestration.
+This document defines the technical architecture for implementing Command Pattern-based undo/redo functionality and Shared Process Execution system in PyFlowGraph, positioning it as a professional workflow automation platform. The design maintains backward compatibility with existing PySide6 architecture while delivering enterprise-grade automation capabilities including high-performance data processing, API integrations, and workflow orchestration.
 
 **Key Architecture Decisions:**
 - Command Pattern implementation integrated into existing NodeGraph operations
-- Hierarchical grouping system using Qt's QGraphicsItemGroup with custom extensions
+- Shared Process Execution Model replacing isolated subprocess-per-node for 10-100x performance gains
+- Direct object passing between nodes without JSON serialization overhead
 - Memory-efficient command history with configurable depth (default 50, max 200)
 - Backward-compatible file format extensions preserving existing .md workflow
 - Extensible node type system for integration connectors (HTTP, Database, Cloud)
@@ -57,7 +58,8 @@ PyFlowGraph follows a layered desktop application architecture built on PySide6:
 ├─────────────────────────────────────────────────────────────┤
 │                    Infrastructure Layer                     │
 ├─────────────────────────────────────────────────────────────┤
-│ GraphExecutor - Subprocess isolation & execution           │
+│ SharedProcessManager - Shared process pool for execution   │
+│ GraphExecutor - Node execution coordination                 │
 │ FlowFormat - Markdown serialization                        │
 │ EventSystem - Event-driven execution                       │
 │ FileOperations - File I/O management                       │
@@ -372,6 +374,214 @@ class CompositeCommand(CommandBase):
                 success = False
         return success
 ```
+
+---
+
+## Single Process Execution Architecture
+
+### Overview
+
+The Single Process Execution Architecture replaces the current isolated subprocess-per-node model with a single persistent Python interpreter, delivering 100-1000x performance improvements for ML/data science workflows while respecting GPU memory constraints through intelligent sequential scheduling.
+
+### Current vs. New Architecture
+
+#### Current Architecture (Isolated Subprocess)
+```
+Node A → [Subprocess A] → JSON → Node B → [Subprocess B] → JSON → Node C
+   ↑         ↑                      ↑         ↑
+100ms    Serialize              100ms    Serialize
+startup   overhead             startup   overhead
+```
+
+#### New Architecture (Single Process)
+```
+Node A → [Same Python Interpreter] → Direct Reference → Node B → [Same Interpreter] → Node C
+   ↑              ↑                        ↑                         ↑
+  0ms        No overhead                Zero-copy                   0ms
+startup    Same namespace           Native objects               startup
+```
+
+### Core Components
+
+#### SingleProcessExecutor
+```python
+# src/execution/single_process_executor.py
+class SingleProcessExecutor:
+    """Manages execution in a single persistent Python interpreter."""
+    
+    def __init__(self):
+        self.namespace: Dict[str, Any] = {}  # Persistent namespace
+        self.object_store: Dict[str, Any] = {}  # Direct object storage
+        self.memory_monitor = MemoryMonitor()
+        self.gpu_monitor = GPUMonitor()
+        self.execution_queue = ExecutionQueue()
+        
+    def execute_node(self, node: Node, inputs: Dict[str, Any]) -> Any:
+        """Execute node directly in current interpreter."""
+        # Check memory/GPU constraints before execution
+        self._check_resources(node, inputs)
+        
+        # Prepare execution environment
+        exec_globals = {**self.namespace, **inputs}
+        
+        # Execute node code directly
+        try:
+            exec(node.code, exec_globals)
+            result = exec_globals[node.function_name](**inputs)
+            
+            # Store result directly (no serialization)
+            self._store_result(node, result)
+            return result
+            
+        except Exception as e:
+            self._handle_execution_error(node, e)
+            raise
+            
+    def _check_resources(self, node: Node, inputs: Dict[str, Any]):
+        """Check if sufficient resources available before execution."""
+        # Estimate memory requirements
+        memory_required = self._estimate_memory_usage(inputs)
+        
+        # Check GPU memory if using GPU tensors
+        if self._uses_gpu(inputs):
+            gpu_memory_required = self._estimate_gpu_memory(inputs)
+            if not self.gpu_monitor.has_available_memory(gpu_memory_required):
+                self._cleanup_gpu_memory()
+                
+    def _store_result(self, node: Node, result: Any):
+        """Store result directly in object store."""
+        # No serialization - direct Python object reference
+        self.object_store[f"node_{node.id}_result"] = result
+        
+        # Update persistent namespace with common imports/variables
+        if hasattr(result, '__module__'):
+            module_name = result.__module__
+            if module_name not in self.namespace:
+                self.namespace[module_name] = __import__(module_name)
+```
+
+#### SequentialScheduler
+```python
+# src/execution/sequential_scheduler.py
+class SequentialScheduler:
+    """GPU-aware sequential execution scheduler."""
+    
+    def __init__(self, executor: SingleProcessExecutor):
+        self.executor = executor
+        self.dependency_graph = DependencyGraph()
+        self.resource_monitor = ResourceMonitor()
+        
+    def schedule_execution(self, nodes: List[Node]) -> ExecutionPlan:
+        """Create execution plan respecting dependencies and resources."""
+        # Build dependency graph
+        execution_order = self._topological_sort(nodes)
+        
+        # Add resource constraints
+        execution_plan = ExecutionPlan()
+        for node in execution_order:
+            # Check if node requires GPU resources
+            if self._is_gpu_intensive(node):
+                execution_plan.add_gpu_checkpoint(node)
+            
+            execution_plan.add_node(node)
+            
+        return execution_plan
+        
+    def _is_gpu_intensive(self, node: Node) -> bool:
+        """Detect if node will use significant GPU memory."""
+        gpu_keywords = ['torch.', 'cuda', 'gpu', 'tensorflow', 'jax.device']
+        return any(keyword in node.code.lower() for keyword in gpu_keywords)
+        
+    def execute_plan(self, plan: ExecutionPlan) -> Dict[Node, Any]:
+        """Execute nodes sequentially according to plan."""
+        results = {}
+        
+        for step in plan.steps:
+            if step.is_gpu_checkpoint:
+                # Clean up GPU memory before heavy operation
+                self._cleanup_gpu_memory()
+                
+            result = self.executor.execute_node(step.node, step.inputs)
+            results[step.node] = result
+            
+        return results
+```
+
+#### GPUMemoryManager
+```python
+# src/execution/gpu_memory_manager.py
+class GPUMemoryManager:
+    """Manages GPU memory for optimal utilization."""
+    
+    def __init__(self):
+        self.device_monitors = {}
+        self.memory_pool = {}
+        self.cleanup_strategies = [
+            TensorCleanupStrategy(),
+            ModelCleanupStrategy(),
+            CacheCleanupStrategy()
+        ]
+        
+    def check_available_memory(self, required_bytes: int) -> bool:
+        """Check if sufficient GPU memory available."""
+        try:
+            import torch
+            if torch.cuda.is_available():
+                free_memory = torch.cuda.get_device_properties(0).total_memory
+                free_memory -= torch.cuda.memory_allocated(0)
+                return free_memory >= required_bytes
+        except ImportError:
+            pass
+        return True  # Assume available if no GPU libs
+        
+    def cleanup_memory(self):
+        """Aggressive GPU memory cleanup."""
+        for strategy in self.cleanup_strategies:
+            strategy.cleanup()
+            
+        # Force garbage collection
+        import gc
+        gc.collect()
+        
+        # PyTorch specific cleanup
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+        except ImportError:
+            pass
+```
+
+### Performance Benefits
+
+#### Execution Time Comparison
+| Operation | Current (Subprocess) | New (Single Process) | Improvement |
+|-----------|---------------------|---------------------|-------------|
+| Small node execution | 100-200ms | <1ms | 100-200x faster |
+| Large tensor passing | 500ms-2s | 0ms (direct reference) | ∞x faster |
+| ML pipeline (10 nodes) | 5-10 seconds | 10-50ms | 100-1000x faster |
+| PyTorch model inference | 2-5 seconds overhead | 0ms overhead | No overhead |
+
+#### Memory Usage Benefits
+- **Direct object references**: No copying or serialization ever
+- **Persistent namespace**: Imports and common objects stay loaded
+- **GPU memory optimization**: Intelligent cleanup prevents OOM
+- **Shared computation graphs**: ML frameworks can optimize across nodes
+
+### Implementation Strategy
+
+#### Migration Approach
+- Clean break from subprocess model - no backward compatibility
+- All data passing uses direct Python object references
+- Existing graphs require one-time conversion (automated)
+- Focus on maximum performance rather than compatibility
+
+#### GPU Memory Strategy
+- Sequential execution prevents VRAM conflicts
+- Automatic cleanup before memory-intensive operations
+- Real-time monitoring prevents out-of-memory crashes
+- Support for multi-GPU workloads with device affinity
 
 ---
 

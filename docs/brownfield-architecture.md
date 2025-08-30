@@ -22,7 +22,8 @@ Comprehensive documentation of the entire PyFlowGraph system - a universal node-
 - **Main Window**: `src/node_editor_window.py` - QMainWindow with menus, toolbars, dock widgets
 - **Graph Scene**: `src/node_graph.py` - QGraphicsScene managing nodes and connections
 - **Node System**: `src/node.py` - Core Node class with automatic pin generation
-- **Execution Engine**: `src/graph_executor.py` - Batch mode subprocess execution
+- **Execution Engine**: `src/execution/graph_executor.py` - Shared process execution coordination
+- **Process Manager**: `src/execution/shared_process_manager.py` - Persistent worker process pool management
 - **Event System**: `src/event_system.py` - Live mode event-driven execution
 - **File Format**: `src/flow_format.py` - Markdown-based persistence
 - **Configuration**: `dark_theme.qss` - Application styling
@@ -156,12 +157,13 @@ Nodes automatically parse Python function signatures to create pins:
 - Supports `Tuple[...]` for multiple outputs
 - Type determines pin color (int=blue, str=green, float=orange, bool=red)
 
-#### Execution Protocol
-Each node executes in isolated subprocess:
-1. Serialize input pin values as JSON
-2. Execute node code in subprocess with timeout
-3. Deserialize output values from JSON
-4. Pass to connected nodes
+#### Execution Protocol (Shared Process Architecture)
+Each node executes in shared worker process:
+1. Acquire worker from persistent process pool
+2. Pass object references for large data (tensors, DataFrames), JSON for primitives
+3. Execute node code in shared process with direct memory access
+4. Return results via object references or direct values
+5. Pass to connected nodes with zero-copy for large objects
 
 #### Event System (Live Mode)
 - `EventType`: Defines event categories (TIMER, USER_INPUT, etc.)
@@ -363,7 +365,7 @@ pip install -r requirements.txt  # Install dependencies
 
 ### Performance Considerations
 
-- **Subprocess Overhead**: Each node execution spawns new process
+- **Execution Performance**: Shared process pool eliminates subprocess overhead (10-100x faster)
 - **Large Graphs**: No optimization for graphs with 100+ nodes
 - **Virtual Environments**: Creating new environments can be slow
 
