@@ -1,6 +1,30 @@
-# Computer Vision Pipeline - PyTorch Example
+# NVIDIA GPU Computer Vision Pipeline - PyTorch CUDA Example
 
-Computer vision pipeline using PyTorch with native object passing for maximum performance. Demonstrates zero-copy tensor operations, GPU acceleration, and ML framework integration.
+High-performance computer vision pipeline using PyTorch with CUDA GPU acceleration and native object passing. Demonstrates zero-copy tensor operations, NVIDIA GPU acceleration, and ML framework integration optimized for CUDA-enabled systems.
+
+## Dependencies
+
+```json
+{
+  "requirements": [
+    "torch>=2.0.0+cu118",
+    "torchvision>=0.15.0+cu118", 
+    "torchaudio>=2.0.0+cu118",
+    "Pillow>=8.0.0",
+    "numpy>=1.21.0"
+  ],
+  "optional": [
+    "nvidia-ml-py3>=11.0.0"
+  ],
+  "python": ">=3.8",
+  "system": [
+    "NVIDIA GPU (RTX 20/30/40 series or Tesla/Quadro)",
+    "CUDA Toolkit 11.8 or 12.x", 
+    "NVIDIA Driver 520.61+ (for CUDA 11.8) or 525.60+ (for CUDA 12.x)"
+  ],
+  "notes": "CUDA-enabled PyTorch for NVIDIA GPU acceleration. Install from: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118. Models download automatically (~100MB for ResNet-50). Fallback to CPU if CUDA unavailable."
+}
+```
 
 ## Node: Image Path Input (ID: image-path-input)
 
