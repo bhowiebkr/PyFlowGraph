@@ -354,7 +354,96 @@ Where r, g, b are 0-255 and a (alpha/transparency) is 0-255 (0 = fully transpare
 - Groups maintain their own undo/redo history for property changes
 - Groups can be collapsed/expanded to manage visual complexity
 
-### 3.6 Connections Section
+### 3.6 Dependencies Section (Optional)
+
+Files MAY contain a Dependencies section specifying required Python packages:
+
+```markdown
+## Dependencies
+
+```json
+{
+  "requirements": [
+    "torch>=1.9.0",
+    "torchvision>=0.10.0", 
+    "Pillow>=8.0.0",
+    "numpy>=1.21.0"
+  ],
+  "optional": [
+    "cuda-toolkit>=11.0"
+  ],
+  "python": ">=3.8"
+}
+```
+
+**Dependency Properties:**
+
+**Required Fields:**
+- `requirements`: Array of package specifications using pip-style version constraints
+
+**Optional Fields:**
+- `optional`: Array of optional packages that enhance functionality
+- `python`: Minimum Python version requirement
+- `system`: System-level dependencies (e.g., CUDA, OpenCV system libraries)
+- `notes`: Additional installation or compatibility notes
+
+**Package Specification Format:**
+- Use pip-compatible version specifiers: `package>=1.0.0`, `package==1.2.3`, `package~=1.0`
+- For exact versions: `"torch==1.12.0"`
+- For minimum versions: `"numpy>=1.21.0"`
+- For compatible versions: `"pandas~=1.4.0"` (equivalent to `>=1.4.0, ==1.4.*`)
+
+**Usage Examples:**
+
+**ML/AI Dependencies:**
+```json
+{
+  "requirements": [
+    "torch>=1.9.0",
+    "torchvision>=0.10.0",
+    "transformers>=4.0.0",
+    "numpy>=1.21.0"
+  ],
+  "optional": ["cuda-toolkit>=11.0"],
+  "python": ">=3.8",
+  "notes": "CUDA support requires compatible GPU drivers"
+}
+```
+
+**Data Science Dependencies:**
+```json
+{
+  "requirements": [
+    "pandas>=1.3.0",
+    "numpy>=1.21.0", 
+    "matplotlib>=3.4.0",
+    "scikit-learn>=1.0.0"
+  ],
+  "python": ">=3.8"
+}
+```
+
+**Web/API Dependencies:**
+```json
+{
+  "requirements": [
+    "requests>=2.25.0",
+    "fastapi>=0.70.0",
+    "uvicorn>=0.15.0"
+  ],
+  "optional": ["gunicorn>=20.1.0"],
+  "python": ">=3.8"
+}
+```
+
+**Dependency Resolution:**
+- Virtual environments handle package installation and version management
+- Missing dependencies are detected at graph load time
+- Users are prompted to install missing packages through the environment manager
+- Optional dependencies are installed only if requested
+- Version conflicts are resolved according to pip's dependency resolution
+
+### 3.7 Connections Section
 
 The file MUST contain exactly one Connections section:
 
@@ -400,7 +489,7 @@ The file MUST contain exactly one Connections section:
 ]
 ```
 
-### 3.7 GUI Integration & Data Flow
+### 3.8 GUI Integration & Data Flow
 
 When a node has both GUI components and pin connections, the data flows as follows:
 
@@ -455,7 +544,7 @@ This state is:
 - Restored when the graph is loaded via `set_initial_state()`
 - Updated whenever widget values change
 
-### 3.8 Reroute Nodes
+### 3.9 Reroute Nodes
 
 Reroute nodes are special organizational nodes that help manage connection routing and graph layout without affecting data flow.
 
@@ -505,7 +594,7 @@ Reroute nodes are special organizational nodes that help manage connection routi
 ]
 ```
 
-### 3.9 Execution Modes
+### 3.10 Execution Modes
 
 PyFlowGraph supports two distinct execution modes that determine how the graph processes data:
 
@@ -541,7 +630,7 @@ PyFlowGraph supports two distinct execution modes that determine how the graph p
 - Both modes benefit from native object passing (100-1000x performance improvement)
 - ML objects (tensors, DataFrames) persist across executions in Live mode
 
-### 3.10 ML Framework Integration
+### 3.11 ML Framework Integration
 
 PyFlowGraph provides native, zero-copy support for major machine learning and data science frameworks through the single process execution architecture.
 
@@ -628,7 +717,7 @@ def _cleanup_gpu_memory(self):
         pass
 ```
 
-### 3.11 Virtual Environments
+### 3.12 Virtual Environments
 
 PyFlowGraph uses isolated Python virtual environments to manage dependencies for each graph:
 
@@ -664,7 +753,7 @@ PyFlowGraph/
 - **Resource Management**: Automatic memory cleanup and GPU cache management
 - **Portability**: Environments can be recreated from requirements
 
-### 3.11 Native Object Passing System
+### 3.13 Native Object Passing System
 
 PyFlowGraph executes all nodes in a single persistent Python interpreter with direct object references for maximum performance. This architecture eliminates all serialization overhead and enables zero-copy data transfer between nodes.
 
@@ -816,7 +905,7 @@ The execution system maintains object references through:
 - **Persistence**: Objects remain in memory across executions in Live Mode
 - **Cleanup**: Automatic garbage collection when nodes are disconnected
 
-### 3.12 Error Handling
+### 3.14 Error Handling
 
 The system provides comprehensive error handling during graph execution:
 
