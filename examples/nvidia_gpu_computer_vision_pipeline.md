@@ -470,6 +470,7 @@ widgets['results_display'].setFont(font)
 layout.addWidget(widgets['results_display'])
 
 widgets['clear_btn'] = QPushButton('Clear Results', parent)
+widgets['clear_btn'].clicked.connect(lambda: widgets['results_display'].setPlainText('Run pipeline to see results...'))
 layout.addWidget(widgets['clear_btn'])
 ```
 
@@ -633,11 +634,11 @@ def set_initial_state(widgets, state):
     "end_pin_name": "channels"
   },
   {
-    "start_node_uuid": "classifier",
-    "start_pin_uuid": "8f2a1b3c-9d4e-5f6a-7b8c-9d0e1f2a3b4c",
+    "start_node_uuid": "classifier", 
+    "start_pin_uuid": "4a7b8c9d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
     "start_pin_name": "output_4",
     "end_node_uuid": "results-display",
-    "end_pin_uuid": "17729284-46e4-4fa3-a6f6-a92beb65feab",
+    "end_pin_uuid": "17729284-46e4-4fa3-a6f6-a92beb65feab", 
     "end_pin_name": "device_info"
   }
 ]
