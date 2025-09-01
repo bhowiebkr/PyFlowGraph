@@ -469,8 +469,11 @@ font = QFont('Courier New', 9)
 widgets['results_display'].setFont(font)
 layout.addWidget(widgets['results_display'])
 
+def clear_results():
+    widgets['results_display'].setPlainText('Run pipeline to see results...')
+
 widgets['clear_btn'] = QPushButton('Clear Results', parent)
-widgets['clear_btn'].clicked.connect(lambda: widgets['results_display'].setPlainText('Run pipeline to see results...'))
+widgets['clear_btn'].clicked.connect(clear_results)
 layout.addWidget(widgets['clear_btn'])
 ```
 
