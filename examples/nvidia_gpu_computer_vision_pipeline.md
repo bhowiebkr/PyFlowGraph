@@ -470,6 +470,9 @@ widgets['results_display'].setFont(font)
 layout.addWidget(widgets['results_display'])
 
 def clear_results():
+    # Set a flag on the node to indicate results are cleared
+    if 'node' in globals():
+        node._results_cleared = True
     widgets['results_display'].setPlainText('Run pipeline to see results...')
 
 widgets['clear_btn'] = QPushButton('Clear Results', parent)
@@ -484,9 +487,17 @@ def get_values(widgets):
     return {}
 
 def set_values(widgets, outputs):
+    # Check if results were manually cleared
+    if 'node' in globals() and hasattr(node, '_results_cleared') and node._results_cleared:
+        # Don't restore results if they were manually cleared
+        return
+    
     results = outputs.get('output_1', {})
     
     if results:
+        # Clear the cleared flag when new results come in
+        if 'node' in globals():
+            node._results_cleared = False
         # Format results for display
         display_text = ""
         

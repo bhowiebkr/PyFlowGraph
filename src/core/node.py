@@ -172,6 +172,7 @@ class Node(QGraphicsItem):
 
         self.custom_widget_host = QWidget()
         self.custom_widget_host.setAttribute(Qt.WA_TranslucentBackground)
+        self.custom_widget_host._node = self  # Add node reference for GUI callbacks
         self.custom_widget_layout = QVBoxLayout(self.custom_widget_host)
         self.custom_widget_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.custom_widget_host)
@@ -201,7 +202,7 @@ class Node(QGraphicsItem):
             try:
                 from PySide6 import QtWidgets
 
-                scope = {"parent": self.custom_widget_host, "layout": self.custom_widget_layout, "widgets": self.gui_widgets, "QtWidgets": QtWidgets}
+                scope = {"parent": self.custom_widget_host, "layout": self.custom_widget_layout, "widgets": self.gui_widgets, "node": self, "QtWidgets": QtWidgets}
                 exec(self.gui_code, scope)
             except Exception as e:
                 from PySide6.QtWidgets import QLabel
@@ -470,7 +471,7 @@ class Node(QGraphicsItem):
         if not self.gui_get_values_code or not self.gui_widgets:
             return {}
         try:
-            scope = {"widgets": self.gui_widgets}
+            scope = {"widgets": self.gui_widgets, "node": self}
             exec(self.gui_get_values_code, scope)
             value_getter = scope.get("get_values")
             if callable(value_getter):
@@ -488,7 +489,7 @@ class Node(QGraphicsItem):
             if DEBUG_GUI_UPDATES:
                 print(f"DEBUG: set_gui_values() called for '{self.title}' with outputs: {outputs}")
                 print(f"DEBUG: Available widgets: {list(self.gui_widgets.keys()) if self.gui_widgets else []}")
-            scope = {"widgets": self.gui_widgets}
+            scope = {"widgets": self.gui_widgets, "node": self}
             exec(self.gui_get_values_code, scope)
             value_setter = scope.get("set_values")
             if callable(value_setter):
@@ -510,7 +511,7 @@ class Node(QGraphicsItem):
         if not self.gui_get_values_code or not self.gui_widgets or not state:
             return
         try:
-            scope = {"widgets": self.gui_widgets}
+            scope = {"widgets": self.gui_widgets, "node": self}
             exec(self.gui_get_values_code, scope)
             state_setter = scope.get("set_initial_state")
             if callable(state_setter):
