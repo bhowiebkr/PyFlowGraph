@@ -236,3 +236,7 @@ class ExecutionController:
     def refresh_environment_state(self):
         """Public method to refresh environment state (called after environment selection)."""
         self._check_environment_validity()
+        
+        # Refresh the GraphExecutor's SingleProcessExecutor with new venv path
+        if self.executor:
+            self.executor.refresh_executor_environment()
