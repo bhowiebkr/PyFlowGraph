@@ -308,7 +308,7 @@ import torch
 import torchvision.models as models
 
 @node_entry 
-def classify_image(preprocessed_tensor: torch.Tensor) -> Tuple[Dict[str, float], str, float]:
+def classify_image(preprocessed_tensor: torch.Tensor) -> Tuple[Dict[str, float], str, float, str]:
     # Load full ResNet model for classification
     if not hasattr(classify_image, 'model'):
         print("Loading ResNet-50 classifier...")
@@ -361,10 +361,14 @@ def classify_image(preprocessed_tensor: torch.Tensor) -> Tuple[Dict[str, float],
     top_class = max(predictions, key=predictions.get)
     top_confidence = max(predictions.values())
     
+    # Determine device info for results
+    device_info = "cuda:0" if torch.cuda.is_available() and tensor.is_cuda else "cpu"
+    
     print(f"Top prediction: {top_class} ({top_confidence:.4f})")
     print(f"Top 5 predictions: {predictions}")
+    print(f"Processing device: {device_info}")
     
-    return predictions, top_class, top_confidence
+    return predictions, top_class, top_confidence, device_info
 ```
 
 
