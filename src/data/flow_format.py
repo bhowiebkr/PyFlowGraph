@@ -158,6 +158,9 @@ class FlowFormatHandler:
                         elif heading_text == "Groups":
                             current_section = "groups"
                             current_node = None
+                        elif heading_text == "Dependencies":
+                            current_section = "dependencies"
+                            current_node = None
                         else:
                             # Node header: "Node: Title (ID: uuid)"
                             match = re.match(r"Node:\s*(.*?)\s*\(ID:\s*(.*?)\)", heading_text)
@@ -202,6 +205,14 @@ class FlowFormatHandler:
                 elif current_section == "groups" and language == "json":
                     try:
                         graph_data["groups"] = json.loads(content)
+                    except json.JSONDecodeError:
+                        pass  # Skip invalid JSON
+                
+                elif current_section == "dependencies" and language == "json":
+                    try:
+                        deps_data = json.loads(content)
+                        # Extract just the requirements array, which is what the rest of the system expects
+                        graph_data["requirements"] = deps_data.get("requirements", [])
                     except json.JSONDecodeError:
                         pass  # Skip invalid JSON
                 

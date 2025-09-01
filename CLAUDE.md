@@ -118,6 +118,8 @@ ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 NEVER use emojis in any code, tests, or temporary files - causes Windows encoding errors.
 
+**CRITICAL GIT COMMIT RULE**: NEVER commit changes unless the user explicitly asks to commit. Always wait for the user to test and verify changes work before committing. Do NOT commit automatically after making changes - this is forbidden.
+
 **WINDOWS-ONLY PLATFORM REQUIREMENTS**:
 - NEVER use Linux commands: `ls`, `grep`, `find`, `chmod`, `/usr/bin/bash`, `./script.sh`
 - ALWAYS use Windows commands: `dir`, `findstr`, `where`, `attrib`, `cmd.exe`, `script.bat`

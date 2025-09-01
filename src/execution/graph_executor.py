@@ -25,8 +25,22 @@ class GraphExecutor:
         self.log = log_widget
         self.get_venv_path = venv_path_callback
         
-        # Initialize single process executor
-        self.single_process_executor = SingleProcessExecutor(log_widget)
+        # Get venv path for package loading
+        venv_path = self.get_venv_path() if self.get_venv_path else None
+        
+        # Initialize single process executor with venv path
+        self.single_process_executor = SingleProcessExecutor(log_widget, venv_path)
+
+    def refresh_executor_environment(self):
+        """Recreate the SingleProcessExecutor with updated venv path when environment changes."""
+        # Get current venv path
+        venv_path = self.get_venv_path() if self.get_venv_path else None
+        
+        # Recreate the SingleProcessExecutor with new venv path
+        self.single_process_executor = SingleProcessExecutor(self.log, venv_path)
+        
+        if DEBUG_EXECUTION:
+            self.log.append(f"DEBUG: Recreated SingleProcessExecutor with venv_path: {venv_path}")
 
     def get_python_executable(self):
         """Get the Python executable path for the virtual environment."""

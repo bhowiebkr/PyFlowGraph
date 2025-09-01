@@ -23,13 +23,16 @@ from core.reroute_node import RerouteNode
 class SingleProcessExecutor:
     """Executes nodes directly in a single persistent Python interpreter."""
     
-    def __init__(self, log_widget=None):
+    def __init__(self, log_widget=None, venv_path=None):
         """Initialize the single process executor.
         
         Args:
             log_widget: Optional logging widget for output messages
+            venv_path: Path to virtual environment for package loading
         """
         self.log = log_widget if log_widget is not None else []
+        self.venv_path = venv_path
+        self.original_sys_path = None  # Store original sys.path for cleanup
         
         # Persistent namespace for all node executions
         self.namespace: Dict[str, Any] = {}
@@ -42,6 +45,9 @@ class SingleProcessExecutor:
         
         # Reference counting for memory management
         self.object_refs: Dict[Any, int] = weakref.WeakValueDictionary()
+        
+        # Set up virtual environment packages if provided
+        self._setup_venv_packages()
         
         # Initialize with essential imports
         self._initialize_namespace()
@@ -72,6 +78,36 @@ class SingleProcessExecutor:
             except ImportError:
                 # Module not available, skip
                 pass
+    
+    def _setup_venv_packages(self):
+        """Set up virtual environment packages by adding site-packages to sys.path."""
+        if not self.venv_path or not os.path.exists(self.venv_path):
+            return
+            
+        # Store original sys.path for cleanup
+        self.original_sys_path = sys.path.copy()
+        
+        # Find site-packages directory in the virtual environment
+        if os.name == 'nt':  # Windows
+            site_packages_path = os.path.join(self.venv_path, "Lib", "site-packages")
+        else:  # Unix/Linux/macOS
+            # Find the Python version directory
+            lib_dir = os.path.join(self.venv_path, "lib")
+            if os.path.exists(lib_dir):
+                python_dirs = [d for d in os.listdir(lib_dir) if d.startswith('python')]
+                if python_dirs:
+                    site_packages_path = os.path.join(lib_dir, python_dirs[0], "site-packages")
+                else:
+                    return
+            else:
+                return
+        
+        # Add site-packages to sys.path if it exists
+        if os.path.exists(site_packages_path):
+            # Insert at the beginning to give priority to venv packages
+            sys.path.insert(0, site_packages_path)
+            if self.log and hasattr(self.log, 'append'):
+                self.log.append(f"Added venv packages from: {site_packages_path}")
     
     def execute_node(self, node: Node, inputs: Dict[str, Any]) -> Tuple[Any, str]:
         """Execute a single node directly in the current interpreter.
@@ -227,3 +263,9 @@ class SingleProcessExecutor:
         self.object_store.clear()
         self.execution_times.clear()
         self._initialize_namespace()
+    
+    def cleanup_venv_packages(self):
+        """Restore original sys.path by removing venv packages."""
+        if self.original_sys_path is not None:
+            sys.path[:] = self.original_sys_path
+            self.original_sys_path = None
