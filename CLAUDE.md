@@ -1,12 +1,35 @@
 # CLAUDE.md
 
+## CRITICAL WINDOWS-ONLY PLATFORM REQUIREMENTS
+
+**ABSOLUTE RULE**: This is a Windows-only codebase. Claude Code MUST NEVER use Linux commands.
+
+**FORBIDDEN Linux Commands - NEVER USE THESE:**
+- `ls`, `grep`, `find`, `chmod`, `./script.sh`, `/usr/bin/bash`, `cat`, `head`, `tail`, `rm`, `mv`, `cp`
+
+**REQUIRED Windows Commands - ALWAYS USE THESE:**
+- `dir` (not `ls`)
+- `findstr` (not `grep`) 
+- `where` (not `find`)
+- `del` (not `rm`)
+- `move` (not `mv`)
+- `copy` (not `cp`)
+- `type` (not `cat`)
+- `script.bat` (not `./script.sh`)
+- `python` (not `python3`)
+
+**File Operations:**
+- Use Windows paths: `E:\HOME\PyFlowGraph\` 
+- Execute batch files directly: `run.bat` (not `./run.bat`)
+- Use backslashes `\` or forward slashes `/` for paths
+
 ## Project Overview
 
 PyFlowGraph: Universal node-based visual scripting editor built with Python and PySide6. "Code as Nodes" philosophy with automatic pin generation from Python function signatures.
 
 ## Commands
 
-**Running**: `run.bat` (Windows) or `./run.sh` (Linux/macOS)
+**Running**: `run.bat`
 **Testing**: `run_test_gui.bat` - Professional GUI test runner
 **Dependencies**: `pip install PySide6`
 
@@ -31,6 +54,7 @@ PyFlowGraph: Universal node-based visual scripting editor built with Python and 
 **Node Function Parsing**: Automatic pin generation from Python function signatures with type hints
 **Data Flow Execution**: Data-driven (not control-flow), single process architecture, direct object references
 **Graph Persistence**: Clean JSON format, saved to `examples/` directory
+**Virtual Environments**: Graphs can specify dependencies and use isolated `venvs/` environments
 
 ## File Organization
 
@@ -55,7 +79,7 @@ PyFlowGraph/
 - **Coverage-driven test generation** for missing tests
 - **Token-efficient reporting** optimized for Claude Code
 
-**Current Suite**: 18+ test files covering node system, pins, connections, execution, file formats
+**Current Suite**: 50+ test files covering node system, pins, connections, execution, file formats
 **GUI Runner**: `run_test_gui.bat` - Professional PySide6 interface with real-time status
 **Coverage**: Core components, command system, integration scenarios
 
@@ -74,26 +98,12 @@ PyFlowGraph/
 
 ## Development Notes
 
-- **WINDOWS-ONLY CODEBASE**: This project runs exclusively on Windows
 - PySide6 Qt-based GUI with Font Awesome icons
-- Isolated subprocess execution for security
+- Single process execution for performance
 - No Claude attribution in commits or code comments
 - **NEVER use emojis in any code, tests, or temporary files - causes encoding issues**
 - Clean, professional, technical documentation only
 
-## Windows Platform Requirements
-
-**CRITICAL**: This is a Windows-only codebase. Claude Code MUST use Windows-compatible commands:
-
-- **Shell Commands**: Use `cmd`, `powershell`, or Windows batch commands only
-- **File Operations**: Use Windows paths with backslashes `\` or forward slashes `/`
-- **Batch Files**: Execute `.bat` files directly (e.g., `run.bat`, `run_test_gui.bat`)
-- **Python Execution**: Use `python` command (not `python3`)
-- **Path Separators**: Use Windows-style paths `E:\HOME\PyFlowGraph\`
-
-**FORBIDDEN Linux Commands**:
-- Do NOT use: `ls`, `grep`, `find`, `chmod`, `./script.sh`, `/usr/bin/bash`
-- Use instead: `dir`, `findstr`, `where`, `attrib`, `script.bat`, `cmd.exe`
 
 ## Code Standards
 
@@ -120,9 +130,5 @@ NEVER use emojis in any code, tests, or temporary files - causes Windows encodin
 
 **CRITICAL GIT COMMIT RULE**: NEVER commit changes unless the user explicitly asks to commit. Always wait for the user to test and verify changes work before committing. Do NOT commit automatically after making changes - this is forbidden.
 
-**WINDOWS-ONLY PLATFORM REQUIREMENTS**:
-- NEVER use Linux commands: `ls`, `grep`, `find`, `chmod`, `/usr/bin/bash`, `./script.sh`
-- ALWAYS use Windows commands: `dir`, `findstr`, `where`, `attrib`, `cmd.exe`, `script.bat`
-- Execute batch files directly: `run.bat`, `run_test_gui.bat` (not `./run.bat`)
-- Use Windows paths: `E:\HOME\PyFlowGraph\` or forward slashes for compatibility
-- Use `python` command (not `python3`)
+**RELEASE NOTES RULE**: Write professional, technical release notes. Never use marketing language, excessive emojis, or promotional tone. Focus on factual changes, technical details, and concrete improvements. Avoid words like "revolutionary", "breakthrough", "amazing", etc.
+
