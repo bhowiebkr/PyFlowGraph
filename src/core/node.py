@@ -538,6 +538,13 @@ class Node(QGraphicsItem):
             if pin.name == name:
                 return pin
         return None
+    
+    def get_pin_by_name_and_direction(self, name, direction):
+        """Get a pin by name and direction (input/output)"""
+        for pin in self.pins:
+            if pin.name == name and pin.direction == direction:
+                return pin
+        return None
 
     def _parse_type_hint(self, hint_node):
         if hint_node is None:
@@ -562,6 +569,30 @@ class Node(QGraphicsItem):
                 # Fallback for unknown slice types
                 return base_type
         return "any"
+    
+    def _parse_named_output(self, type_str):
+        """Parse named output like 'name:type' or just 'type'."""
+        if ':' in type_str:
+            name, type_part = type_str.split(':', 1)
+            return name.strip(), type_part.strip().lower()
+        else:
+            return None, type_str.lower()
+    
+    def _parse_output_names_from_docstring(self, func_def):
+        """Parse output names from function docstring using @outputs annotation."""
+        docstring = ast.get_docstring(func_def)
+        if not docstring:
+            return []
+        
+        lines = docstring.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('@outputs:'):
+                # Format: @outputs: name1, name2, name3
+                outputs_str = line.replace('@outputs:', '').strip()
+                return [name.strip() for name in outputs_str.split(',') if name.strip()]
+        
+        return []
 
     def update_pins_from_code(self):
         new_data_inputs, new_data_outputs = {}, {}
@@ -596,15 +627,37 @@ class Node(QGraphicsItem):
                 if isinstance(return_annotation, ast.Subscript) and isinstance(return_annotation.value, ast.Name) and return_annotation.value.id.lower() == "tuple":
                     # Handle Tuple[str, int, bool] - multiple outputs
                     if hasattr(return_annotation.slice, 'elts'):
-                        output_types = [self._parse_type_hint(elt).lower() for elt in return_annotation.slice.elts]
-                        for i, type_name in enumerate(output_types):
-                            new_data_outputs[f"output_{i+1}"] = type_name
+                        # Check for named outputs in docstring first
+                        named_outputs = self._parse_output_names_from_docstring(main_func_def)
+                        
+                        for i, elt in enumerate(return_annotation.slice.elts):
+                            type_name = self._parse_type_hint(elt).lower()
+                            
+                            # Use named output if available, otherwise use generic name
+                            if i < len(named_outputs):
+                                output_name = named_outputs[i]
+                            else:
+                                output_name = f"output_{i+1}"
+                            
+                            new_data_outputs[output_name] = type_name
                     else:
                         # Single tuple element like Tuple[str]
-                        new_data_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
+                        named_outputs = self._parse_output_names_from_docstring(main_func_def)
+                        type_name = self._parse_type_hint(return_annotation.slice).lower()
+                        
+                        if named_outputs:
+                            new_data_outputs[named_outputs[0]] = type_name
+                        else:
+                            new_data_outputs["output_1"] = type_name
                 else:
                     # Handle single return types (including List[Dict], Dict[str, int], etc.)
-                    new_data_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
+                    named_outputs = self._parse_output_names_from_docstring(main_func_def)
+                    type_name = self._parse_type_hint(return_annotation).lower()
+                    
+                    if named_outputs:
+                        new_data_outputs[named_outputs[0]] = type_name
+                    else:
+                        new_data_outputs["output_1"] = type_name
         except (SyntaxError, AttributeError):
             return
 
