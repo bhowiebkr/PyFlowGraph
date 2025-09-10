@@ -1,50 +1,80 @@
 # PyFlowGraph Documentation
 
-This directory contains comprehensive documentation for the PyFlowGraph project, organized by purpose and audience.
+This directory contains comprehensive documentation for the PyFlowGraph project, organized following BMAD-inspired structure with clear separation between user documentation, developer resources, and technical references.
 
 ## Quick Navigation
 
-### For Product Strategy & Planning
-- **[PRD](prd.md)** - Product Requirements Document
-- **[Roadmap](roadmap.md)** - Feature development roadmap and priorities
-- **[Competitive Analysis](competitive-analysis.md)** - Missing features vs competitors
+### For Users
+- **[User Guide](user_guide/)** - Getting started, tutorials, and examples
+  - [Getting Started](user_guide/getting_started.md) - Installation and first workflow
+  - [Tutorials](user_guide/tutorials/) - Step-by-step guides
+  - [Examples](user_guide/examples/) - Sample workflows and use cases
 
-### For Architecture & Technical Design
-- **[Technical Architecture](architecture/technical_architecture.md)** - Core system architecture
-- **[Brownfield Architecture](architecture/brownfield-architecture.md)** - Legacy system considerations
-- **[Source Tree](architecture/source-tree.md)** - Codebase organization
-- **[Tech Stack](architecture/tech-stack.md)** - Technology choices and rationale
-- **[Coding Standards](architecture/coding-standards.md)** - Development guidelines
+### For Developers
+- **[Developer Guide](developer_guide/)** - Development environment and contribution guidelines
+  - [Testing Guide](developer_guide/testing-guide.md) - Test runner and testing strategies
+  - [Implementation Notes](developer_guide/implementation-notes.md) - Technical priorities
+  - [AI Agents Guide](developer_guide/ai-agents-guide.md) - Working with AI assistants
 
-### For Feature Specifications
-- **[Flow Specification](specifications/flow_spec.md)** - Core flow format specification
-- **[UI/UX Specifications](specifications/ui-ux-specifications.md)** - Interface design specs
-- **[Priority 1 Features](specifications/priority-1-features-project-brief.md)** - Critical feature brief
+### For Technical Reference
+- **[Reference](reference/)** - Complete technical documentation
+  - [Architecture](reference/architecture/) - System design and technical architecture
+  - [Specifications](reference/specifications/) - Feature and interface specifications
+  - [API](reference/api/) - API documentation (planned)
 
-### For Development & Implementation
-- **[Testing Guide](development/testing-guide.md)** - Test runner and testing strategies
-- **[Implementation Notes](development/implementation-notes.md)** - Technical implementation priorities
-- **[Fixes Directory](development/fixes/)** - Specific implementation and fix plans
+### For Project Management
+- **[Project](project/)** - Strategic planning and development tracking
+  - [PRD](project/prd.md) - Product Requirements Document
+  - [Roadmap](project/roadmap.md) - Feature development roadmap
+  - [Epics](project/epics/) - Epic and story tracking
 
-## Document Organization
+### For Issue Tracking
+- **[Issues](issues/)** - Bug reports and issue resolution
+  - [Active Issues](issues/active/) - Current unresolved issues
+  - [Resolved Issues](issues/resolved/) - Completed issue resolutions
 
-### Strategic Documents
-High-level product and business documentation for stakeholders and product planning.
+### For Implementation Details
+- **[Implementation](implementation/)** - Detailed implementation plans and fixes
+  - [Fixes](implementation/fixes/) - Specific fix implementations
+  - [Migration Plans](implementation/migration_plans/) - Code reorganization plans
 
-### Architecture Documents
-Technical architecture, system design, and structural documentation for architects and senior developers.
+## Document Organization Philosophy
 
-### Specifications
-Detailed feature and interface specifications for development teams.
+This documentation structure follows industry best practices with clear separation of concerns:
 
-### Development Documentation
-Implementation guides, testing procedures, and development tooling for active contributors.
+### User-Focused Documentation (`user_guide/`)
+Practical guides for end users, including tutorials, examples, and getting started materials.
+
+### Developer Documentation (`developer_guide/`)
+Technical development information for contributors, including testing, setup, and implementation guidance.
+
+### Reference Material (`reference/`)
+Comprehensive technical specifications, architecture documentation, and API references for detailed technical understanding.
+
+### Project Management (`project/`)
+Strategic documents, planning materials, and development tracking for stakeholders and project coordination.
+
+### Issue Management (`issues/`)
+Structured bug tracking and issue resolution with proper categorization and documentation.
+
+### Implementation Details (`implementation/`)
+Specific implementation plans, migration strategies, and detailed technical solutions.
 
 ## Contributing to Documentation
 
 When adding new documentation:
-- Place strategic docs in the root `docs/` directory
-- Place technical architecture in `architecture/`
-- Place feature specs in `specifications/`
-- Place implementation details in `development/`
-- Update this README with new document links
+- Place user-focused content in `user_guide/`
+- Place developer information in `developer_guide/`
+- Place technical specifications in `reference/`
+- Place strategic content in `project/`
+- Place bug reports in `issues/`
+- Place implementation details in `implementation/`
+- Always update relevant README files with new document links
+- Follow existing naming conventions and organization patterns
+
+## Navigation Tips
+
+- Each major section has its own README with detailed navigation
+- Related documents are cross-referenced for easy discovery  
+- Status information is maintained for active development items
+- Historical documents are preserved in appropriate subdirectories
