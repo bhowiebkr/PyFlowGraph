@@ -4,7 +4,7 @@
 
 import uuid
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsTextItem
-from PySide6.QtCore import QRectF, Qt
+from PySide6.QtCore import QRectF, Qt, QSettings
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont
 import sys
 import os
@@ -46,12 +46,31 @@ class Pin(QGraphicsItem):
         self.pen.setWidth(2)
 
         # --- Label ---
-        self.label = QGraphicsTextItem(self.name.replace("_", " ").title(), self)
+        self.label = QGraphicsTextItem(self._get_display_name(), self)
         self.label.setDefaultTextColor(QColor("#FFDDDDDD"))
         self.label.setFont(QFont("Arial", 10))
         self.update_label_pos()
 
         self.setAcceptHoverEvents(True)
+
+    def _get_display_name(self):
+        """Get the display name for the pin label, optionally including type."""
+        base_name = self.name.replace("_", " ").title()
+        
+        # Check settings for type visibility
+        settings = QSettings("PyFlowGraph", "NodeEditor")
+        show_types = settings.value("show_pin_types", True, type=bool)
+        
+        if show_types and self.pin_category == "data":
+            return f"{base_name} ({self.pin_type})"
+        else:
+            return base_name
+
+    def update_label_text(self):
+        """Update the label text based on current settings."""
+        if hasattr(self, 'label') and self.label:
+            self.label.setPlainText(self._get_display_name())
+            self.update_label_pos()
 
     def destroy(self):
         """Cleanly remove the pin and its label from the scene."""

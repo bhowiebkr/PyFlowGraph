@@ -4,7 +4,7 @@ Password generation workflow with configurable parameters, random character sele
 
 ## Node: Password Configuration (ID: config-input)
 
-Collects password generation parameters through QSpinBox (length 4-128) and QCheckBox widgets for character set selection. Returns Tuple[int, bool, bool, bool, bool] containing length and boolean flags for uppercase, lowercase, numbers, and symbols inclusion.
+Collects password generation parameters through QSpinBox (length 4-128) and QCheckBox widgets for character set selection. Returns named outputs: length (int), uppercase (bool), lowercase (bool), numbers (bool), and symbols (bool) for configuration values.
 
 GUI state management handles default values: length=12, uppercase=True, lowercase=True, numbers=True, symbols=False. Uses standard get_values() and set_initial_state() functions for parameter persistence and retrieval.
 
@@ -43,6 +43,10 @@ from typing import Tuple
 
 @node_entry
 def configure_password(length: int, include_uppercase: bool, include_lowercase: bool, include_numbers: bool, include_symbols: bool) -> Tuple[int, bool, bool, bool, bool]:
+    """
+    Configure password generation parameters.
+    @outputs: length, uppercase, lowercase, numbers, symbols
+    """
     print(f"Password config: {length} chars, Upper: {include_uppercase}, Lower: {include_lowercase}, Numbers: {include_numbers}, Symbols: {include_symbols}")
     return length, include_uppercase, include_lowercase, include_numbers, include_symbols
 ```
@@ -139,6 +143,10 @@ import string
 
 @node_entry
 def generate_password(length: int, include_uppercase: bool, include_lowercase: bool, include_numbers: bool, include_symbols: bool) -> str:
+    """
+    Generate password using specified parameters.
+    @outputs: password
+    """
     charset = ''
     
     if include_uppercase:
@@ -163,7 +171,7 @@ def generate_password(length: int, include_uppercase: bool, include_lowercase: b
 
 Analyzes password strength using regex pattern matching and point-based scoring system. Length scoring: 25 points for >=12 chars, 15 points for >=8 chars. Character variety scoring: 20 points each for uppercase (A-Z), lowercase (a-z), numbers (0-9), 15 points for symbols.
 
-Uses re.search() with specific patterns to detect character categories. Score thresholds: >=80 Very Strong, >=60 Strong, >=40 Moderate, >=20 Weak, <20 Very Weak. Returns Tuple[str, int, str] containing strength label, numerical score, and feedback text.
+Uses re.search() with specific patterns to detect character categories. Score thresholds: >=80 Very Strong, >=60 Strong, >=40 Moderate, >=20 Weak, <20 Very Weak. Returns named outputs: strength (str), score (int), and feedback (str) for analysis results.
 
 Feedback generation uses list accumulation for missing elements, joined with semicolons. Provides specific recommendations for improving password complexity based on detected deficiencies.
 
@@ -197,6 +205,10 @@ from typing import Tuple
 
 @node_entry
 def analyze_strength(password: str) -> Tuple[str, int, str]:
+    """
+    Analyze password strength and provide feedback.
+    @outputs: strength, score, feedback
+    """
     score = 0
     feedback = []
     
@@ -286,6 +298,10 @@ Handles multiple input parameters (password, strength, score, feedback) and cons
 ```python
 @node_entry
 def display_result(password: str, strength: str, score: int, feedback: str) -> str:
+    """
+    Format and display password generation results.
+    @outputs: result
+    """
     result = f"Generated Password: {password}\n"
     result += f"Strength: {strength} ({score}/100)\n"
     result += f"Feedback: {feedback}"
@@ -330,8 +346,8 @@ def get_values(widgets):
     return {}
 
 def set_values(widgets, outputs):
-    # Extract password from the result string
-    result = outputs.get('output_1', '')
+    # Extract password from the result string using named output
+    result = outputs.get('result', '')
     lines = result.split('\n')
     if lines:
         password_line = lines[0]
@@ -411,106 +427,80 @@ def set_initial_state(widgets, state):
 [
   {
     "start_node_uuid": "config-input",
-    "start_pin_uuid": "2bdbb436-faa3-4345-809e-55ac394cebff",
     "start_pin_name": "exec_out",
     "end_node_uuid": "password-generator",
-    "end_pin_uuid": "8dc5c082-5132-47ca-b851-dcb68d791600",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "config-input",
-    "start_pin_uuid": "068f30af-1550-429e-a3e9-fbd276aa4ac3",
-    "start_pin_name": "output_1",
+    "start_pin_name": "length",
     "end_node_uuid": "password-generator",
-    "end_pin_uuid": "da985b28-1c20-43c0-af67-b3786a3b46d5",
     "end_pin_name": "length"
   },
   {
     "start_node_uuid": "config-input",
-    "start_pin_uuid": "953d5acc-5421-4ef4-a935-d14d2cb5b81f",
-    "start_pin_name": "output_2",
+    "start_pin_name": "uppercase",
     "end_node_uuid": "password-generator",
-    "end_pin_uuid": "6a8833b4-4636-4716-9b00-7ce21176a1c6",
     "end_pin_name": "include_uppercase"
   },
   {
     "start_node_uuid": "config-input",
-    "start_pin_uuid": "5d09e8a2-97e8-4e80-9444-5a8860bf1c95",
-    "start_pin_name": "output_3",
+    "start_pin_name": "lowercase",
     "end_node_uuid": "password-generator",
-    "end_pin_uuid": "eb8fe9b6-ca05-4cf6-9284-de16329def38",
     "end_pin_name": "include_lowercase"
   },
   {
     "start_node_uuid": "config-input",
-    "start_pin_uuid": "18896049-0d85-46dd-bfc0-503e1ef83299",
-    "start_pin_name": "output_4",
+    "start_pin_name": "numbers",
     "end_node_uuid": "password-generator",
-    "end_pin_uuid": "dbfc734f-a9a1-41e9-9da3-b324f2624079",
     "end_pin_name": "include_numbers"
   },
   {
     "start_node_uuid": "config-input",
-    "start_pin_uuid": "ad1fa1bb-6392-4842-b7e0-05749ed76d49",
-    "start_pin_name": "output_5",
+    "start_pin_name": "symbols",
     "end_node_uuid": "password-generator",
-    "end_pin_uuid": "a780ba73-ba81-47d9-8a2c-218ff79da04d",
     "end_pin_name": "include_symbols"
   },
   {
     "start_node_uuid": "password-generator",
-    "start_pin_uuid": "47289249-0f60-4a7d-9ef3-5b8e8af9eefe",
     "start_pin_name": "exec_out",
     "end_node_uuid": "strength-analyzer",
-    "end_pin_uuid": "27382879-d157-45f8-818c-a6f2dc248053",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "password-generator",
-    "start_pin_uuid": "dd57640e-4343-4edc-a02b-bd26b36b11bd",
-    "start_pin_name": "output_1",
+    "start_pin_name": "password",
     "end_node_uuid": "strength-analyzer",
-    "end_pin_uuid": "b46b0699-a4cc-4105-b5fd-669f7dfada7b",
     "end_pin_name": "password"
   },
   {
     "start_node_uuid": "strength-analyzer",
-    "start_pin_uuid": "a13241b5-b88b-4fa0-aa84-bab1263de0d0",
     "start_pin_name": "exec_out",
     "end_node_uuid": "output-display",
-    "end_pin_uuid": "f418584f-1c44-4581-b2ab-8ff7cb4c2eb1",
     "end_pin_name": "exec_in"
   },
   {
     "start_node_uuid": "password-generator",
-    "start_pin_uuid": "dd57640e-4343-4edc-a02b-bd26b36b11bd",
-    "start_pin_name": "output_1",
+    "start_pin_name": "password",
     "end_node_uuid": "output-display",
-    "end_pin_uuid": "4f69f7c3-90a5-407f-92b5-db6294f491ec",
     "end_pin_name": "password"
   },
   {
     "start_node_uuid": "strength-analyzer",
-    "start_pin_uuid": "d010fde2-6fc4-4986-be10-f7180769adc0",
-    "start_pin_name": "output_1",
+    "start_pin_name": "strength",
     "end_node_uuid": "output-display",
-    "end_pin_uuid": "4d9aa2a1-b0fa-4c18-8368-6fcb0dbaa82a",
     "end_pin_name": "strength"
   },
   {
     "start_node_uuid": "strength-analyzer",
-    "start_pin_uuid": "cf968aa5-a239-4ad7-9f2c-126304e980dd",
-    "start_pin_name": "output_2",
+    "start_pin_name": "score",
     "end_node_uuid": "output-display",
-    "end_pin_uuid": "b3f945ee-c1d7-42b3-8562-1d3aadeaaac3",
     "end_pin_name": "score"
   },
   {
     "start_node_uuid": "strength-analyzer",
-    "start_pin_uuid": "16240242-f015-41b5-9bfd-9111facbefdb",
-    "start_pin_name": "output_3",
+    "start_pin_name": "feedback",
     "end_node_uuid": "output-display",
-    "end_pin_uuid": "6d0907a2-cf91-4071-9f4d-0a9627aa3728",
     "end_pin_name": "feedback"
   }
 ]
