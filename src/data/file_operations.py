@@ -55,15 +55,19 @@ class FileOperationsManager:
     def save(self):
         """Save the current graph."""
         if not self.current_file_path:
+            # Get last used directory
+            last_dir = self.settings.value("last_directory", "")
             file_path, _ = QFileDialog.getSaveFileName(
                 self.parent_window, 
                 "Save Graph As...", 
-                "", 
+                last_dir, 
                 "Flow Files (*.md)"
             )
             if not file_path:
                 return False
             self.current_file_path = file_path
+            # Save directory for next time
+            self.settings.setValue("last_directory", os.path.dirname(file_path))
 
         self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
         self.update_window_title()
@@ -71,16 +75,20 @@ class FileOperationsManager:
     
     def save_as(self):
         """Save the current graph with a new filename."""
+        # Get last used directory
+        last_dir = self.settings.value("last_directory", "")
         file_path, _ = QFileDialog.getSaveFileName(
             self.parent_window, 
             "Save Graph As...", 
-            "", 
+            last_dir, 
             "Flow Files (*.md)"
         )
         if not file_path:
             return False
 
         self.current_file_path = file_path
+        # Save directory for next time
+        self.settings.setValue("last_directory", os.path.dirname(file_path))
         self.current_graph_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
         self.update_window_title()
         return self._save_file(self.current_file_path)
@@ -88,10 +96,12 @@ class FileOperationsManager:
     def load(self, file_path=None):
         """Load a graph from file."""
         if not file_path:
+            # Get last used directory
+            last_dir = self.settings.value("last_directory", "")
             file_path, _ = QFileDialog.getOpenFileName(
                 self.parent_window, 
                 "Load Graph", 
-                "", 
+                last_dir, 
                 "Flow Files (*.md);;All Files (*.*)"
             )
 
@@ -106,6 +116,8 @@ class FileOperationsManager:
                 self.graph.deserialize(data)
                 self.current_requirements = data.get("requirements", [])
                 self.settings.setValue("last_file_path", file_path)
+                # Save directory for next time
+                self.settings.setValue("last_directory", os.path.dirname(file_path))
                 
                 # Handle environment selection for the loaded graph
                 self._handle_environment_selection(file_path)
@@ -151,6 +163,8 @@ class FileOperationsManager:
                 f.write(content)
             
             self.settings.setValue("last_file_path", file_path)
+            # Save directory for next time
+            self.settings.setValue("last_directory", os.path.dirname(file_path))
             self.output_log.append(f"Graph saved to {file_path}")
             return True
             
