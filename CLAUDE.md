@@ -130,5 +130,12 @@ NEVER use emojis in any code, tests, or temporary files - causes Windows encodin
 
 **CRITICAL GIT COMMIT RULE**: NEVER commit changes unless the user explicitly asks to commit. Always wait for the user to test and verify changes work before committing. Do NOT commit automatically after making changes - this is forbidden.
 
+**ABSOLUTE CLAUDE ATTRIBUTION BAN**: NEVER EVER add Claude Code attribution to ANY commits, release notes, or documentation. This includes:
+- No "Generated with Claude Code" in commit messages
+- No "Co-Authored-By: Claude" in commits
+- No Claude attribution in release notes or changelogs
+- No tool attribution anywhere in the codebase
+- FORBIDDEN: Any mention of Claude, Anthropic, or AI assistance in project files
+
 **RELEASE NOTES RULE**: Write professional, technical release notes. Never use marketing language, excessive emojis, or promotional tone. Focus on factual changes, technical details, and concrete improvements. Avoid words like "revolutionary", "breakthrough", "amazing", etc.
 
