@@ -538,6 +538,23 @@ class Node(QGraphicsItem):
             if pin.name == name:
                 return pin
         return None
+    
+    def get_pin_by_name_and_direction(self, name, direction):
+        """Get a pin by name and direction (input/output)"""
+        for pin in self.pins:
+            if pin.name == name and pin.direction == direction:
+                return pin
+        return None
+    
+    def rename_pin(self, pin, new_name):
+        """Rename a pin while preserving its connections and properties"""
+        if pin.name == new_name:
+            return  # No change needed
+            
+        pin.name = new_name
+        # Update the label text if the pin has a label
+        if hasattr(pin, 'update_label_text'):
+            pin.update_label_text()
 
     def _parse_type_hint(self, hint_node):
         if hint_node is None:
@@ -562,6 +579,66 @@ class Node(QGraphicsItem):
                 # Fallback for unknown slice types
                 return base_type
         return "any"
+    
+    def _parse_named_output(self, type_str):
+        """Parse named output like 'name:type' or just 'type'."""
+        if ':' in type_str:
+            name, type_part = type_str.split(':', 1)
+            return name.strip(), type_part.strip().lower()
+        else:
+            return None, type_str.lower()
+    
+    def _parse_output_names_from_docstring(self, func_def):
+        """Parse output names from function docstring using @outputs annotation."""
+        docstring = ast.get_docstring(func_def)
+        if not docstring:
+            return []
+        
+        lines = docstring.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('@outputs:'):
+                # Format: @outputs: name1, name2, name3
+                outputs_str = line.replace('@outputs:', '').strip()
+                return [name.strip() for name in outputs_str.split(',') if name.strip()]
+        
+        return []
+    
+    def _update_data_pins(self, new_pins_dict, direction):
+        """Update data pins intelligently, preserving connections when renaming"""
+        # Get current pins of this direction and category
+        if direction == "input":
+            current_pins = [p for p in self.input_pins if p.pin_category == "data"]
+        else:
+            current_pins = [p for p in self.output_pins if p.pin_category == "data"]
+        
+        # Convert new_pins_dict to ordered list to match by position
+        new_pins_list = list(new_pins_dict.items())  # [(name, type), (name, type), ...]
+        
+        # Update existing pins by position, rename if needed
+        for i, (new_name, new_type) in enumerate(new_pins_list):
+            if i < len(current_pins):
+                # Pin exists at this position - update it
+                pin = current_pins[i]
+                name_changed = pin.name != new_name
+                type_changed = pin.pin_type != new_type
+                
+                if name_changed:
+                    self.rename_pin(pin, new_name)
+                    
+                # Update type if needed
+                if type_changed:
+                    pin.pin_type = new_type
+                    # Update label to reflect type change
+                    if hasattr(pin, 'update_label_text'):
+                        pin.update_label_text()
+            else:
+                # Need to add a new pin at this position
+                self.add_data_pin(new_name, direction, new_type)
+        
+        # Remove any extra pins that are no longer needed
+        for i in range(len(new_pins_list), len(current_pins)):
+            self.remove_pin(current_pins[i])
 
     def update_pins_from_code(self):
         new_data_inputs, new_data_outputs = {}, {}
@@ -596,41 +673,43 @@ class Node(QGraphicsItem):
                 if isinstance(return_annotation, ast.Subscript) and isinstance(return_annotation.value, ast.Name) and return_annotation.value.id.lower() == "tuple":
                     # Handle Tuple[str, int, bool] - multiple outputs
                     if hasattr(return_annotation.slice, 'elts'):
-                        output_types = [self._parse_type_hint(elt).lower() for elt in return_annotation.slice.elts]
-                        for i, type_name in enumerate(output_types):
-                            new_data_outputs[f"output_{i+1}"] = type_name
+                        # Check for named outputs in docstring first
+                        named_outputs = self._parse_output_names_from_docstring(main_func_def)
+                        
+                        for i, elt in enumerate(return_annotation.slice.elts):
+                            type_name = self._parse_type_hint(elt).lower()
+                            
+                            # Use named output if available, otherwise use generic name
+                            if i < len(named_outputs):
+                                output_name = named_outputs[i]
+                            else:
+                                output_name = f"output_{i+1}"
+                            
+                            new_data_outputs[output_name] = type_name
                     else:
                         # Single tuple element like Tuple[str]
-                        new_data_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
+                        named_outputs = self._parse_output_names_from_docstring(main_func_def)
+                        type_name = self._parse_type_hint(return_annotation.slice).lower()
+                        
+                        if named_outputs:
+                            new_data_outputs[named_outputs[0]] = type_name
+                        else:
+                            new_data_outputs["output_1"] = type_name
                 else:
                     # Handle single return types (including List[Dict], Dict[str, int], etc.)
-                    new_data_outputs["output_1"] = self._parse_type_hint(return_annotation).lower()
+                    named_outputs = self._parse_output_names_from_docstring(main_func_def)
+                    type_name = self._parse_type_hint(return_annotation).lower()
+                    
+                    if named_outputs:
+                        new_data_outputs[named_outputs[0]] = type_name
+                    else:
+                        new_data_outputs["output_1"] = type_name
         except (SyntaxError, AttributeError):
             return
 
-        # Manage data pins
-        current_data_inputs = {pin.name: pin for pin in self.input_pins if pin.pin_category == "data"}
-        current_data_outputs = {pin.name: pin for pin in self.output_pins if pin.pin_category == "data"}
-        
-        # Remove obsolete data input pins
-        for name, pin in list(current_data_inputs.items()):
-            if name not in new_data_inputs:
-                self.remove_pin(pin)
-        
-        # Add new data input pins
-        for name, type_name in new_data_inputs.items():
-            if name not in current_data_inputs:
-                self.add_data_pin(name, "input", type_name)
-        
-        # Remove obsolete data output pins
-        for name, pin in list(current_data_outputs.items()):
-            if name not in new_data_outputs:
-                self.remove_pin(pin)
-        
-        # Add new data output pins
-        for name, type_name in new_data_outputs.items():
-            if name not in current_data_outputs:
-                self.add_data_pin(name, "output", type_name)
+        # Manage data pins intelligently
+        self._update_data_pins(new_data_inputs, "input")
+        self._update_data_pins(new_data_outputs, "output")
 
         # Add execution pins based on function parameters
         current_exec_inputs = {pin.name: pin for pin in self.input_pins if pin.pin_category == "execution"}

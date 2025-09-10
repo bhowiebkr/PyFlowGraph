@@ -27,9 +27,9 @@ Each ingredient dictionary contains 'name', 'quantity', 'unit', and 'original_li
     "body": "#0056b3"
   },
   "gui_state": {
-    "recipe_name": "",
+    "recipe_name": "Classic Chocolate Chip Cookies",
     "servings": 4,
-    "ingredients_text": ""
+    "ingredients_text": "2 cups flour\n1 cup butter\n3/4 cup sugar\n2 eggs\n1 tsp salt\n1 cup chocolate chips"
   }
 }
 ```
@@ -42,6 +42,10 @@ from typing import List, Tuple, Dict
 
 @node_entry
 def parse_recipe(recipe_name: str, servings: int, ingredients_text: str) -> Tuple[str, int, List[Dict]]:
+    """
+    Parse recipe ingredients from text input.
+    @outputs: recipe_name, servings, ingredients
+    """
     # Parse ingredients from text
     ingredients = []
     lines = [line.strip() for line in ingredients_text.split('\n') if line.strip()]
@@ -86,6 +90,7 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QSpinBox, QTextEdit, QPushButto
 layout.addWidget(QLabel('Recipe Name:', parent))
 widgets['recipe_name'] = QLineEdit(parent)
 widgets['recipe_name'].setPlaceholderText('Enter recipe name...')
+widgets['recipe_name'].setText('Classic Chocolate Chip Cookies')
 layout.addWidget(widgets['recipe_name'])
 
 layout.addWidget(QLabel('Number of Servings:', parent))
@@ -98,6 +103,7 @@ layout.addWidget(QLabel('Ingredients (one per line):', parent))
 widgets['ingredients_text'] = QTextEdit(parent)
 widgets['ingredients_text'].setMinimumHeight(150)
 widgets['ingredients_text'].setPlaceholderText('Example:\n2 cups flour\n3 eggs\n1 cup milk\n1 tsp salt')
+widgets['ingredients_text'].setPlainText('2 cups flour\n1 cup butter\n3/4 cup sugar\n2 eggs\n1 tsp salt\n1 cup chocolate chips')
 layout.addWidget(widgets['ingredients_text'])
 
 widgets['parse_btn'] = QPushButton('Parse Recipe', parent)
@@ -114,10 +120,14 @@ def get_values(widgets):
         'ingredients_text': widgets['ingredients_text'].toPlainText()
     }
 
+def set_values(widgets, outputs):
+    # Input node doesn't need to display outputs
+    pass
+
 def set_initial_state(widgets, state):
-    widgets['recipe_name'].setText(state.get('recipe_name', ''))
+    widgets['recipe_name'].setText(state.get('recipe_name', 'Classic Chocolate Chip Cookies'))
     widgets['servings'].setValue(state.get('servings', 4))
-    widgets['ingredients_text'].setPlainText(state.get('ingredients_text', ''))
+    widgets['ingredients_text'].setPlainText(state.get('ingredients_text', '2 cups flour\n1 cup butter\n3/4 cup sugar\n2 eggs\n1 tsp salt\n1 cup chocolate chips'))
 ```
 
 
@@ -156,6 +166,10 @@ from typing import List, Dict
 
 @node_entry
 def lookup_nutrition(ingredients: List[Dict]) -> List[Dict]:
+    """
+    Look up nutrition data for ingredients.
+    @outputs: enriched_ingredients
+    """
     # Simplified nutrition database (calories per 100g/100ml/1 item)
     nutrition_db = {
         'flour': {'calories': 364, 'protein': 10.3, 'carbs': 76.3, 'fat': 1.0, 'unit_conversion': {'cup': 125}},
@@ -240,6 +254,21 @@ def lookup_nutrition(ingredients: List[Dict]) -> List[Dict]:
     return enriched_ingredients
 ```
 
+### GUI State Handler
+
+```python
+def get_values(widgets):
+    return {}
+
+def set_values(widgets, outputs):
+    # Database node doesn't need to display outputs
+    pass
+
+def set_initial_state(widgets, state):
+    # Database node doesn't have saved state to restore
+    pass
+```
+
 
 ## Node: Nutrition Calculator (ID: nutrition-calculator)
 
@@ -276,6 +305,10 @@ from typing import List, Dict, Tuple
 
 @node_entry
 def calculate_nutrition(recipe_name: str, servings: int, ingredients: List[Dict]) -> Tuple[Dict, Dict, str]:
+    """
+    Calculate total and per-serving nutrition values.
+    @outputs: total_nutrition, per_serving, analysis
+    """
     # Calculate total nutrition
     total = {
         'calories': 0,
@@ -345,6 +378,21 @@ def calculate_nutrition(recipe_name: str, servings: int, ingredients: List[Dict]
     return total, per_serving, analysis
 ```
 
+### GUI State Handler
+
+```python
+def get_values(widgets):
+    return {}
+
+def set_values(widgets, outputs):
+    # Calculator node doesn't need to display outputs
+    pass
+
+def set_initial_state(widgets, state):
+    # Calculator node doesn't have saved state to restore
+    pass
+```
+
 
 ## Node: Nutrition Report Generator (ID: nutrition-report)
 
@@ -381,6 +429,10 @@ from typing import Dict, List
 
 @node_entry
 def generate_nutrition_report(recipe_name: str, servings: int, ingredients: List[Dict], total_nutrition: Dict, per_serving: Dict, analysis: str) -> str:
+    """
+    Generate formatted nutrition report.
+    @outputs: report
+    """
     report = "\n" + "="*70 + "\n"
     report += "                    NUTRITION REPORT\n"
     report += "="*70 + "\n\n"
@@ -481,8 +533,12 @@ def get_values(widgets):
     return {}
 
 def set_values(widgets, outputs):
-    report = outputs.get('output_1', 'No report data')
+    report = outputs.get('report', 'No report data')
     widgets['report_display'].setPlainText(report)
+
+def set_initial_state(widgets, state):
+    # Report node doesn't have saved state to restore
+    pass
 ```
 
 
@@ -492,15 +548,39 @@ def set_values(widgets, outputs):
 [
   {
     "start_node_uuid": "recipe-input",
-    "start_pin_name": "output_1",
+    "start_pin_name": "exec_out",
+    "end_node_uuid": "nutrition-database",
+    "end_pin_name": "exec_in"
+  },
+  {
+    "start_node_uuid": "recipe-input",
+    "start_pin_name": "ingredients",
+    "end_node_uuid": "nutrition-database",
+    "end_pin_name": "ingredients"
+  },
+  {
+    "start_node_uuid": "nutrition-database",
+    "start_pin_name": "exec_out",
+    "end_node_uuid": "nutrition-calculator",
+    "end_pin_name": "exec_in"
+  },
+  {
+    "start_node_uuid": "recipe-input",
+    "start_pin_name": "recipe_name",
     "end_node_uuid": "nutrition-calculator",
     "end_pin_name": "recipe_name"
   },
   {
     "start_node_uuid": "recipe-input",
-    "start_pin_name": "output_2",
+    "start_pin_name": "servings",
     "end_node_uuid": "nutrition-calculator",
     "end_pin_name": "servings"
+  },
+  {
+    "start_node_uuid": "nutrition-database",
+    "start_pin_name": "enriched_ingredients",
+    "end_node_uuid": "nutrition-calculator",
+    "end_pin_name": "ingredients"
   },
   {
     "start_node_uuid": "nutrition-calculator",
@@ -510,31 +590,37 @@ def set_values(widgets, outputs):
   },
   {
     "start_node_uuid": "recipe-input",
-    "start_pin_name": "output_1",
+    "start_pin_name": "recipe_name",
     "end_node_uuid": "nutrition-report",
     "end_pin_name": "recipe_name"
   },
   {
     "start_node_uuid": "recipe-input",
-    "start_pin_name": "output_2",
+    "start_pin_name": "servings",
     "end_node_uuid": "nutrition-report",
     "end_pin_name": "servings"
   },
   {
+    "start_node_uuid": "nutrition-database",
+    "start_pin_name": "enriched_ingredients",
+    "end_node_uuid": "nutrition-report",
+    "end_pin_name": "ingredients"
+  },
+  {
     "start_node_uuid": "nutrition-calculator",
-    "start_pin_name": "output_1",
+    "start_pin_name": "total_nutrition",
     "end_node_uuid": "nutrition-report",
     "end_pin_name": "total_nutrition"
   },
   {
     "start_node_uuid": "nutrition-calculator",
-    "start_pin_name": "output_2",
+    "start_pin_name": "per_serving",
     "end_node_uuid": "nutrition-report",
     "end_pin_name": "per_serving"
   },
   {
     "start_node_uuid": "nutrition-calculator",
-    "start_pin_name": "output_3",
+    "start_pin_name": "analysis",
     "end_node_uuid": "nutrition-report",
     "end_pin_name": "analysis"
   }

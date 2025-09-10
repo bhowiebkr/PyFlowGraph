@@ -261,6 +261,16 @@ class NodeEditorWindow(QMainWindow):
         if dialog.exec():
             self.venv_parent_dir = self.settings.value("venv_parent_dir")
             self.output_log.append(f"Default venv directory updated to: {self.venv_parent_dir}")
+            
+            # Refresh all pin labels to reflect type visibility setting changes
+            self.refresh_pin_labels()
+
+    def refresh_pin_labels(self):
+        """Refresh all pin labels in the current graph to reflect setting changes."""
+        for node in self.graph.nodes:
+            for pin in node.pins:
+                if hasattr(pin, 'update_label_text'):
+                    pin.update_label_text()
 
     def on_graph_properties(self):
         """Open the graph properties dialog."""

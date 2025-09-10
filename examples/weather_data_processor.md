@@ -43,6 +43,10 @@ from typing import List, Dict, Tuple
 
 @node_entry
 def simulate_weather_data(city: str, days: int, season: str) -> Tuple[str, List[Dict]]:
+    """
+    Simulate weather data for specified parameters.
+    @outputs: city, weather_data
+    """
     # Temperature ranges by season (Celsius)
     temp_ranges = {
         'Spring': (10, 20),
@@ -188,6 +192,10 @@ import statistics
 
 @node_entry
 def analyze_weather(weather_data: List[Dict]) -> Tuple[Dict, Dict, Dict]:
+    """
+    Analyze weather statistics and patterns.
+    @outputs: temp_stats, conditions, env_stats
+    """
     if not weather_data:
         return {}, {}, {}
     
@@ -266,6 +274,10 @@ from typing import List, Dict, Tuple
 
 @node_entry
 def detect_trends(weather_data: List[Dict]) -> Tuple[str, str, List[str]]:
+    """
+    Detect weather trends and patterns.
+    @outputs: temp_trend, precip_pattern, insights
+    """
     if len(weather_data) < 3:
         return "Insufficient data", "No patterns", []
     
@@ -395,6 +407,10 @@ from typing import List, Dict
 
 @node_entry
 def generate_weather_report(city: str, weather_data: List[Dict], temp_stats: Dict, conditions: Dict, env_stats: Dict, temp_trend: str, precip_pattern: str, insights: List[str]) -> str:
+    """
+    Generate comprehensive weather report.
+    @outputs: report
+    """
     if not weather_data:
         return "No weather data available"
     
@@ -512,7 +528,7 @@ def get_values(widgets):
     return {}
 
 def set_values(widgets, outputs):
-    report = outputs.get('output_1', 'No report data')
+    report = outputs.get('report', 'No report data')
     widgets['report_display'].setPlainText(report)
 ```
 
@@ -529,7 +545,7 @@ def set_values(widgets, outputs):
   },
   {
     "start_node_uuid": "weather-simulator",
-    "start_pin_name": "output_2",
+    "start_pin_name": "weather_data",
     "end_node_uuid": "weather-analyzer",
     "end_pin_name": "weather_data"
   },
@@ -541,7 +557,7 @@ def set_values(widgets, outputs):
   },
   {
     "start_node_uuid": "weather-simulator",
-    "start_pin_name": "output_2",
+    "start_pin_name": "weather_data",
     "end_node_uuid": "trend-detector",
     "end_pin_name": "weather_data"
   },
@@ -553,49 +569,49 @@ def set_values(widgets, outputs):
   },
   {
     "start_node_uuid": "weather-simulator",
-    "start_pin_name": "output_1",
+    "start_pin_name": "city",
     "end_node_uuid": "weather-report",
     "end_pin_name": "city"
   },
   {
     "start_node_uuid": "weather-simulator",
-    "start_pin_name": "output_2",
+    "start_pin_name": "weather_data",
     "end_node_uuid": "weather-report",
     "end_pin_name": "weather_data"
   },
   {
     "start_node_uuid": "weather-analyzer",
-    "start_pin_name": "output_1",
+    "start_pin_name": "temp_stats",
     "end_node_uuid": "weather-report",
     "end_pin_name": "temp_stats"
   },
   {
     "start_node_uuid": "weather-analyzer",
-    "start_pin_name": "output_2",
+    "start_pin_name": "conditions",
     "end_node_uuid": "weather-report",
     "end_pin_name": "conditions"
   },
   {
     "start_node_uuid": "weather-analyzer",
-    "start_pin_name": "output_3",
+    "start_pin_name": "env_stats",
     "end_node_uuid": "weather-report",
     "end_pin_name": "env_stats"
   },
   {
     "start_node_uuid": "trend-detector",
-    "start_pin_name": "output_1",
+    "start_pin_name": "temp_trend",
     "end_node_uuid": "weather-report",
     "end_pin_name": "temp_trend"
   },
   {
     "start_node_uuid": "trend-detector",
-    "start_pin_name": "output_2",
+    "start_pin_name": "precip_pattern",
     "end_node_uuid": "weather-report",
     "end_pin_name": "precip_pattern"
   },
   {
     "start_node_uuid": "trend-detector",
-    "start_pin_name": "output_3",
+    "start_pin_name": "insights",
     "end_node_uuid": "weather-report",
     "end_pin_name": "insights"
   }

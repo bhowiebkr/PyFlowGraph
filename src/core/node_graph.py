@@ -450,8 +450,9 @@ class NodeGraph(QGraphicsScene):
             start_node = uuid_to_node_map.get(conn_data["start_node_uuid"])
             end_node = uuid_to_node_map.get(conn_data["end_node_uuid"])
             if start_node and end_node:
-                start_pin = start_node.get_pin_by_name(conn_data["start_pin_name"])
-                end_pin = end_node.get_pin_by_name(conn_data["end_pin_name"])
+                # For connections, start_pin should be output and end_pin should be input
+                start_pin = start_node.get_pin_by_name_and_direction(conn_data["start_pin_name"], "output")
+                end_pin = end_node.get_pin_by_name_and_direction(conn_data["end_pin_name"], "input")
                 if start_pin and end_pin:
                     self.create_connection(start_pin, end_pin, use_command=False)
 

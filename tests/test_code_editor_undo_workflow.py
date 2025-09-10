@@ -59,7 +59,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
         mock_text_editor.undo.assert_called_once()
         
         # Verify no commands were pushed to graph history during editing
-        self.mock_command_history.push.assert_not_called()
+        self.mock_command_history.execute_command.assert_not_called()
     
     def test_editor_undo_redo_independent_of_graph(self):
         """Test editor undo/redo operates independently from graph history."""
@@ -77,7 +77,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
         self.assertEqual(mock_text_editor.redo.call_count, 1)
         
         # Verify graph history was not affected
-        self.mock_command_history.push.assert_not_called()
+        self.mock_command_history.execute_command.assert_not_called()
         self.mock_command_history.undo.assert_not_called()
         self.mock_command_history.redo.assert_not_called()
     
@@ -119,7 +119,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
         mock_dialog.reject()
         
         # Verify no impact on command history
-        self.mock_command_history.push.assert_not_called()
+        self.mock_command_history.execute_command.assert_not_called()
         self.mock_node.set_code.assert_not_called()
     
     def test_user_scenario_edit_undo_redo_edit_again(self):
@@ -130,7 +130,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
             commands_created.append(command)
             command.execute()
         
-        self.mock_command_history.push.side_effect = mock_push_command
+        self.mock_command_history.execute_command.side_effect = mock_push_command
         
         # Step 1: User edits code and accepts
         from src.commands.node_commands import CodeChangeCommand
@@ -139,7 +139,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
             self.mock_node_graph, self.mock_node,
             self.original_code, self.modified_code
         )
-        self.mock_command_history.push(command1)
+        self.mock_command_history.execute_command(command1)
         
         # Step 2: User undos the change (from main graph, not in editor)
         def mock_undo():
@@ -168,7 +168,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
             self.mock_node_graph, self.mock_node,
             self.modified_code, self.final_code
         )
-        self.mock_command_history.push(command2)
+        self.mock_command_history.execute_command(command2)
         
         # Verify the workflow
         self.assertEqual(len(commands_created), 2)

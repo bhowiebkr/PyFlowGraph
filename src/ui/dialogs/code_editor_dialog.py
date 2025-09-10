@@ -102,7 +102,7 @@ class CodeEditorDialog(QDialog):
                 )
                 # Push command to graph's history if it exists
                 if hasattr(self.node_graph, 'command_history'):
-                    self.node_graph.command_history.push(code_command)
+                    self.node_graph.command_history.execute_command(code_command)
                 else:
                     # Fallback: execute directly
                     code_command.execute()

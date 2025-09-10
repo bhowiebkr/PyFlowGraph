@@ -59,6 +59,10 @@ Provides image file path input through GUI text field for computer vision pipeli
 ```python
 @node_entry
 def provide_image_path(image_path: str) -> str:
+    """
+    Provide image file path for processing.
+    @outputs: image_path
+    """
     print(f"Image path: {image_path}")
     return image_path
 ```
@@ -132,6 +136,10 @@ import torchvision.transforms as transforms
 
 @node_entry
 def load_image(image_path: str) -> Tuple[torch.Tensor, Tuple[int, int], int]:
+    """
+    Load image and convert to tensor.
+    @outputs: image_tensor, original_size, channels
+    """
     # Handle relative paths by making them absolute from project root
     if not os.path.isabs(image_path):
         # Get project root directory
@@ -188,6 +196,10 @@ import torchvision.transforms as transforms
 
 @node_entry
 def preprocess_image(image_tensor: torch.Tensor) -> Tuple[torch.Tensor, List[int], str]:
+    """
+    Preprocess image tensor for model input.
+    @outputs: processed_tensor, shape, device_info
+    """
     # Define preprocessing pipeline for ImageNet models
     preprocess = transforms.Compose([
         transforms.Resize(256),
@@ -243,6 +255,10 @@ import torchvision.models as models
 
 @node_entry
 def extract_features(preprocessed_tensor: torch.Tensor) -> Tuple[torch.Tensor, int, str]:
+    """
+    Extract features using ResNet backbone.
+    @outputs: feature_vector, feature_size, device_info
+    """
     # Load pre-trained ResNet (cached after first load)
     if not hasattr(extract_features, 'model'):
         print("Loading ResNet-50 model...")
@@ -309,6 +325,10 @@ import torchvision.models as models
 
 @node_entry 
 def classify_image(preprocessed_tensor: torch.Tensor) -> Tuple[Dict[str, float], str, float, str]:
+    """
+    Classify image using ResNet model.
+    @outputs: predictions, top_class, top_confidence, device_info
+    """
     # Load full ResNet model for classification
     if not hasattr(classify_image, 'model'):
         print("Loading ResNet-50 classifier...")
@@ -413,6 +433,10 @@ def display_results(
     channels: int,
     device_info: str
 ) -> Dict[str, Any]:
+    """
+    Display classification results and metadata.
+    @outputs: results
+    """
     
     # Format comprehensive results
     results = {
@@ -492,7 +516,7 @@ def set_values(widgets, outputs):
         # Don't restore results if they were manually cleared
         return
     
-    results = outputs.get('output_1', {})
+    results = outputs.get('results', {})
     
     if results:
         # Clear the cleared flag when new results come in
@@ -546,7 +570,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "image-path-input",
     "start_pin_uuid": "721b621b-de32-4b4e-89b3-71298c2c658d",
-    "start_pin_name": "output_1",
+    "start_pin_name": "image_path",
     "end_node_uuid": "image-loader",
     "end_pin_uuid": "6d8be62e-ddb8-447d-93f8-fee9b1a2feed",
     "end_pin_name": "image_path"
@@ -562,7 +586,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "image-loader",
     "start_pin_uuid": "97a73c7d-d993-4c77-ae5b-bd2b97ff8fcc",
-    "start_pin_name": "output_1",
+    "start_pin_name": "image_tensor",
     "end_node_uuid": "image-preprocessor",
     "end_pin_uuid": "5491bc59-e999-4ddb-bdba-06aff632a9bd",
     "end_pin_name": "image_tensor"
@@ -578,7 +602,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "image-preprocessor",
     "start_pin_uuid": "7b9d79a9-8f11-4edd-9c3b-1b2aed9bbd39",
-    "start_pin_name": "output_1",
+    "start_pin_name": "processed_tensor",
     "end_node_uuid": "feature-extractor",
     "end_pin_uuid": "f6e0d65e-8a41-4f0a-9ed7-648742896464",
     "end_pin_name": "preprocessed_tensor"
@@ -586,7 +610,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "image-preprocessor",
     "start_pin_uuid": "7b9d79a9-8f11-4edd-9c3b-1b2aed9bbd39",
-    "start_pin_name": "output_1",
+    "start_pin_name": "processed_tensor",
     "end_node_uuid": "classifier",
     "end_pin_uuid": "56e59097-e8e8-4c48-a1b9-306c745d2a94",
     "end_pin_name": "preprocessed_tensor"
@@ -610,7 +634,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "classifier",
     "start_pin_uuid": "267aa2d1-2da4-4905-be62-1428f89119c1",
-    "start_pin_name": "output_1",
+    "start_pin_name": "predictions",
     "end_node_uuid": "results-display",
     "end_pin_uuid": "d78cd96e-a61f-47a5-adde-ab25bbcaeeb7",
     "end_pin_name": "predictions"
@@ -618,7 +642,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "classifier",
     "start_pin_uuid": "d375ceda-2c11-40d9-8218-9ccabacbcec1",
-    "start_pin_name": "output_2",
+    "start_pin_name": "top_class",
     "end_node_uuid": "results-display",
     "end_pin_uuid": "974ada93-b0d1-46e5-8d3f-7c085c25b549",
     "end_pin_name": "top_class"
@@ -626,7 +650,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "classifier",
     "start_pin_uuid": "cf83b358-403b-487e-a455-1f75a7414e23",
-    "start_pin_name": "output_3",
+    "start_pin_name": "top_confidence",
     "end_node_uuid": "results-display",
     "end_pin_uuid": "916151d9-e3e8-4cb1-a597-a9f3a845ebec",
     "end_pin_name": "top_confidence"
@@ -634,7 +658,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "image-loader",
     "start_pin_uuid": "b0c69da9-d1b8-4386-b7b5-ca289c44a444",
-    "start_pin_name": "output_2",
+    "start_pin_name": "original_size",
     "end_node_uuid": "results-display",
     "end_pin_uuid": "ccaf27a6-7e0a-4dd1-b863-ac13d0f0db38",
     "end_pin_name": "original_size"
@@ -642,7 +666,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "image-loader",
     "start_pin_uuid": "66b37842-debd-4074-8d92-e6aabb196e25",
-    "start_pin_name": "output_3",
+    "start_pin_name": "channels",
     "end_node_uuid": "results-display",
     "end_pin_uuid": "dae48807-e32a-4acd-a275-9c1455de3abd",
     "end_pin_name": "channels"
@@ -650,7 +674,7 @@ def set_initial_state(widgets, state):
   {
     "start_node_uuid": "classifier", 
     "start_pin_uuid": "4a7b8c9d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-    "start_pin_name": "output_4",
+    "start_pin_name": "device_info",
     "end_node_uuid": "results-display",
     "end_pin_uuid": "17729284-46e4-4fa3-a6f6-a92beb65feab", 
     "end_pin_name": "device_info"
