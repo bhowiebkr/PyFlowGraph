@@ -112,7 +112,7 @@ class TestCodeEditorDialogIntegration(unittest.TestCase):
                         self.node_graph, self.node, self.original_code, new_code
                     )
                     if hasattr(self.node_graph, 'command_history'):
-                        self.node_graph.command_history.push(code_command)
+                        self.node_graph.command_history.execute_command(code_command)
                 self.accept()
             
             mock_handle_accept.side_effect = handle_accept_impl
@@ -121,8 +121,8 @@ class TestCodeEditorDialogIntegration(unittest.TestCase):
             mock_handle_accept(mock_dialog)
             
             # Verify command was pushed to history
-            self.command_history.push.assert_called_once()
-            pushed_command = self.command_history.push.call_args[0][0]
+            self.command_history.execute_command.assert_called_once()
+            pushed_command = self.command_history.execute_command.call_args[0][0]
             self.assertIsInstance(pushed_command, CodeChangeCommand)
             self.assertEqual(pushed_command.old_code, self.original_code)
             self.assertEqual(pushed_command.new_code, self.new_code)
@@ -137,7 +137,7 @@ class TestCodeEditorDialogIntegration(unittest.TestCase):
         mock_dialog.reject()
         
         # Verify no commands were pushed
-        self.command_history.push.assert_not_called()
+        self.command_history.execute_command.assert_not_called()
     
     def test_no_changes_does_not_create_command(self):
         """Test that no command is created when code is unchanged."""
@@ -169,14 +169,14 @@ class TestCodeEditorDialogIntegration(unittest.TestCase):
                 new_code = self.code_editor.toPlainText()
                 if new_code != self.original_code:
                     # This should not execute
-                    self.node_graph.command_history.push(Mock())
+                    self.node_graph.command_history.execute_command(Mock())
                 self.accept()
             
             mock_handle_accept.side_effect = handle_accept_no_changes
             mock_handle_accept(mock_dialog)
             
             # Verify no commands were pushed
-            self.command_history.push.assert_not_called()
+            self.command_history.execute_command.assert_not_called()
     
     def test_fallback_when_no_command_history(self):
         """Test fallback behavior when node_graph has no command_history."""
@@ -211,7 +211,7 @@ class TestCodeEditorDialogIntegration(unittest.TestCase):
                             self.node_graph, self.node, self.original_code, new_code
                         )
                         if hasattr(self.node_graph, 'command_history'):
-                            self.node_graph.command_history.push(code_command)
+                            self.node_graph.command_history.execute_command(code_command)
                         else:
                             code_command.execute()
                     self.accept()
