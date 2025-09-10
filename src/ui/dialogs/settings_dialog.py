@@ -3,7 +3,7 @@
 # path for virtual environments.
 
 import os
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog, QDialogButtonBox
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog, QDialogButtonBox, QCheckBox
 from PySide6.QtCore import QSettings
 
 
@@ -44,6 +44,11 @@ class SettingsDialog(QDialog):
         path_layout.addWidget(browse_button)
         layout.addLayout(path_layout)
 
+        # --- Pin Type Visibility Setting ---
+        self.show_pin_types_checkbox = QCheckBox("Show pin types in labels (e.g., 'name (int)')")
+        self.show_pin_types_checkbox.setChecked(self.settings.value("show_pin_types", True, type=bool))
+        layout.addWidget(self.show_pin_types_checkbox)
+
         # --- OK and Cancel Buttons ---
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self.accept)
@@ -58,4 +63,5 @@ class SettingsDialog(QDialog):
     def accept(self):
         """Saves the settings when the user clicks OK."""
         self.settings.setValue("venv_parent_dir", self.path_edit.text())
+        self.settings.setValue("show_pin_types", self.show_pin_types_checkbox.isChecked())
         super().accept()
