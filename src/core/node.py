@@ -620,10 +620,18 @@ class Node(QGraphicsItem):
             if i < len(current_pins):
                 # Pin exists at this position - update it
                 pin = current_pins[i]
-                if pin.name != new_name:
+                name_changed = pin.name != new_name
+                type_changed = pin.pin_type != new_type
+                
+                if name_changed:
                     self.rename_pin(pin, new_name)
-                # Update type if needed (pin.pin_type)
-                pin.pin_type = new_type
+                    
+                # Update type if needed
+                if type_changed:
+                    pin.pin_type = new_type
+                    # Update label to reflect type change
+                    if hasattr(pin, 'update_label_text'):
+                        pin.update_label_text()
             else:
                 # Need to add a new pin at this position
                 self.add_data_pin(new_name, direction, new_type)
