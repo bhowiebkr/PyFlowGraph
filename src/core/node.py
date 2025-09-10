@@ -545,6 +545,16 @@ class Node(QGraphicsItem):
             if pin.name == name and pin.direction == direction:
                 return pin
         return None
+    
+    def rename_pin(self, pin, new_name):
+        """Rename a pin while preserving its connections and properties"""
+        if pin.name == new_name:
+            return  # No change needed
+            
+        pin.name = new_name
+        # Update the label text if the pin has a label
+        if hasattr(pin, 'update_label_text'):
+            pin.update_label_text()
 
     def _parse_type_hint(self, hint_node):
         if hint_node is None:
@@ -593,6 +603,34 @@ class Node(QGraphicsItem):
                 return [name.strip() for name in outputs_str.split(',') if name.strip()]
         
         return []
+    
+    def _update_data_pins(self, new_pins_dict, direction):
+        """Update data pins intelligently, preserving connections when renaming"""
+        # Get current pins of this direction and category
+        if direction == "input":
+            current_pins = [p for p in self.input_pins if p.pin_category == "data"]
+        else:
+            current_pins = [p for p in self.output_pins if p.pin_category == "data"]
+        
+        # Convert new_pins_dict to ordered list to match by position
+        new_pins_list = list(new_pins_dict.items())  # [(name, type), (name, type), ...]
+        
+        # Update existing pins by position, rename if needed
+        for i, (new_name, new_type) in enumerate(new_pins_list):
+            if i < len(current_pins):
+                # Pin exists at this position - update it
+                pin = current_pins[i]
+                if pin.name != new_name:
+                    self.rename_pin(pin, new_name)
+                # Update type if needed (pin.pin_type)
+                pin.pin_type = new_type
+            else:
+                # Need to add a new pin at this position
+                self.add_data_pin(new_name, direction, new_type)
+        
+        # Remove any extra pins that are no longer needed
+        for i in range(len(new_pins_list), len(current_pins)):
+            self.remove_pin(current_pins[i])
 
     def update_pins_from_code(self):
         new_data_inputs, new_data_outputs = {}, {}
@@ -661,29 +699,9 @@ class Node(QGraphicsItem):
         except (SyntaxError, AttributeError):
             return
 
-        # Manage data pins
-        current_data_inputs = {pin.name: pin for pin in self.input_pins if pin.pin_category == "data"}
-        current_data_outputs = {pin.name: pin for pin in self.output_pins if pin.pin_category == "data"}
-        
-        # Remove obsolete data input pins
-        for name, pin in list(current_data_inputs.items()):
-            if name not in new_data_inputs:
-                self.remove_pin(pin)
-        
-        # Add new data input pins
-        for name, type_name in new_data_inputs.items():
-            if name not in current_data_inputs:
-                self.add_data_pin(name, "input", type_name)
-        
-        # Remove obsolete data output pins
-        for name, pin in list(current_data_outputs.items()):
-            if name not in new_data_outputs:
-                self.remove_pin(pin)
-        
-        # Add new data output pins
-        for name, type_name in new_data_outputs.items():
-            if name not in current_data_outputs:
-                self.add_data_pin(name, "output", type_name)
+        # Manage data pins intelligently
+        self._update_data_pins(new_data_inputs, "input")
+        self._update_data_pins(new_data_outputs, "output")
 
         # Add execution pins based on function parameters
         current_exec_inputs = {pin.name: pin for pin in self.input_pins if pin.pin_category == "execution"}
