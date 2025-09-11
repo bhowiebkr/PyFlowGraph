@@ -149,7 +149,12 @@ class SingleProcessExecutor:
             
             # Record performance
             execution_time = time.perf_counter() - start_time
+            execution_time_ms = execution_time * 1000  # Convert to milliseconds
             self.execution_times[node.title] = execution_time
+            
+            # Set execution time on node for visual display
+            node.execution_time = execution_time_ms
+            node.update()  # Trigger visual update to show execution time
             
             # Get captured output
             captured_output = stdout_capture.getvalue()
@@ -165,7 +170,12 @@ class SingleProcessExecutor:
             
         except Exception as e:
             execution_time = time.perf_counter() - start_time
+            execution_time_ms = execution_time * 1000  # Convert to milliseconds
             self.execution_times[node.title] = execution_time
+            
+            # Set execution time on node even for failed executions
+            node.execution_time = execution_time_ms
+            node.update()  # Trigger visual update to show execution time
             
             error_message = f"ERROR in node '{node.title}': {e}"
             

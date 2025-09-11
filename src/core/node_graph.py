@@ -6,9 +6,9 @@ import uuid
 import json
 import os
 import sys
-from PySide6.QtWidgets import QGraphicsScene, QApplication
+from PySide6.QtWidgets import QGraphicsScene, QApplication, QGraphicsPathItem
 from PySide6.QtCore import Qt, QPointF, QTimer, Signal
-from PySide6.QtGui import QKeyEvent, QColor
+from PySide6.QtGui import QKeyEvent, QColor, QPen, QPainterPath
 from .node import Node
 from .reroute_node import RerouteNode
 from .connection import Connection
@@ -25,6 +25,44 @@ from commands import (
     CompositeCommand
 )
 
+
+class TempConnection(QGraphicsPathItem):
+    """
+    Temporary connection visualization for connection preview during drag operations.
+    Shows a dashed line from start position to current mouse position.
+    """
+    def __init__(self, start_pos, parent=None):
+        super().__init__(parent)
+        self.start_pos = start_pos
+        self.end_pos = start_pos
+        
+        # Create dashed gray pen for preview visualization
+        pen = QPen(QColor(100, 100, 100), 2, Qt.DashLine)
+        self.setPen(pen)
+        
+        # Set lower z-value so it appears behind other connections
+        self.setZValue(-2)
+        
+        # Create initial path
+        self.update_path()
+    
+    def update_end_pos(self, pos):
+        """Update the end position and refresh the path"""
+        self.end_pos = pos
+        self.update_path()
+    
+    def update_path(self):
+        """Update the Bezier curve path from start to end position"""
+        path = QPainterPath()
+        path.moveTo(self.start_pos)
+        
+        # Calculate control points for smooth Bezier curve (similar to Connection)
+        dx = self.end_pos.x() - self.start_pos.x()
+        ctrl1 = self.start_pos + QPointF(dx * 0.5, 0)
+        ctrl2 = self.end_pos - QPointF(dx * 0.5, 0)
+        path.cubicTo(ctrl1, ctrl2, self.end_pos)
+        
+        self.setPath(path)
 
 class NodeGraph(QGraphicsScene):
     # Signals for UI updates
@@ -681,12 +719,14 @@ class NodeGraph(QGraphicsScene):
 
     def start_drag_connection(self, start_pin):
         self._drag_start_pin = start_pin
-        self._drag_connection = Connection(start_pin, None)
+        # Use TempConnection for preview instead of regular Connection
+        start_pos = start_pin.get_scene_pos()
+        self._drag_connection = TempConnection(start_pos)
         self.addItem(self._drag_connection)
 
     def update_drag_connection(self, end_pos):
         if self._drag_connection:
-            self._drag_connection.set_end_pos(end_pos)
+            self._drag_connection.update_end_pos(end_pos)
             self.update()
 
     def end_drag_connection(self, end_pos):

@@ -67,6 +67,9 @@ class Node(QGraphicsItem):
         self._is_resizing = False
         self._resize_handle_size = 15
 
+        # --- Performance Metrics ---
+        self.execution_time = None  # Execution time in milliseconds
+
         # --- Visual Properties ---
         self.color_body = QColor(20, 20, 20, 220)
         self.color_title_bar = QColor("#2A2A2A")
@@ -124,7 +127,7 @@ class Node(QGraphicsItem):
         if self.get_resize_handle_rect().contains(event.pos()):
             self.setCursor(Qt.SizeFDiagCursor)
         else:
-            self.setCursor(Qt.ArrowCursor)
+            self.setCursor(Qt.OpenHandCursor)  # Use hand cursor instead of arrow
         super().hoverMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent):
@@ -132,6 +135,8 @@ class Node(QGraphicsItem):
             self._is_resizing = True
         else:
             self._is_resizing = False
+            # Change to closed hand when starting to drag
+            self.setCursor(Qt.ClosedHandCursor)
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -155,6 +160,8 @@ class Node(QGraphicsItem):
             self._update_layout()
             self.update()
         else:
+            # Change back to open hand when drag ends
+            self.setCursor(Qt.OpenHandCursor)
             super().mouseReleaseEvent(event)
 
     # --- GUI & Layout ---
@@ -441,6 +448,17 @@ class Node(QGraphicsItem):
             painter.setPen(highlight_pen)
             painter.setBrush(Qt.NoBrush)
             painter.drawPath(body_path)
+        
+        # Display execution time at bottom of node if available
+        if self.execution_time is not None:
+            painter.save()
+            painter.setPen(QPen(QColor(150, 150, 150), 1))  # Gray text
+            painter.setFont(QFont("Arial", 8))  # Small font
+            execution_text = f"Execution: {self.execution_time:.2f}ms"
+            text_rect = QRectF(5, self.height - 18, self.width - 10, 15)
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, execution_text)
+            painter.restore()
+        
         handle_rect = self.get_resize_handle_rect()
         painter.setPen(QPen(self.color_border.lighter(150), 1.5))
         painter.drawLine(handle_rect.left() + 4, handle_rect.bottom() - 1, handle_rect.right() - 1, handle_rect.top() + 4)
@@ -776,3 +794,13 @@ class Node(QGraphicsItem):
             self.execution_pins.remove(pin_to_remove)
         if pin_to_remove in self.data_pins:
             self.data_pins.remove(pin_to_remove)
+
+    def hoverEnterEvent(self, event):
+        """Handle mouse hover enter - show hand cursor for node dragging"""
+        self.setCursor(Qt.OpenHandCursor)  # Set cursor directly on the node
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        """Handle mouse hover leave - reset cursor to default"""
+        self.setCursor(Qt.ArrowCursor)  # Reset to default cursor
+        super().hoverLeaveEvent(event)

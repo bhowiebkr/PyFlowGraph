@@ -14,6 +14,9 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 
+from src.core.pin import Pin
+from src.core.node import Node
+
 class NodeEditorView(QGraphicsView):
     """
     Custom QGraphicsView for the node editor. Handles zooming and Blueprint-style panning.
@@ -182,6 +185,28 @@ class NodeEditorView(QGraphicsView):
                         return item, handle
         return None, None
 
+    def _update_cursor_for_item(self, item):
+        """Update cursor based on the item type under the mouse"""
+        # Check the item itself
+        if isinstance(item, Pin):
+            self.viewport().setCursor(Qt.CrossCursor)
+            return True
+        
+        # Check if item has a parent that might be a pin
+        parent = item.parentItem() if hasattr(item, 'parentItem') else None
+        if parent and isinstance(parent, Pin):
+            self.viewport().setCursor(Qt.CrossCursor)
+            return True
+            
+        # Check child items recursively for pins
+        if hasattr(item, 'childItems'):
+            for child in item.childItems():
+                if isinstance(child, Pin):
+                    self.viewport().setCursor(Qt.CrossCursor)
+                    return True
+        
+        return False
+
     def mousePressEvent(self, event: QMouseEvent):
         is_pan_button = event.button() in (Qt.RightButton, Qt.MiddleButton)
         
@@ -195,7 +220,7 @@ class NodeEditorView(QGraphicsView):
                 self._is_resizing_group = True
                 self._resize_group = group
                 self._resize_handle = handle
-                self.setCursor(group.get_cursor_for_handle(handle))
+                self.viewport().setCursor(group.get_cursor_for_handle(handle))
                 self.setDragMode(QGraphicsView.NoDrag)
                 group.start_resize(handle, scene_pos)
                 event.accept()
@@ -204,7 +229,7 @@ class NodeEditorView(QGraphicsView):
         if is_pan_button:
             self._is_panning = True
             self._pan_start_pos = event.pos()
-            self.setCursor(Qt.ClosedHandCursor)
+            self.viewport().setCursor(Qt.ClosedHandCursor)
             self.setDragMode(QGraphicsView.NoDrag)
             event.accept()
         else:
@@ -250,13 +275,7 @@ class NodeEditorView(QGraphicsView):
             self._pan_start_pos = event.pos()
             event.accept()
         else:
-            # Update cursor when hovering over resize handles
-            scene_pos = self.mapToScene(event.pos())
-            group, handle = self._get_group_resize_handle_at_pos(scene_pos)
-            if group and handle != group.HANDLE_NONE:
-                self.setCursor(group.get_cursor_for_handle(handle))
-            else:
-                self.setCursor(Qt.ArrowCursor)
+            # Don't override cursors during drag operations - let items handle their own cursors
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -269,12 +288,12 @@ class NodeEditorView(QGraphicsView):
             self._is_resizing_group = False
             self._resize_group = None
             self._resize_handle = None
-            self.setCursor(Qt.ArrowCursor)
+            self.viewport().setCursor(Qt.ArrowCursor)
             self.setDragMode(QGraphicsView.RubberBandDrag)
             event.accept()
         elif self._is_panning and is_pan_button:
             self._is_panning = False
-            self.setCursor(Qt.ArrowCursor)
+            self.viewport().setCursor(Qt.ArrowCursor)
             self.setDragMode(QGraphicsView.RubberBandDrag)
             if event.button() == Qt.RightButton and (event.pos() - self._pan_start_pos).manhattanLength() < 3:
                 pos, global_pos, modifiers = event.pos(), event.globalPos(), event.modifiers()

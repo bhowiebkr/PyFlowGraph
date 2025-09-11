@@ -17,6 +17,7 @@ class Connection(QGraphicsPathItem):
 
         self.start_pin = start_pin
         self.end_pin = end_pin
+        self.hover_state = False  # Track hover state for visual feedback
         
         self.color = QColor("lightgray")
         self._pen = QPen(self.color)
@@ -25,6 +26,7 @@ class Connection(QGraphicsPathItem):
         self._pen_selected.setWidth(4)
         
         self.setPen(self._pen)
+        self.setAcceptHoverEvents(True)  # Enable hover events
 
         if self.start_pin and self.end_pin:
             self.start_pin.add_connection(self)
@@ -62,8 +64,17 @@ class Connection(QGraphicsPathItem):
         return super().itemChange(change, value)
 
     def paint(self, painter, option, widget=None):
-        # Make sure pen is set correctly (backup for paint method)
-        self.setPen(self._pen_selected if self.isSelected() else self._pen)
+        # Determine pen based on selection and hover state
+        if self.isSelected():
+            pen = self._pen_selected
+        elif self.hover_state:
+            # Create thicker hover pen for stronger visual feedback
+            hover_pen = QPen(self.color.lighter(130), 6)  # Much thicker than normal
+            pen = hover_pen
+        else:
+            pen = self._pen
+            
+        self.setPen(pen)
         if option.state & QStyle.State_Selected:
             option.state &= ~QStyle.State_Selected
         super().paint(painter, option, widget)
@@ -93,3 +104,17 @@ class Connection(QGraphicsPathItem):
             "end_pin_uuid": self.end_pin.uuid,
             "end_pin_name": self.end_pin.name,
         }
+
+    def hoverEnterEvent(self, event):
+        """Handle mouse hover enter - activate hover visual effect"""
+        self.hover_state = True
+        # Don't change Z-value, keep connections behind nodes
+        self.update()  # Trigger repaint with hover state
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        """Handle mouse hover leave - deactivate hover visual effect"""
+        self.hover_state = False
+        # Keep Z-value at background level
+        self.update()  # Trigger repaint without hover state
+        super().hoverLeaveEvent(event)

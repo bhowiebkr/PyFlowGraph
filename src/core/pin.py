@@ -32,6 +32,7 @@ class Pin(QGraphicsItem):
         self.connections = []
         self.value = None
         self.label_margin = 8
+        self.hover_state = False  # Track hover state for visual feedback
 
         # --- Dynamic Color Generation ---
         if self.pin_category == "execution":
@@ -121,7 +122,14 @@ class Pin(QGraphicsItem):
         return QRectF(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)
 
     def paint(self, painter, option, widget=None):
-        painter.setBrush(self.brush)
+        # Use lighter color when hovering for visual feedback
+        if self.hover_state:
+            hover_color = self.color.lighter(130)
+            hover_brush = QBrush(hover_color)
+            painter.setBrush(hover_brush)
+        else:
+            painter.setBrush(self.brush)
+        
         painter.setPen(self.pen)
         painter.drawEllipse(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)
 
@@ -185,3 +193,17 @@ class Pin(QGraphicsItem):
             "type": self.pin_type,
             "category": self.pin_category
         }
+
+    def hoverEnterEvent(self, event):
+        """Handle mouse hover enter - activate hover visual effect"""
+        self.hover_state = True
+        self.setCursor(Qt.CrossCursor)  # Set cursor directly on the pin
+        self.update()  # Trigger repaint with hover state
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        """Handle mouse hover leave - deactivate hover visual effect"""
+        self.hover_state = False
+        self.setCursor(Qt.ArrowCursor)  # Reset cursor to default
+        self.update()  # Trigger repaint without hover state
+        super().hoverLeaveEvent(event)
