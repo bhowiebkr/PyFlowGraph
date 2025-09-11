@@ -73,6 +73,13 @@ class FlowFormatHandler:
         # Always include gui_state (even if empty) for consistency
         metadata["gui_state"] = node.get("gui_state", {})
         
+        # Include node-level dependencies if present
+        if "dependencies" in node and node["dependencies"]:
+            metadata["dependencies"] = node["dependencies"]
+        
+        if "optional_dependencies" in node and node["optional_dependencies"]:
+            metadata["optional_dependencies"] = node["optional_dependencies"]
+        
         content += "### Metadata\n\n"
         content += "```json\n"
         content += json.dumps(metadata, indent=2)
@@ -227,6 +234,13 @@ class FlowFormatHandler:
                                 "gui_state": metadata.get("gui_state", {}),
                                 "is_reroute": metadata.get("is_reroute", False)
                             })
+                            
+                            # Parse node-level dependencies if present
+                            if "dependencies" in metadata:
+                                current_node["dependencies"] = metadata["dependencies"]
+                            
+                            if "optional_dependencies" in metadata:
+                                current_node["optional_dependencies"] = metadata["optional_dependencies"]
                         except json.JSONDecodeError:
                             pass
                     

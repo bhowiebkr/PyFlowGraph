@@ -18,6 +18,7 @@ from .node_editor_view import NodeEditorView
 from execution.environment_manager import EnvironmentManagerDialog
 from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.environment_selection_dialog import EnvironmentSelectionDialog
+from ui.panels.node_library_panel import NodeLibraryPanel
 from ui.dialogs.graph_properties_dialog import GraphPropertiesDialog
 from ui.dialogs.undo_history_dialog import UndoHistoryDialog
 
@@ -76,6 +77,11 @@ class NodeEditorWindow(QMainWindow):
         dock = QDockWidget("Output Log")
         dock.setWidget(self.output_log)
         self.addDockWidget(Qt.BottomDockWidgetArea, dock)
+        
+        # Node library panel - use settings for directory
+        library_dir = self.settings.value("library_directory", "examples")
+        self.library_panel = NodeLibraryPanel(self, examples_dir=library_dir)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.library_panel)
         
         # Ensure default virtual environment exists
         self._ensure_default_environment()
@@ -182,6 +188,10 @@ class NodeEditorWindow(QMainWindow):
         edit_menu.addAction(self.action_add_node)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_settings)
+        
+        # View menu
+        view_menu = menu_bar.addMenu("&View")
+        view_menu.addAction(self.library_panel.toggleViewAction())
         
         # Environment menu
         env_menu = menu_bar.addMenu("&Environment")

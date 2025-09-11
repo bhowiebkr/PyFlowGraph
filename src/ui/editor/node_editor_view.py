@@ -4,9 +4,10 @@
 
 import sys
 import os
-from PySide6.QtWidgets import QGraphicsView, QMenu
+import json
+from PySide6.QtWidgets import QGraphicsView, QMenu, QMessageBox
 from PySide6.QtCore import Qt, QPoint, QTimer, QLineF
-from PySide6.QtGui import QPainter, QPen, QColor, QMouseEvent, QContextMenuEvent, QKeyEvent, QCursor
+from PySide6.QtGui import QPainter, QPen, QColor, QMouseEvent, QContextMenuEvent, QKeyEvent, QCursor, QDragEnterEvent, QDragMoveEvent, QDropEvent
 
 # Add project root to path for cross-package imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -16,6 +17,7 @@ if project_root not in sys.path:
 
 from src.core.pin import Pin
 from src.core.node import Node
+from src.core.dependency_checker import DependencyChecker, DependencyStatus
 
 class NodeEditorView(QGraphicsView):
     """
@@ -28,6 +30,12 @@ class NodeEditorView(QGraphicsView):
         self.setDragMode(QGraphicsView.RubberBandDrag)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
+        
+        # Enable drag and drop
+        self.setAcceptDrops(True)
+        
+        # Initialize dependency checker
+        self.dependency_checker = DependencyChecker()
 
         # --- UI Enhancements ---
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -356,3 +364,154 @@ class NodeEditorView(QGraphicsView):
             gridLines.append(QLineF(rect.left(), y, rect.right(), y))
             y += self._grid_size_course
         painter.drawLines(gridLines)
+    
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """Handle drag enter events from node library."""
+        if event.mimeData().hasFormat("application/x-pyflowgraph-node"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+    
+    def dragMoveEvent(self, event: QDragMoveEvent):
+        """Handle drag move events."""
+        if event.mimeData().hasFormat("application/x-pyflowgraph-node"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+    
+    def dropEvent(self, event: QDropEvent):
+        """Handle drop events to create nodes with dependency validation."""
+        if not event.mimeData().hasFormat("application/x-pyflowgraph-node"):
+            event.ignore()
+            return
+        
+        try:
+            # Parse node data from drop
+            node_json = event.mimeData().data("application/x-pyflowgraph-node").data().decode('utf-8')
+            node_data = json.loads(node_json)
+            
+            # Validate dependencies before creating node
+            dependency_info = self.dependency_checker.check_node_dependencies(node_data)
+            
+            # Check if there are missing required dependencies
+            missing_required = dependency_info.get("missing_required", [])
+            if missing_required:
+                # Show warning dialog
+                response = QMessageBox.question(
+                    self,
+                    "Missing Dependencies",
+                    f"This node requires the following packages that are not installed:\n\n"
+                    f"{', '.join(missing_required)}\n\n"
+                    f"Create the node anyway?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                
+                if response == QMessageBox.No:
+                    event.ignore()
+                    return
+            
+            # Check for missing optional dependencies
+            missing_optional = dependency_info.get("missing_optional", [])
+            if missing_optional and not missing_required:
+                # Show info about optional dependencies
+                QMessageBox.information(
+                    self,
+                    "Optional Dependencies Missing",
+                    f"This node has optional dependencies that are not installed:\n\n"
+                    f"{', '.join(missing_optional)}\n\n"
+                    f"The node will work but some features may be limited.",
+                    QMessageBox.Ok
+                )
+            
+            # Calculate drop position in scene coordinates
+            scene_pos = self.mapToScene(event.pos())
+            
+            # Create the node
+            self._create_node_from_data(node_data, scene_pos)
+            
+            event.acceptProposedAction()
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Drop Error", 
+                f"Failed to create node from drop: {e}"
+            )
+            event.ignore()
+    
+    def _create_node_from_data(self, node_data, position):
+        """Create a node from library data at the specified position.
+        
+        Args:
+            node_data: Node data from library
+            position: QPointF position in scene coordinates
+        """
+        # Create node directly in the scene using the graph's create_node method
+        scene = self.scene()
+        if hasattr(scene, 'create_node'):
+            # Extract node data
+            title = node_data.get("title", "New Node")
+            code = node_data.get("code", "# Node code")
+            gui_code = node_data.get("gui_code", "")
+            gui_get_values_code = node_data.get("gui_get_values_code", "")
+            size = node_data.get("size", [200, 150])
+            colors = node_data.get("colors", {})
+            
+            # Create the node
+            node = scene.create_node(title, pos=(position.x(), position.y()))
+            
+            # Set the code and properties
+            if code:
+                node.set_code(code)
+            if gui_code:
+                node.set_gui_code(gui_code)
+            if gui_get_values_code:
+                node.gui_get_values_code = gui_get_values_code
+            if size:
+                node.width = size[0]
+                node.height = size[1]
+            if colors:
+                if "title" in colors:
+                    node.color_title_bar = QColor(colors["title"])
+                if "body" in colors:
+                    node.color_body = QColor(colors["body"])
+                node.update()  # Trigger repaint with new colors
+            
+            # Apply the same resize trick used when loading flow graphs
+            # This ensures GUI widgets render properly in drag/drop nodes
+            QTimer.singleShot(0, lambda: self._final_node_update(node))
+    
+    def _final_node_update(self, node):
+        """Apply the final layout update to a newly created node (same as final_load_update).
+        
+        This ensures GUI widgets render properly by deferring layout calculations
+        until after the Qt event loop processes all pending widget creation events.
+        """
+        try:
+            if node.scene() is None:
+                return  # Node has been removed from scene
+            
+            # Re-validate minimum size now that GUI is fully constructed
+            min_width, min_height = node.calculate_absolute_minimum_size()
+            current_width, current_height = node.width, node.height
+            
+            # Check if current size is still too small after GUI construction
+            required_width = max(current_width, min_width)
+            required_height = max(current_height, min_height)
+            
+            if required_width != current_width or required_height != current_height:
+                node.width = required_width
+                node.height = required_height
+            
+            # Force a complete layout rebuild like manual resize does
+            node._update_layout()
+            # Update all pin connections like manual resize does
+            for pin in node.pins:
+                pin.update_connections()
+            # Force node visual update
+            node.update()
+            
+        except RuntimeError:
+            # Node has been deleted, skip
+            pass
