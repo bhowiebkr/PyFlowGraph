@@ -11,7 +11,8 @@ from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, 
     QTreeWidget, QTreeWidgetItem, QLineEdit, QPushButton,
     QLabel, QGraphicsView, QGraphicsScene, QGraphicsRectItem,
-    QMessageBox, QComboBox, QSplitter, QTextEdit, QToolTip, QFileDialog
+    QMessageBox, QComboBox, QSplitter, QTextEdit, QToolTip, QFileDialog,
+    QSizePolicy
 )
 from PySide6.QtCore import Qt, QMimeData, QTimer, QPoint, QSize
 from PySide6.QtGui import QDrag, QPixmap, QPainter, QColor, QBrush, QPen, QFont
@@ -30,10 +31,14 @@ class NodePreviewWidget(QGraphicsView):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(150)  # Full width, taller for better node view
+        self.setMinimumHeight(100)  # Set minimum height instead of fixed height
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setRenderHint(QPainter.Antialiasing)
+        
+        # Disable interaction - make it read-only for preview
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.setInteractive(False)
         
         # Create scene
         self.scene = QGraphicsScene()
@@ -178,10 +183,32 @@ class NodeLibraryItem(QTreeWidgetItem):
             self.setText(1, "OK")
             self.setForeground(1, QColor(100, 200, 100))
         elif status == DependencyStatus.OPTIONAL_MISSING:
-            self.setText(1, "WARN")
+            # Show missing optional packages
+            dep_info = self.node_data.get("dependency_info", {})
+            missing_optional = dep_info.get("missing_optional", [])
+            if missing_optional:
+                # Show first few missing packages
+                display_packages = missing_optional[:2]
+                status_text = f"Missing: {', '.join(display_packages)}"
+                if len(missing_optional) > 2:
+                    status_text += f" (+{len(missing_optional) - 2} more)"
+                self.setText(1, status_text)
+            else:
+                self.setText(1, "WARN")
             self.setForeground(1, QColor(200, 150, 50))
         elif status == DependencyStatus.REQUIRED_MISSING:
-            self.setText(1, "ERROR")
+            # Show missing required packages instead of just "ERROR"
+            dep_info = self.node_data.get("dependency_info", {})
+            missing_required = dep_info.get("missing_required", [])
+            if missing_required:
+                # Show first few missing packages
+                display_packages = missing_required[:2]
+                status_text = f"Missing: {', '.join(display_packages)}"
+                if len(missing_required) > 2:
+                    status_text += f" (+{len(missing_required) - 2} more)"
+                self.setText(1, status_text)
+            else:
+                self.setText(1, "ERROR")
             self.setForeground(1, QColor(200, 100, 100))
         else:
             self.setText(1, "UNKNOWN")
@@ -263,17 +290,37 @@ class NodeLibraryPanel(QDockWidget):
         
         layout = QVBoxLayout(main_widget)
         
+        # Top row: Refresh and Change Directory buttons at the very top
+        top_button_row = QHBoxLayout()
+        
+        # Refresh button
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.clicked.connect(self._refresh_cache)
+        refresh_btn.setStyleSheet("QPushButton { border: 1px solid #555; padding: 6px 12px; background: #4a4a4a; color: white; } QPushButton:hover { background: #5a5a5a; }")
+        top_button_row.addWidget(refresh_btn)
+        
+        # Directory button
+        dir_btn = QPushButton("Change Directory")
+        dir_btn.clicked.connect(self._change_directory)
+        dir_btn.setStyleSheet("QPushButton { border: 1px solid #555; padding: 6px 12px; background: #4a6a9e; color: white; } QPushButton:hover { background: #5a7aae; }")
+        top_button_row.addWidget(dir_btn)
+        
+        # Add stretch to push buttons to the left
+        top_button_row.addStretch()
+        
+        layout.addLayout(top_button_row)
+        
         # Search section
         search_layout = QVBoxLayout()
         
-        # First row: search box and status filter
-        search_row1 = QHBoxLayout()
+        # Search row: search box and status filter
+        search_row = QHBoxLayout()
         
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("Search nodes...")
         self.search_box.textChanged.connect(self._filter_tree)
         self.search_box.setStyleSheet("QLineEdit { border: 1px solid #555; padding: 4px; background: #3a3a3a; color: white; }")
-        search_row1.addWidget(self.search_box)
+        search_row.addWidget(self.search_box)
         
         # Status filter
         self.status_filter = QComboBox()
@@ -284,31 +331,14 @@ class NodeLibraryPanel(QDockWidget):
         self.status_filter.currentTextChanged.connect(self._filter_tree)
         self.status_filter.setStyleSheet("QComboBox { border: 1px solid #555; padding: 4px; background: #3a3a3a; color: white; }")
         self.status_filter.setMaximumWidth(120)
-        search_row1.addWidget(self.status_filter)
+        search_row.addWidget(self.status_filter)
         
-        search_layout.addLayout(search_row1)
-        
-        # Second row: buttons
-        button_row = QHBoxLayout()
-        
-        # Refresh button
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.clicked.connect(self._refresh_cache)
-        refresh_btn.setStyleSheet("QPushButton { border: 1px solid #555; padding: 6px 12px; background: #4a4a4a; color: white; } QPushButton:hover { background: #5a5a5a; }")
-        button_row.addWidget(refresh_btn)
-        
-        # Directory button
-        dir_btn = QPushButton("Change Directory")
-        dir_btn.clicked.connect(self._change_directory)
-        dir_btn.setStyleSheet("QPushButton { border: 1px solid #555; padding: 6px 12px; background: #4a6a9e; color: white; } QPushButton:hover { background: #5a7aae; }")
-        button_row.addWidget(dir_btn)
-        
-        search_layout.addLayout(button_row)
+        search_layout.addLayout(search_row)
         
         layout.addLayout(search_layout)
         
         # Main content splitter
-        splitter = QSplitter(Qt.Vertical)
+        self.splitter = QSplitter(Qt.Vertical)
         
         # Tree widget
         self.tree_widget = QTreeWidget()
@@ -352,46 +382,44 @@ class NodeLibraryPanel(QDockWidget):
         # Item selection and preview
         self.tree_widget.itemSelectionChanged.connect(self._on_selection_changed)
         
-        splitter.addWidget(self.tree_widget)
+        self.splitter.addWidget(self.tree_widget)
         
         # Info panel
         info_widget = QWidget()
         info_layout = QVBoxLayout(info_widget)
+        info_layout.setContentsMargins(2, 2, 2, 2)  # Reduce side margins
         
-        # Preview section - full width
-        preview_label = QLabel("Preview")
-        preview_label.setStyleSheet("QLabel { font-weight: bold; color: #4a9eff; margin-bottom: 5px; }")
-        info_layout.addWidget(preview_label)
-        
-        self.preview_widget = NodePreviewWidget()
-        info_layout.addWidget(self.preview_widget)
-        
-        # Details text
+        # Details text first (description)
         self.details_text = QTextEdit()
-        self.details_text.setMaximumHeight(100)
+        self.details_text.setMaximumHeight(150)
         self.details_text.setReadOnly(True)
         self.details_text.setStyleSheet("""
             QTextEdit {
                 border: 1px solid #555;
                 background: #2a2a2a;
                 color: white;
-                padding: 5px;
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 10px;
+                padding: 3px 2px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-size: 12px;
             }
         """)
         info_layout.addWidget(self.details_text)
         
-        splitter.addWidget(info_widget)
+        # Preview widget below description (no label needed)
+        self.preview_widget = NodePreviewWidget()
+        self.preview_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        info_layout.addWidget(self.preview_widget, 1)  # Give it stretch factor of 1
         
-        # Set splitter proportions
-        splitter.setSizes([300, 150])
+        self.splitter.addWidget(info_widget)
         
-        layout.addWidget(splitter)
+        # Load saved splitter state or set default proportions
+        self._load_splitter_state()
         
-        # Status bar
-        self.status_label = QLabel("Ready")
-        layout.addWidget(self.status_label)
+        # Connect splitter moved signal to save state
+        self.splitter.splitterMoved.connect(self._save_splitter_state)
+        
+        layout.addWidget(self.splitter)
+        
     
     def _populate_tree(self):
         """Populate the tree with nodes from examples."""
@@ -399,7 +427,6 @@ class NodeLibraryPanel(QDockWidget):
         
         try:
             # Update status
-            self.status_label.setText("Scanning nodes...")
             
             # Get all nodes
             self.current_nodes = self.scanner.scan_nodes()
@@ -424,10 +451,8 @@ class NodeLibraryPanel(QDockWidget):
             summary = self.scanner.get_dependency_summary()
             total = summary.get("total_nodes", 0)
             satisfied = summary.get("status_counts", {}).get(DependencyStatus.SATISFIED, 0)
-            self.status_label.setText(f"Loaded {total} nodes ({satisfied} available)")
             
         except Exception as e:
-            self.status_label.setText(f"Error: {e}")
             QMessageBox.warning(self, "Scan Error", f"Failed to scan nodes: {e}")
     
     def _filter_tree(self):
@@ -485,38 +510,51 @@ class NodeLibraryPanel(QDockWidget):
             # Update preview
             self.preview_widget.set_node_data(node_data)
             
-            # Update details text
+            # Update details text with HTML formatting and colors
             details = []
-            details.append(f"Title: {node_data.get('title', 'Unknown')}")
-            details.append(f"Source: {node_data.get('source_filename', 'Unknown')}")
             
+            # Title with blue color for labels, white for values
+            title = node_data.get('title', 'Unknown')
+            details.append(f"<span style='color: #6ab7ff;'><b>Title:</b></span> <span style='color: #ffffff;'>{title}</span>")
+            
+            # Source file with green color
+            source = node_data.get('source_filename', 'Unknown')
+            details.append(f"<span style='color: #6ab7ff;'><b>Source:</b></span> <span style='color: #90ee90;'>{source}</span>")
+            
+            # Description with lighter text
             description = node_data.get('description', '')
             if description:
-                details.append(f"Description: {description}")
+                details.append(f"<span style='color: #6ab7ff;'><b>Description:</b></span><br><span style='color: #d0d0d0;'>{description}</span>")
             
             # Dependency information
             dep_info = node_data.get('dependency_info', {})
             if dep_info:
                 details.append("")
-                details.append("Dependencies:")
+                details.append("<span style='color: #ffa500;'><b>Dependencies:</b></span>")
                 
                 req_deps = dep_info.get('required_dependencies', [])
                 if req_deps:
-                    details.append(f"  Required: {', '.join(req_deps)}")
+                    deps_text = ', '.join(req_deps)
+                    details.append(f"  <span style='color: #6ab7ff;'>Required:</span> <span style='color: #ffffff;'>{deps_text}</span>")
                 
                 opt_deps = dep_info.get('optional_dependencies', [])
                 if opt_deps:
-                    details.append(f"  Optional: {', '.join(opt_deps)}")
+                    deps_text = ', '.join(opt_deps)
+                    details.append(f"  <span style='color: #6ab7ff;'>Optional:</span> <span style='color: #cccccc;'>{deps_text}</span>")
                 
                 missing_req = dep_info.get('missing_required', [])
                 if missing_req:
-                    details.append(f"  Missing Required: {', '.join(missing_req)}")
+                    deps_text = ', '.join(missing_req)
+                    details.append(f"  <span style='color: #ff6b6b;'>Missing Required:</span> <span style='color: #ff9999;'>{deps_text}</span>")
                 
                 missing_opt = dep_info.get('missing_optional', [])
                 if missing_opt:
-                    details.append(f"  Missing Optional: {', '.join(missing_opt)}")
+                    deps_text = ', '.join(missing_opt)
+                    details.append(f"  <span style='color: #ffaa55;'>Missing Optional:</span> <span style='color: #ffcc88;'>{deps_text}</span>")
             
-            self.details_text.setText("\n".join(details))
+            # Set HTML content
+            html_content = "<br>".join(details)
+            self.details_text.setHtml(html_content)
         else:
             self.details_text.clear()
     
@@ -582,12 +620,9 @@ class NodeLibraryPanel(QDockWidget):
     def _refresh_cache(self):
         """Manually refresh the entire cache."""
         try:
-            self.status_label.setText("Refreshing...")
             files_count = self.scanner.refresh_cache()
             self._populate_tree()
-            self.status_label.setText(f"Refreshed {files_count} files")
         except Exception as e:
-            self.status_label.setText(f"Refresh error: {e}")
             QMessageBox.warning(self, "Refresh Error", f"Failed to refresh: {e}")
     
     def _change_directory(self):
@@ -610,7 +645,6 @@ class NodeLibraryPanel(QDockWidget):
             
             # Refresh the tree
             self._refresh_cache()
-            self.status_label.setText(f"Changed library to: {new_dir}")
     
     def get_scanner(self) -> NodeScanner:
         """Get the node scanner instance.
@@ -619,3 +653,32 @@ class NodeLibraryPanel(QDockWidget):
             The NodeScanner instance used by this panel
         """
         return self.scanner
+
+    
+    def _load_splitter_state(self):
+        """Load saved splitter state from settings."""
+        # Try to get settings from main window
+        main_window = self.parent()
+        if hasattr(main_window, 'settings'):
+            saved_state = main_window.settings.value("library_splitter_state")
+            if saved_state:
+                try:
+                    # Convert saved state to list of integers
+                    sizes = [int(x) for x in saved_state.split(',')]
+                    if len(sizes) == 2 and all(s > 0 for s in sizes):
+                        self.splitter.setSizes(sizes)
+                        return
+                except (ValueError, AttributeError):
+                    pass
+        
+        # Fall back to default sizes if no valid saved state
+        self.splitter.setSizes([300, 150])
+    
+    def _save_splitter_state(self):
+        """Save current splitter state to settings."""
+        # Try to get settings from main window
+        main_window = self.parent()
+        if hasattr(main_window, 'settings'):
+            sizes = self.splitter.sizes()
+            state_string = ','.join(str(size) for size in sizes)
+            main_window.settings.setValue("library_splitter_state", state_string)
