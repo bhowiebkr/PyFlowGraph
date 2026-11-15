@@ -75,21 +75,30 @@ def process_data(data):
         # Create large data object (1M integers)
         large_data = list(range(1000000))
         
-        # Time the execution
-        start_time = time.perf_counter()
-        result, _ = self.executor.execute_node(node, {'data': large_data})
-        execution_time = time.perf_counter() - start_time
-        
-        # Verify result
+        # The best of several runs: one timing on a shared CI runner can be slow.
+        def best(fn, runs=5):
+            times = []
+            for _ in range(runs):
+                start_time = time.perf_counter()
+                value = fn()
+                times.append(time.perf_counter() - start_time)
+            return value, min(times)
+
+        (result, _), execution_time = best(
+            lambda: self.executor.execute_node(node, {'data': large_data}))
+        _, direct_time = best(lambda: (len(large_data), sum(large_data)))
+
         self.assertEqual(result, (1000000, 499999500000))
-        
-        print(f"\nMemory Efficiency Test:")
+
+        print("\nMemory Efficiency Test:")
         print(f"Processed {len(large_data):,} integers")
-        print(f"Execution time: {execution_time*1000:.2f}ms")
-        
-        # Should be very fast since we're passing by reference (under 10ms)
-        self.assertLess(execution_time, 0.01,
-                       f"Large data processing took {execution_time*1000:.2f}ms, should be under 10ms")
+        print(f"Execution time: {execution_time*1000:.2f}ms, direct call: {direct_time*1000:.2f}ms")
+
+        # The list passes by reference, so the node costs little more than the work itself.
+        # A copy or a serialization of 1M integers would take many times longer.
+        self.assertLess(execution_time, direct_time * 2 + 0.002,
+                        f"Large data processing took {execution_time*1000:.2f}ms, "
+                        f"the same work without the node {direct_time*1000:.2f}ms")
     
     def test_import_overhead(self):
         """Test that imports don't add overhead after the first use."""
