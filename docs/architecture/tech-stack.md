@@ -43,10 +43,10 @@ Nuitka             # Optional: For building executables
 - **Features**: Line numbers, smart indentation, Python syntax highlighting
 
 #### Execution Engine
-- **Purpose**: Safe execution of node graphs
-- **Technology**: Python subprocess isolation
-- **Communication**: JSON serialization between processes
-- **Security**: Sandboxed execution environment
+- **Purpose**: Execution of node graphs
+- **Technology**: `exec()` in one persistent namespace, in the editor process
+- **Communication**: Python objects passed by reference
+- **Security**: Not a sandbox. The editor asks before it runs code from an untrusted graph.
 
 #### Event System
 - **Purpose**: Interactive and event-driven execution
@@ -136,9 +136,9 @@ Nuitka             # Optional: For building executables
 ## Security Considerations
 
 ### Code Execution
-- Subprocess isolation for node execution
-- No direct eval/exec on user code
-- JSON-only inter-process communication
+- Node code runs with `exec()` in the editor process, not in a sandbox
+- The editor asks before it opens or pastes an untrusted graph with GUI code
+- Graph dependencies that pip would read as options are refused
 
 ### File System
 - Restricted file access patterns

@@ -192,10 +192,12 @@ if not self.validate_connection(source, target):
 ## Security
 
 ### Code Execution
-- All node code executes in isolated subprocesses
-- Never use `eval()` or `exec()` on untrusted input
-- Validate all inputs before processing
-- Use JSON for inter-process communication
+- Node code runs with `exec()` in the editor process. It is not a sandbox: see the known
+  limits in [STATUS.md](../../STATUS.md).
+- Code that a graph brings runs only after the trust check. Do not add another path that runs
+  graph code before that check.
+- Never use `eval()` or `exec()` on other untrusted input.
+- Validate all inputs before processing.
 
 ### File Access
 - Restrict file operations to project directories

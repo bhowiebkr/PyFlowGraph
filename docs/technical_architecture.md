@@ -126,7 +126,7 @@ The Command Pattern implementation provides a robust, extensible foundation for 
 
 #### CommandBase (Abstract Base Class)
 ```python
-# src/commands/command_base.py
+# src/pyflowgraph/commands/command_base.py
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
@@ -163,7 +163,7 @@ class CommandBase(ABC):
 
 #### CommandHistory (Command Manager)
 ```python
-# src/commands/command_history.py
+# src/pyflowgraph/commands/command_history.py
 from typing import List, Optional
 from .command_base import CommandBase
 
@@ -242,7 +242,7 @@ class CommandHistory:
 
 #### Node Operations
 ```python
-# src/commands/node_commands.py
+# src/pyflowgraph/commands/node_commands.py
 class CreateNodeCommand(CommandBase):
     """Command for creating nodes with full state preservation."""
     
@@ -342,7 +342,7 @@ class DeleteNodeCommand(CommandBase):
 
 #### Composite Commands for Complex Operations
 ```python
-# src/commands/composite_command.py
+# src/pyflowgraph/commands/composite_command.py
 class CompositeCommand(CommandBase):
     """Command that groups multiple operations as single undo unit."""
     
@@ -405,7 +405,7 @@ startup    Same namespace           Native objects               startup
 
 #### SingleProcessExecutor
 ```python
-# src/execution/single_process_executor.py
+# src/pyflowgraph/execution/single_process_executor.py
 class SingleProcessExecutor:
     """Manages execution in a single persistent Python interpreter."""
     
@@ -462,7 +462,7 @@ class SingleProcessExecutor:
 
 #### SequentialScheduler
 ```python
-# src/execution/sequential_scheduler.py
+# src/pyflowgraph/execution/sequential_scheduler.py
 class SequentialScheduler:
     """GPU-aware sequential execution scheduler."""
     
@@ -509,7 +509,7 @@ class SequentialScheduler:
 
 #### GPUMemoryManager
 ```python
-# src/execution/gpu_memory_manager.py
+# src/pyflowgraph/execution/gpu_memory_manager.py
 class GPUMemoryManager:
     """Manages GPU memory for optimal utilization."""
     
@@ -1011,7 +1011,7 @@ class NodeEditorWindow(QMainWindow):
 
 #### Specialized UI Dialogs
 ```python
-# src/ui/undo_history_dialog.py
+# src/pyflowgraph/ui/undo_history_dialog.py
 class UndoHistoryDialog(QDialog):
     """Visual undo history timeline (FR4)."""
     
@@ -1042,7 +1042,7 @@ class UndoHistoryDialog(QDialog):
         
         layout.addLayout(button_layout)
 
-# src/ui/group_creation_dialog.py
+# src/pyflowgraph/ui/group_creation_dialog.py
 class GroupCreationDialog(QDialog):
     """Dialog for group creation with metadata input."""
     
@@ -1145,7 +1145,7 @@ The architecture addresses specific performance requirements (NFR1-NFR3) through
 
 #### Command History Optimization (NFR1, NFR3)
 ```python
-# src/commands/performance_optimizations.py
+# src/pyflowgraph/commands/performance_optimizations.py
 class OptimizedCommandHistory(CommandHistory):
     """Performance-optimized command history implementation."""
     

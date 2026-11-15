@@ -38,7 +38,6 @@ Unlike existing workflow automation platforms, PyFlowGraph offers:
 - Python code execution within nodes
 - Automatic pin generation from function signatures
 - Markdown-based persistent format
-- Subprocess isolation for security
 
 ### Planned Automation Features
 

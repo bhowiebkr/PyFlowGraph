@@ -387,11 +387,18 @@ Files MAY contain a Dependencies section specifying required Python packages:
 - `system`: System-level dependencies (e.g., CUDA, OpenCV system libraries)
 - `notes`: Additional installation or compatibility notes
 
+**Where the editor writes it:** after the graph description, before the first node. The editor
+writes the section when the graph has requirements or other dependency fields. It writes back
+the fields that it does not use, such as `optional` and `notes`, as they were in the file.
+
 **Package Specification Format:**
 - Use pip-compatible version specifiers: `package>=1.0.0`, `package==1.2.3`, `package~=1.0`
 - For exact versions: `"torch==1.12.0"`
 - For minimum versions: `"numpy>=1.21.0"`
 - For compatible versions: `"pandas~=1.4.0"` (equivalent to `>=1.4.0, ==1.4.*`)
+- Each entry is one package. An entry that starts with `-`, or that holds a ` -` option after
+  the package or a line break, is not a package name. pip would read it as an option, for example
+  `--index-url`, so the editor stops the environment setup and lists the entry.
 
 **Usage Examples:**
 

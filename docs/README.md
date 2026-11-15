@@ -1,80 +1,51 @@
 # PyFlowGraph Documentation
 
-This directory contains comprehensive documentation for the PyFlowGraph project, organized following BMAD-inspired structure with clear separation between user documentation, developer resources, and technical references.
+The [README](../README.md) is the user guide. [STATUS.md](../STATUS.md) tells what works, what
+was checked and the known problems. [CONTRIBUTING.md](../CONTRIBUTING.md) tells how to set up,
+run the tests and report a problem.
 
-## Quick Navigation
+## Specifications
 
-### For Users
-- **[User Guide](user_guide/)** - Getting started, tutorials, and examples
-  - [Getting Started](user_guide/getting_started.md) - Installation and first workflow
-  - [Tutorials](user_guide/tutorials/) - Step-by-step guides
-  - [Examples](user_guide/examples/) - Sample workflows and use cases
+- [flow_spec.md](specifications/flow_spec.md): the Markdown graph format. The editor reads and
+  writes this format.
+- [flow_spec_llm.md](specifications/flow_spec_llm.md): a short version of the format for
+  language models.
+- [flow_spec_llm_generator.md](specifications/flow_spec_llm_generator.md): instructions for a
+  language model that writes graph files.
+- [ui-ux-specifications.md](specifications/ui-ux-specifications.md): the user interface design.
 
-### For Developers
-- **[Developer Guide](developer_guide/)** - Development environment and contribution guidelines
-  - [Testing Guide](developer_guide/testing-guide.md) - Test runner and testing strategies
-  - [Implementation Notes](developer_guide/implementation-notes.md) - Technical priorities
-  - [AI Agents Guide](developer_guide/ai-agents-guide.md) - Working with AI assistants
+## Plans
 
-### For Technical Reference
-- **[Reference](reference/)** - Complete technical documentation
-  - [Architecture](reference/architecture/) - System design and technical architecture
-  - [Specifications](reference/specifications/) - Feature and interface specifications
-  - [API](reference/api/) - API documentation (planned)
+These pages are plans. Some of the work is done, and the code can differ from them.
 
-### For Project Management
-- **[Project](project/)** - Strategic planning and development tracking
-  - [PRD](project/prd.md) - Product Requirements Document
-  - [Roadmap](project/roadmap.md) - Feature development roadmap
-  - [Epics](project/epics/) - Epic and story tracking
+- [roadmap.md](roadmap.md): the planned features.
+- [prd.md](prd.md): the product requirements.
+- [workflow-automation-vision.md](workflow-automation-vision.md): the long-term direction.
+- [competitive-analysis.md](competitive-analysis.md): other node editors.
+- [priority-1-features-project-brief.md](specifications/priority-1-features-project-brief.md):
+  the brief for the first features.
+- [stories/3.4.epic.md](stories/3.4.epic.md) and
+  [pin-type-visibility-enhancement.md](specifications/pin-type-visibility-enhancement.md): pin
+  type badges and connection highlights. Not made yet.
 
-### For Issue Tracking
-- **[Issues](issues/)** - Bug reports and issue resolution
-  - [Active Issues](issues/active/) - Current unresolved issues
-  - [Resolved Issues](issues/resolved/) - Completed issue resolutions
+## Design
 
-### For Implementation Details
-- **[Implementation](implementation/)** - Detailed implementation plans and fixes
-  - [Fixes](implementation/fixes/) - Specific fix implementations
-  - [Migration Plans](implementation/migration_plans/) - Code reorganization plans
+- [technical_architecture.md](technical_architecture.md): the design of the command system,
+  the groups and the single process execution. Written before the work.
+- [architecture/coding-standards.md](architecture/coding-standards.md): code style.
+- [architecture/tech-stack.md](architecture/tech-stack.md): the libraries and tools.
 
-## Document Organization Philosophy
+## Development
 
-This documentation structure follows industry best practices with clear separation of concerns:
+- [development/implementation-notes.md](development/implementation-notes.md): notes on the
+  feature priorities.
+- [development/modern-icons-guide.md](development/modern-icons-guide.md): the Font Awesome
+  icons.
+- [development/pyside6-testing-guide.md](development/pyside6-testing-guide.md): ways to test
+  PySide6 code. To run the tests of this repository, follow
+  [CONTRIBUTING.md](../CONTRIBUTING.md#run-the-tests).
 
-### User-Focused Documentation (`user_guide/`)
-Practical guides for end users, including tutorials, examples, and getting started materials.
+## Bugs
 
-### Developer Documentation (`developer_guide/`)
-Technical development information for contributors, including testing, setup, and implementation guidance.
-
-### Reference Material (`reference/`)
-Comprehensive technical specifications, architecture documentation, and API references for detailed technical understanding.
-
-### Project Management (`project/`)
-Strategic documents, planning materials, and development tracking for stakeholders and project coordination.
-
-### Issue Management (`issues/`)
-Structured bug tracking and issue resolution with proper categorization and documentation.
-
-### Implementation Details (`implementation/`)
-Specific implementation plans, migration strategies, and detailed technical solutions.
-
-## Contributing to Documentation
-
-When adding new documentation:
-- Place user-focused content in `user_guide/`
-- Place developer information in `developer_guide/`
-- Place technical specifications in `reference/`
-- Place strategic content in `project/`
-- Place bug reports in `issues/`
-- Place implementation details in `implementation/`
-- Always update relevant README files with new document links
-- Follow existing naming conventions and organization patterns
-
-## Navigation Tips
-
-- Each major section has its own README with detailed navigation
-- Related documents are cross-referenced for easy discovery  
-- Status information is maintained for active development items
-- Historical documents are preserved in appropriate subdirectories
+[bugs/](bugs/) holds bug reports as Markdown files. The **Bug Sync** workflow copies them to
+GitHub Issues when they change on `main`.

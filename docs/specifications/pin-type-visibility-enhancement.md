@@ -131,12 +131,12 @@ Status: <active|inactive>
 ### 4.1 Modified Files
 
 **Primary Changes**:
-- `src/core/pin.py`: Add hover event handlers and tooltip generation
-- `src/core/connection.py`: Add connection hover effects and tooltips
+- `src/pyflowgraph/core/pin.py`: Add hover event handlers and tooltip generation
+- `src/pyflowgraph/core/connection.py`: Add connection hover effects and tooltips
 
 **Supporting Changes**:
-- `src/utils/tooltip_utils.py`: New utility for consistent tooltip formatting
-- `src/core/node_graph.py`: Integration for connection creation feedback
+- `src/pyflowgraph/utils/tooltip_utils.py`: New utility for consistent tooltip formatting
+- `src/pyflowgraph/core/node_graph.py`: Integration for connection creation feedback
 
 ### 4.2 Pin.py Implementation
 

@@ -1,28 +1,6 @@
 # PyFlowGraph
 
-<!-- TEST_STATS_START -->
-
-<div align="center">
-
-![Tests](https://img.shields.io/badge/Tests-319%20passed-green)
-![Failed](https://img.shields.io/badge/Failed-6-red)
-![Success Rate](https://img.shields.io/badge/Success%20Rate-93%25-green)
-![Test Files](https://img.shields.io/badge/Test%20Files-48-blue)
-![Total Tests](https://img.shields.io/badge/Total%20Tests-340-lightgrey)
-![Skipped](https://img.shields.io/badge/Skipped-8-yellow)
-![Errors](https://img.shields.io/badge/Errors-9-orange)
-![Warnings](https://img.shields.io/badge/Warnings-0-lightgrey)
-![Last Run](https://img.shields.io/badge/Last%20Run-2025--08--20%2001%3A49%3A54-lightblue)
-
-</div>
-
-<div align="center">
-
-**[View Detailed Test Report](testing/test_results.md)** - Complete test results with individual test details
-
-</div>
-
-<!-- TEST_STATS_END -->
+[![Tests](https://github.com/bhowiebkr/PyFlowGraph/actions/workflows/tests.yml/badge.svg)](https://github.com/bhowiebkr/PyFlowGraph/actions/workflows/tests.yml)
 
 
 A universal, node-based visual scripting editor built with Python and PySide6 that bridges traditional data-flow programming with interactive application development. Create, connect, and execute Python code as nodes using either batch processing for data pipelines or live event-driven execution for interactive applications.
@@ -53,7 +31,7 @@ The core architecture follows a **"Code as Nodes"** philosophy where each node c
 * **Event-Driven Interactive System**: Built-in event system supporting button clicks, timers, value changes, and user input for creating interactive experiences
 * **Node Grouping System**: Visual containers for organizing related nodes with customizable colors, sizes, and transparency. Groups support dynamic membership, resizing, full CRUD operations with Delete key support, and complete undo/redo functionality.
 * **Complete Undo/Redo System**: Command pattern implementation across all operations including node creation/deletion, connections, moves, property changes, and group operations. Multi-level undo with memory management and composite command support.
-* **Isolated Execution Environment**: Each node runs in its own subprocess with isolated virtual environments for maximum security and dependency management
+* **Graph Environments**: Each graph can use its own virtual environment with its own pip packages. Node code runs in the editor process, so it is not a sandbox.
 * **Mini-IDE Code Editor**:
   * A modal dialog provides a spacious and professional coding environment.
   * **Syntax Highlighting** for Python with custom color schemes.
@@ -83,22 +61,16 @@ PyFlowGraph uses a innovative Markdown-based file format (`.md`) that combines h
 
 ![Markdown Format Example](images/markdown_format.png)
 
-For detailed information about the file format specification, see [flow_spec.md](flow_spec.md).
+For detailed information about the file format specification, see [flow_spec.md](docs/specifications/flow_spec.md).
 
 ### Example Graphs
 
 The `examples/` directory contains sample graphs demonstrating various capabilities:
 
-* [`data_analysis_dashboard.md`](examples/data_analysis_dashboard.md) - Interactive data visualization dashboard
-* [`file_organizer_automation.md`](examples/file_organizer_automation.md) - Automated file organization system
-* [`interactive_game_engine.md`](examples/interactive_game_engine.md) - Interactive game with event-driven execution
-* [`password_generator_tool.md`](examples/password_generator_tool.md) - Secure password generation utility
 * [`password_generator_tool_group.md`](examples/password_generator_tool_group.md) - Password generator with group organization demonstration
-* [`personal_finance_tracker.md`](examples/personal_finance_tracker.md) - Personal finance management system
 * [`recipe_nutrition_calculator.md`](examples/recipe_nutrition_calculator.md) - Recipe analysis and nutrition calculator
-* [`social_media_scheduler.md`](examples/social_media_scheduler.md) - Social media content scheduling tool
-* [`text_processing_pipeline.md`](examples/text_processing_pipeline.md) - Advanced text processing workflow
 * [`weather_data_processor.md`](examples/weather_data_processor.md) - Weather data analysis and processing
+* [`nvidia_gpu_computer_vision_pipeline.md`](examples/nvidia_gpu_computer_vision_pipeline.md) - Image processing with PyTorch. It needs a graph environment with `torch` and `torchvision`.
 
 ---
 
@@ -112,7 +84,7 @@ The integrated Python code editor provides a professional development environmen
 
 ### Python Environment Manager
 
-The Python Environment Manager dialog enables sophisticated dependency management for each graph project. Users can specify custom pip requirements that are automatically installed in isolated virtual environments. This ensures each graph has its own clean dependency space, preventing conflicts between different projects while maintaining security through subprocess isolation.
+The Python Environment Manager dialog enables sophisticated dependency management for each graph project. Users can specify custom pip requirements that are automatically installed in isolated virtual environments. This gives each graph its own packages and prevents conflicts between projects. It is not a sandbox: node code runs in the editor process.
 
 ![Python Environment Manager](images/environment_manager.png)
 
@@ -133,10 +105,12 @@ The Node History dialog provides complete visibility into node evolution and cha
 The project is organized into modular, single-responsibility Python files:
 
 ### Core Application Files
-* `src/main.py`: The main entry point for the application. Handles application setup and loads the stylesheet.
+* `src/main.py`: Starts the editor. It loads the fonts and the stylesheet and sets the log level.
+* `src/pyflowgraph/`: The editor package. `pyproject.toml` describes it and lists its dependencies.
 * `dark_theme.qss`: The global Qt Style Sheet that defines the application's dark theme.
+* `src/resources/`: The Font Awesome fonts.
 
-### Core Engine (`src/core/`)
+### Core Engine (`src/pyflowgraph/core/`)
 * `node_graph.py`: The `QGraphicsScene` that manages all nodes, connections, groups, and clipboard logic.
 * `node.py`: Defines the main Node class, including visual appearance and Python code parsing for pin generation.
 * `pin.py`: Defines the input/output pins on nodes with type-safe connections.
@@ -144,30 +118,30 @@ The project is organized into modular, single-responsibility Python files:
 * `reroute_node.py`: Special organizational nodes for managing connection routing.
 * `group.py`: Visual container system for organizing related nodes with customizable appearance.
 
-### User Interface (`src/ui/`)
+### User Interface (`src/pyflowgraph/ui/`)
 * `editor/node_editor_window.py`: Main `QMainWindow` hosting all UI elements.
 * `editor/node_editor_view.py`: `QGraphicsView` handling mouse/keyboard interactions (pan, zoom, copy/paste).
 * `dialogs/`: All dialog components including code editor, settings, node properties, and group management.
 * `code_editing/`: Python code editor with syntax highlighting and smart indentation.
 
-### Execution & Environment (`src/execution/`)
+### Execution & Environment (`src/pyflowgraph/execution/`)
 * `graph_executor.py`: Engine that executes node graphs based on data dependencies.
+* `single_process_executor.py`: Runs node code in the editor process and keeps the imported modules between runs.
 * `environment_manager.py`: Virtual environment management for graph-specific dependencies.
-* `execution_controller.py`: Controls batch and live mode execution with subprocess isolation.
+* `default_environment_manager.py`: Makes the default environment. venv and pip run in a worker thread.
+* `execution_controller.py`: Controls batch and live mode execution.
 
-### Command System (`src/commands/`)
+### Command System (`src/pyflowgraph/commands/`)
 * Command pattern implementation for comprehensive undo/redo functionality
 * `node/`: Node-specific operations (create, delete, move, property changes)
 * Group commands: create, delete, resize, property management
 * Connection and reroute commands with full state preservation
 
 ### Utilities & Configuration
-* `color_utils.py`: Color manipulation utilities for the interface.
-* `environment_manager.py`: Virtual environment management dialog for graph-specific dependencies.
-* `settings_dialog.py`: Application settings configuration interface.
-* `node_properties_dialog.py`: Node property editing interface.
-* `run.sh` / `run.bat`: Helper scripts for running the application within its virtual environment.
-* `run_test_gui.bat`: Professional GUI test runner launcher.
+* `src/pyflowgraph/utils/color_utils.py`: Color manipulation utilities for the interface.
+* `src/pyflowgraph/settings.py` and `paths.py`: The settings file and the folders of the program.
+* `PyFlowGraph.bat`: starts the editor with the Python in the `venv` folder.
+* `tools/run_tests.py`: runs each test file in its own process.
 
 ---
 
@@ -176,10 +150,10 @@ The project is organized into modular, single-responsibility Python files:
 This is the easiest way to run the application without needing to install Python or any dependencies.
 
 1. **Go to the [Releases Page](https://github.com/bhowiebkr/PyFlowGraph/releases)** on GitHub.
-2. Find the latest release and download the `.zip` file (e.g., `NodeEditor_Windows_v1.0.0.zip`).
+2. Find the latest release and download the `.zip` file, such as `PyFlowGraph-Windows-v1.0.0.zip`.
 3. **Unzip** the downloaded file to a location of your choice. This will create a new folder.
-4. Open the new folder and run the `main.exe` executable.
-5. To test the application, go to `File > Load Graph...` and open one of the `.md` files from the `examples` folder.
+4. Open the new folder and run `PyFlowGraph.exe`.
+5. To test the application, click **File > Load Graph...** and open one of the `.md` files from the `examples` folder.
 
 ---
 
@@ -188,7 +162,7 @@ This is the easiest way to run the application without needing to install Python
 1. **Clone the Repository**:
 
     ```bash
-    git clone [https://github.com/bhowiebkr/PyFlowGraph.git](https://github.com/bhowiebkr/PyFlowGraph.git)
+    git clone https://github.com/bhowiebkr/PyFlowGraph.git
     cd PyFlowGraph
     ```
 
@@ -202,26 +176,30 @@ This is the easiest way to run the application without needing to install Python
     * On Linux/macOS: `source venv/bin/activate`
     * On Windows: `venv\Scripts\activate`
 
-4. **Install Dependencies**:
+4. **Install the Program and Its Dependencies**:
 
     ```bash
-    pip install PySide6
+    pip install -e .
     ```
+
+    `pyproject.toml` lists the exact versions.
 
 5. **Run the Application**:
-    Use the provided scripts, which will automatically activate the environment and run the main script.
-
-    **Linux/macOS:**
-
-    ```bash
-    ./run.sh
-    ```
 
     **Windows:**
 
     ```cmd
-    run.bat
+    PyFlowGraph.bat
     ```
+
+    **Linux/macOS:**
+
+    ```bash
+    python src/main.py
+    ```
+
+    To see the debug messages, set the `PYFLOWGRAPH_LOG_LEVEL` environment variable to `DEBUG`
+    before you start the program.
 
 ---
 
@@ -229,8 +207,8 @@ This is the easiest way to run the application without needing to install Python
 
 ### Basic Operations
 
-* **Create a Node**: Right-click on the canvas and select "Add Node"
-* **Edit Node Logic**: Click the "Edit Code" button on a node to open the integrated code editor
+* **Create a Node**: Right-click on the canvas and select **Add Node**
+* **Edit Node Logic**: Click the **</>** button on a node to open the integrated code editor
 * **Connect Nodes**: Click and drag from an output pin (right side) to an input pin (left side)
 * **Navigate**:
   * **Pan**: Right-click + drag or middle-click + drag
@@ -238,8 +216,8 @@ This is the easiest way to run the application without needing to install Python
   * **Select/Move**: Left-click to select and drag nodes
 * **Delete Items**: Select any node, reroute node, connection, or group and press `Delete`
 * **Execute Graph**:
-  * **Batch Mode**: Press `F5` or use "Run > Execute Graph" menu
-  * **Live Mode**: Select "Live" mode and click "Start Live Mode" for interactive execution
+  * **Batch Mode**: Select **Batch** and click **Execute Graph**, or press `F5`
+  * **Live Mode**: Select **Live** and click **Start Live Mode** for interactive execution
 
 ### Execution Modes
 
@@ -249,21 +227,39 @@ This is the easiest way to run the application without needing to install Python
 
 ### Advanced Features
 
-* **Node Grouping**: Right-click to create groups for organizing nodes with custom colors and properties
+* **Node Grouping**: Select nodes, right-click and select **Group Selected** to create groups for organizing nodes with custom colors and properties
 * **Reroute Connections**: Double-click any connection to create an organizational reroute node
 * **Copy/Paste**: Use `Ctrl+C` and `Ctrl+V` to duplicate node selections and groups with preserved connections
 * **Undo/Redo**: Full `Ctrl+Z` and `Ctrl+Y` support for all operations including groups, moves, and property changes
-* **Environment Management**: Access "Run > Manage Environment" to configure pip dependencies
+* **Environment Management**: Click **Environment > Manage Environment...** to configure pip dependencies
 * **Save/Load**: Use "File" menu to save graphs as Markdown or load example projects
 * **Dynamic Window Titles**: Window title automatically updates to show the current graph name
 
+### Open Graphs from Other People
+
+A graph file is a program. The **GUI Definition** and **GUI State Handler** code of its nodes
+runs when the graph opens. The other node code runs when you run the graph.
+
+When a graph has this code and you have not trusted it, the editor asks first:
+
+1. Click **File > Load Graph...**.
+2. Select the file.
+3. Read the list of nodes in **Run Code from This Graph?**.
+4. Click **Open and Trust** only if you trust where the file came from. Click **Cancel** to
+   leave it closed.
+
+The editor remembers your choice until the file changes. It trusts the bundled examples and the
+files that you save. At startup it reopens the last graph only if the graph is trusted.
+
+When you paste nodes with this code from outside the editor, it asks **Run Code from the
+Clipboard?**. Click **Paste and Run** to paste them.
+
 ### Testing the Application
 
-1. Load an example: "File > Load Graph..." and select from the `examples/` folder
-2. Try the `interactive_game_engine.md` for an interactive demonstration of Live Mode
-3. Select execution mode: **Batch Mode** for traditional execution or **Live Mode** for interactive applications
-4. Press `F5` (Batch) or "Start Live Mode" (Live) to execute and see results in the Output Log panel
-5. Notice how the window title updates to show the current graph name
+1. Load an example: click **File > Load Graph...** and select from the `examples/` folder
+2. Select execution mode: **Batch Mode** for traditional execution or **Live Mode** for interactive applications
+3. Press `F5` (Batch) or click **Start Live Mode** (Live) to execute and see results in the Output Log panel
+4. Notice how the window title updates to show the current graph name
 
 ---
 
@@ -323,7 +319,7 @@ def main_node_function(base_name: str) -> str:
 
 ### Advanced Features
 
-**Custom Dependencies**: Each graph can specify its own pip requirements through the Environment Manager. Dependencies are automatically installed in isolated virtual environments.
+**Custom Dependencies**: Each graph can specify its own pip requirements through the Environment Manager. Dependencies are automatically installed in isolated virtual environments. Each entry must be one package, such as `numpy>=1.24`. The setup stops when an entry is a pip option, such as `--index-url`.
 
 **Type Flexibility**: The editor supports any Python type through type hints for automatic pin generation. Pin colors are determined by the type annotation, providing visual type identification. Common types include:
 
@@ -344,70 +340,42 @@ PyFlowGraph features advanced virtual environment management:
 
 * **Isolated Environments**: Each graph can have its own virtual environment with custom pip dependencies
 * **Automatic Management**: The application creates project-specific environments in the `venvs/` directory
-* **Environment Dialog**: Use "Run > Manage Environment" to configure package dependencies for each graph
-* **Security**: All node execution happens in isolated subprocess environments
+* **Environment Dialog**: Click **Environment > Manage Environment...** to configure package dependencies for each graph
+* **Not a sandbox**: Node code runs in the editor process, with the packages of the graph's environment. Trust only graphs whose source you trust.
 
 ---
 
 ## Testing
 
-PyFlowGraph includes a comprehensive testing suite with a professional GUI test runner:
+Run each test file in its own process, with a limit of 10 seconds for each file:
 
-### Running Tests
-
-**GUI Test Runner (Recommended)**:
-```batch
-run_test_gui.bat
-```
-* Professional PySide6 test interface with visual test selection
-* Real-time pass/fail indicators with detailed output viewing
-* Background execution with progress tracking
-
-**Manual Test Execution**:
 ```bash
-python tests/test_name.py
+python tools/run_tests.py
 ```
 
-### Test Coverage
-
-The test suite includes 18+ test files covering:
-* **Core Components**: Node system, pins, connections, group management
-* **Execution Engine**: Code execution, data flow, subprocess isolation  
-* **File Formats**: Markdown/JSON parsing, serialization, file operations with group support
-* **Command System**: Comprehensive undo/redo functionality with command pattern
-* **Group System**: Group creation, deletion, resizing, property management
-* **Integration**: End-to-end workflows and real-world usage scenarios
-* **GUI Operations**: Node/group deletion, copy/paste, view state persistence
+[CONTRIBUTING.md](CONTRIBUTING.md#run-the-tests) tells more. [STATUS.md](STATUS.md) has the result of the last full run.
 
 ---
 
 ## Documentation
 
-Comprehensive documentation is available in the `docs/` directory:
+[docs/README.md](docs/README.md) lists the documentation pages:
 
-### Documentation Structure
-* **[docs/README.md](docs/README.md)** - Documentation overview and navigation
-* **Product Planning**: PRD, roadmap, competitive analysis
-* **Architecture**: Technical architecture, coding standards, tech stack
-* **Specifications**: Flow format spec, UI/UX specifications, feature priorities
-* **Development**: Testing guide, implementation notes, fixes
-
-### Key Documents
-* **[Development Roadmap](docs/roadmap.md)** - Planned features and priorities
-* **[Bug Tracking](docs/bugs/)** - Known issues and GitHub integration
-* **[Testing Guide](docs/development/testing-guide.md)** - Complete testing documentation
-* **[Flow Specification](docs/specifications/flow_spec.md)** - Markdown format specification
+* **[Flow Specification](docs/specifications/flow_spec.md)** - the Markdown graph format
+* **[Development Roadmap](docs/roadmap.md)** - planned features
+* **[Bug Reports](docs/bugs/)** - bug reports that sync with GitHub Issues
+* **[CONTRIBUTING.md](CONTRIBUTING.md)** - set up, run the tests and report a problem
 
 ---
 
 ## Development Roadmap
 
 ### Recently Completed
-* **Undo/Redo System** - Complete multi-level undo/redo with Command Pattern ✅
-* **Node Grouping** - Visual containers for organizing nodes with full CRUD operations ✅
+* **Undo/Redo System** - Complete multi-level undo/redo with Command Pattern
+* **Node Grouping** - Visual containers for organizing nodes with full CRUD operations
+* **Single Process Execution** - Node code runs in the editor process and keeps imported modules between runs
 
-### Priority 1: Performance & Usability
-* **Shared Subprocess Execution** - 10-100x performance improvement
+### Priority 1: Usability
 * **Pin Type Visibility** - Type badges and connection compatibility highlighting
 
 ### Priority 2: Advanced Features
@@ -424,49 +392,30 @@ Active bugs are tracked in both local documentation and GitHub Issues:
 * **Bug Reports**: Located in `docs/bugs/` directory
 * **GitHub Issues**: [Project issue tracker](https://github.com/bhowiebkr/PyFlowGraph/issues)
 
-Current high-priority issues include reroute node execution problems. See [bug documentation](docs/bugs/) for details.
+[STATUS.md](STATUS.md) lists the known problems and the known limits.
 
 ---
 
 ## Dependencies
 
-* **Python 3.8+**
+* **Python 3.11 or newer**
 * **PySide6** - Qt6 framework for Python
-* **Font Awesome** - Professional iconography (included in `resources/`)
+* **Font Awesome** - Professional iconography (included in `src/resources/`)
 
 ---
 
 ## Contributing
 
-We welcome contributions to PyFlowGraph! Here's how you can help:
-
-### Development Process
-1. **Check Issues**: Review existing [GitHub Issues](https://github.com/bhowiebkr/PyFlowGraph/issues) or [bug documentation](docs/bugs/)
-2. **Fork & Branch**: Create a feature branch from `main`
-3. **Follow Standards**: Adhere to [coding standards](docs/architecture/coding-standards.md)
-4. **Test Thoroughly**: Run the test suite with `run_test_gui.bat`
-5. **Document Changes**: Update relevant documentation in `docs/`
-6. **Submit PR**: Create a pull request with clear description
-
-### Areas for Contribution
-* **Bug Fixes**: Help resolve issues from the [bug tracker](docs/bugs/)
-* **Feature Implementation**: Work on [roadmap items](docs/roadmap.md)
-* **Testing**: Expand test coverage in the `tests/` directory
-* **Documentation**: Improve and expand documentation
-* **Examples**: Create new example graphs for the `examples/` directory
-
-### Code Guidelines
-* Follow PySide6/Qt best practices
-* Maintain the single-responsibility principle for modules
-* Include type hints for automatic pin generation
-* Ensure compatibility with the Markdown file format
-* Write tests for new features
+Bug reports, feature requests and pull requests are welcome, from people and from their AI
+agents. [CONTRIBUTING.md](CONTRIBUTING.md) tells how to set up, run the tests and report a
+problem. [STATUS.md](STATUS.md) lists what was checked, the known problems and the known limits.
+Report a security problem privately, as [SECURITY.md](SECURITY.md) tells.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. See the `LICENSE.txt` file for details.
 
 ---
 
