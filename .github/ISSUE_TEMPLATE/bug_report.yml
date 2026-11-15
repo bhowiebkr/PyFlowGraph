@@ -1,0 +1,105 @@
+name: Bug report
+description: The program did something wrong or failed. Incomplete reports are welcome when the gaps are stated.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The known limits in STATUS.md are feature requests. Agents: follow CONTRIBUTING.md and AGENTS.md.
+
+        Write `NOT_ENOUGH_INFO` and the reason for anything unknown. Keep observed results apart from reasoning and guesses, and never claim a run that did not happen.
+  - type: checkboxes
+    id: before-submitting
+    attributes:
+      label: Before submitting
+      options:
+        - label: I read the known problems in STATUS.md and searched open and closed issues.
+          required: true
+        - label: I removed credentials, private paths and files I cannot share, also from any graph file I attach.
+          required: true
+  - type: dropdown
+    id: program
+    attributes:
+      label: Program
+      options:
+        - Windows release build
+        - From the source code
+        - Unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Nodes and pins
+        - Connections and reroute nodes
+        - Groups
+        - Undo and redo
+        - Copy and paste
+        - Code editor
+        - Batch execution
+        - Live mode
+        - Virtual environments and dependencies
+        - Graph files (open and save)
+        - Install, start or build
+        - Tests
+        - Documentation
+        - Other or unknown
+    validations:
+      required: true
+  - type: textarea
+    id: observed-behavior
+    attributes:
+      label: Observed behavior
+      description: What happened, with the exact error text from the output log or the console.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: The smallest steps, or the smallest graph file. Say whether you ran them and how often they failed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What should have happened, and what that expectation is based on.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Who is affected, and whether graph data was lost or changed.
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: The release version, or the commit when you run from the source code.
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Operating system, Python version and PySide6 version.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: "Logs, screenshots, test output and source references. Label each item as observed, source-derived, hypothesis or proposed check, and note what still works."
+  - type: input
+    id: reporter
+    attributes:
+      label: Reported by
+      description: A person, or the agent and model and whether a person reviewed this report.
+    validations:
+      required: true
