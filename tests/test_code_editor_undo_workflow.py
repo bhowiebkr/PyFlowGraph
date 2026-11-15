@@ -6,14 +6,7 @@ and undo/redo behavior from the user's perspective.
 """
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
-
-# Add project root to path for cross-package imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 
 class TestCodeEditorUndoWorkflow(unittest.TestCase):
@@ -84,7 +77,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
     def test_accept_dialog_creates_atomic_command(self):
         """Test accepting dialog creates single atomic command in graph history."""
         # Mock dialog with code changes
-        with patch('src.ui.dialogs.code_editor_dialog.CodeEditorDialog') as MockDialog:
+        with patch('pyflowgraph.ui.dialogs.code_editor_dialog.CodeEditorDialog') as MockDialog:
             mock_dialog_instance = Mock()
             mock_dialog_instance.node = self.mock_node
             mock_dialog_instance.node_graph = self.mock_node_graph
@@ -98,7 +91,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
             MockDialog.return_value = mock_dialog_instance
             
             # Simulate _handle_accept behavior
-            from src.commands.node_commands import CodeChangeCommand
+            from pyflowgraph.commands.node_commands import CodeChangeCommand
             command = CodeChangeCommand(
                 self.mock_node_graph, self.mock_node,
                 self.original_code, self.modified_code
@@ -133,7 +126,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
         self.mock_command_history.execute_command.side_effect = mock_push_command
         
         # Step 1: User edits code and accepts
-        from src.commands.node_commands import CodeChangeCommand
+        from pyflowgraph.commands.node_commands import CodeChangeCommand
         
         command1 = CodeChangeCommand(
             self.mock_node_graph, self.mock_node,
@@ -188,7 +181,7 @@ class TestCodeEditorUndoWorkflow(unittest.TestCase):
         large_modified = "def large_func():\n" + "    # " + "y" * 1000 + "\n    return 'large_modified'"
         
         # Create command with large code
-        from src.commands.node_commands import CodeChangeCommand
+        from pyflowgraph.commands.node_commands import CodeChangeCommand
         command = CodeChangeCommand(
             self.mock_node_graph, self.mock_node,
             large_original, large_modified

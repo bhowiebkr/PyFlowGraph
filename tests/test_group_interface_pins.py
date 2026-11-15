@@ -3,34 +3,21 @@
 
 import unittest
 import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
-# Setup Qt Application for tests
-try:
-    from PySide6.QtWidgets import QApplication
-    from PySide6.QtCore import QCoreApplication
-    import PySide6
-    
-    # Create QApplication instance if it doesn't exist
-    app = QCoreApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-except ImportError:
-    # If PySide6 is not available, skip Qt-dependent tests
-    pass
+from PySide6.QtCore import QRectF
+from PySide6.QtWidgets import QApplication
 
-from src.core.connection_analyzer import ConnectionAnalyzer
-from src.core.group_interface_pin import GroupInterfacePin
-from src.core.group_pin_generator import GroupPinGenerator
-from src.core.group_type_inference import TypeInferenceEngine
-from src.core.group_connection_router import GroupConnectionRouter
-from src.core.group import Group
+# Pins and groups are Qt items, which need an application object.
+app = QApplication.instance() or QApplication(sys.argv)
+
+from pyflowgraph.core.connection_analyzer import ConnectionAnalyzer
+from pyflowgraph.core.group_interface_pin import GroupInterfacePin
+from pyflowgraph.core.group_pin_generator import GroupPinGenerator
+from pyflowgraph.core.group_type_inference import TypeInferenceEngine
+from pyflowgraph.core.group_connection_router import GroupConnectionRouter
+from pyflowgraph.core.group import Group
 
 
 class TestConnectionAnalyzer(unittest.TestCase):
@@ -160,14 +147,12 @@ class TestGroupInterfacePin(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.mock_group = Mock()
+        # A real group: interface pins are Qt child items of their group.
+        self.mock_group = Group("Group")
         self.mock_group.uuid = "group1"
     
-    @patch('src.core.group_interface_pin.Pin.__init__')
-    def test_interface_pin_creation(self, mock_pin_init):
+    def test_interface_pin_creation(self):
         """Test basic interface pin creation."""
-        mock_pin_init.return_value = None
-        
         pin = GroupInterfacePin(
             group=self.mock_group,
             name="input_data",
@@ -185,11 +170,8 @@ class TestGroupInterfacePin(unittest.TestCase):
         self.assertTrue(pin.is_interface_pin)
         self.assertTrue(pin.auto_generated)
     
-    @patch('src.core.group_interface_pin.Pin.__init__')
-    def test_interface_pin_mapping_management(self, mock_pin_init):
+    def test_interface_pin_mapping_management(self):
         """Test adding and removing internal pin mappings."""
-        mock_pin_init.return_value = None
-        
         pin = GroupInterfacePin(
             group=self.mock_group,
             name="test_pin",
@@ -208,19 +190,8 @@ class TestGroupInterfacePin(unittest.TestCase):
         self.assertIn("pin2", pin.internal_pin_mappings)
         self.assertNotIn("pin1", pin.internal_pin_mappings)
     
-    @patch('src.core.group_interface_pin.Pin.__init__')
-    @patch('src.core.group_interface_pin.Pin.serialize')
-    def test_interface_pin_serialization(self, mock_serialize, mock_pin_init):
+    def test_interface_pin_serialization(self):
         """Test interface pin serialization."""
-        mock_pin_init.return_value = None
-        mock_serialize.return_value = {
-            'uuid': 'pin_uuid',
-            'name': 'test_pin',
-            'direction': 'input',
-            'type': 'float',
-            'category': 'data'
-        }
-        
         pin = GroupInterfacePin(
             group=self.mock_group,
             name="test_pin",
@@ -295,9 +266,11 @@ class TestGroupPinGenerator(unittest.TestCase):
             'output_interfaces': []
         }
         
-        with patch('src.core.group_pin_generator.GroupInterfacePin') as mock_pin_class:
+        with patch('pyflowgraph.core.group_pin_generator.GroupInterfacePin') as mock_pin_class:
             mock_pin_instance = Mock()
+            mock_pin_instance.radius = 8
             mock_pin_class.return_value = mock_pin_instance
+            mock_group.boundingRect.return_value = QRectF(0, 0, 200, 150)
             
             result = self.generator.generate_interface_pins(mock_group, ["node1"])
             
@@ -417,6 +390,7 @@ class TestGroupConnectionRouter(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.mock_node_graph = Mock()
+        self.mock_node_graph.connections = []
         self.router = GroupConnectionRouter(self.mock_node_graph)
     
     def test_create_routing_for_group(self):

@@ -7,23 +7,19 @@ and performance requirements as specified in the technical architecture.
 
 import unittest
 import time
-import sys
-import os
 
-# Add src directory to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 
-from commands import (
+from pyflowgraph.commands import (
     CommandBase, CompositeCommand, CommandHistory,
     CreateNodeCommand, DeleteNodeCommand, MoveNodeCommand,
     PropertyChangeCommand, CodeChangeCommand,
     CreateConnectionCommand, DeleteConnectionCommand
 )
-from core.node_graph import NodeGraph
-from core.node import Node
+from pyflowgraph.core.node_graph import NodeGraph
+from pyflowgraph.core.node import Node
 
 
 class MockCommand(CommandBase):

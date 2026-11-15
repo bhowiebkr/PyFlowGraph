@@ -6,8 +6,6 @@ import os
 import time
 import unittest
 
-# Add src directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 try:
     from PySide6.QtWidgets import QApplication
@@ -15,7 +13,7 @@ try:
     from PySide6.QtCore import Qt, QPointF, QTimer
     from PySide6.QtGui import QTransform
 
-    from ui.editor.node_editor_window import NodeEditorWindow
+    from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
     
     QT_AVAILABLE = True
 
@@ -56,7 +54,7 @@ class TestViewStatePersistence(unittest.TestCase):
         print("Starting view state persistence test...")
         
         # Step 1: Load first test file
-        file1_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'password_generator_tool.md')
+        file1_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'password_generator_tool_group.md')
         self.assertTrue(os.path.exists(file1_path), f"Test file does not exist: {file1_path}")
         
         self.window.on_load(file1_path)
@@ -98,7 +96,7 @@ class TestViewStatePersistence(unittest.TestCase):
         print(f"Applied center: ({recorded_center.x():.1f}, {recorded_center.y():.1f})")
         
         # Step 3: Load second file (triggers save of current state)
-        file2_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'data_analysis_dashboard.md')
+        file2_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'weather_data_processor.md')
         self.assertTrue(os.path.exists(file2_path), f"Second test file does not exist: {file2_path}")
         
         self.window.on_load(file2_path)

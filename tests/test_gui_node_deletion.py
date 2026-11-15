@@ -5,20 +5,17 @@ This test runs with actual Qt widgets and scene interactions.
 """
 
 import sys
-import os
 import pytest
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeyEvent
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node import Node
-from core.reroute_node import RerouteNode
-from core.connection import Connection
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
+from pyflowgraph.core.connection import Connection
 
 @pytest.mark.gui
 class TestGUINodeDeletion:
@@ -36,7 +33,7 @@ class TestGUINodeDeletion:
         
         # Load the problematic file to reproduce the issue
         try:
-            from data.file_operations import load_file
+            from pyflowgraph.data.file_operations import load_file
             load_file(self.window, "examples/file_organizer_automation.md")
             print("Loaded file_organizer_automation.md for testing")
         except Exception as e:

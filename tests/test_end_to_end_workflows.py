@@ -10,23 +10,19 @@ Each test represents a complete user story/workflow.
 """
 
 import sys
-import os
 import unittest
 import time
 from pathlib import Path
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication, QFileDialog
 from PySide6.QtCore import Qt, QTimer, QPointF
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from PySide6.QtTest import QTest
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node import Node
-from core.reroute_node import RerouteNode
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
 
 
 class EndToEndWorkflowTestCase(unittest.TestCase):

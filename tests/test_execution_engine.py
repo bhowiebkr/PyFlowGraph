@@ -20,16 +20,13 @@ import subprocess
 import tempfile
 from unittest.mock import Mock, patch, MagicMock
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication, QTextEdit
 
-from execution.graph_executor import GraphExecutor
-from core.node_graph import NodeGraph
-from core.node import Node
-from core.reroute_node import RerouteNode
+from pyflowgraph.execution.graph_executor import GraphExecutor
+from pyflowgraph.core.node_graph import NodeGraph
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
 
 
 class TestExecutionEngine(unittest.TestCase):

@@ -6,21 +6,14 @@ various multi-operation scenarios using composite commands.
 """
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, patch, MagicMock
 from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QApplication
 
-# Add project root to path for imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
-from src.commands.node_commands import MoveMultipleCommand, DeleteMultipleCommand
-from src.core.node import Node
-from src.core.connection import Connection
-from src.core.node_graph import NodeGraph
+from pyflowgraph.commands.node_commands import MoveMultipleCommand, DeleteMultipleCommand
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.node_graph import NodeGraph
 
 
 class TestMoveMultipleCommand(unittest.TestCase):
@@ -65,7 +58,7 @@ class TestMoveMultipleCommand(unittest.TestCase):
         move_cmd = MoveMultipleCommand(self.mock_graph, nodes_and_positions)
         self.assertEqual(move_cmd.get_description(), "Move 3 nodes")
     
-    @patch('src.commands.node_commands.MoveNodeCommand')
+    @patch('pyflowgraph.commands.node.batch_operations.MoveNodeCommand')
     def test_move_command_creation(self, mock_move_cmd):
         """Test that individual move commands are created correctly."""
         mock_cmd1 = Mock()
@@ -125,74 +118,46 @@ class TestDeleteMultipleCommand(unittest.TestCase):
         self.graph.addItem(self.node1)
         self.graph.addItem(self.node2)
         
-        # Set up node code to ensure they have pins
-        self.node1.set_code("def test():\n    return 42")
-        self.node2.set_code("def process(value):\n    return value * 2")
-        
-        # Create connections between nodes if pins exist
-        self.connection1 = None
-        self.connection2 = None
-        
-        if self.node1.output_pins and self.node2.input_pins:
-            self.connection1 = Connection(
-                self.node1.output_pins[0],
-                self.node2.input_pins[0],
-                self.graph
-            )
-            self.graph.addItem(self.connection1)
-    
+        # Pins come from the node code.
+        self.node1.set_code("@node_entry\ndef test() -> int:\n    return 42\n")
+        self.node2.set_code("@node_entry\ndef process(value: int) -> int:\n    return value * 2\n")
+
+        output = next(p for p in self.node1.output_pins if p.name == "output_1")
+        value = next(p for p in self.node2.input_pins if p.name == "value")
+        self.connection1 = self.graph.create_connection(output, value, use_command=False)
+
     def test_delete_single_node_description(self):
         """Test description generation for single node deletion."""
         selected_items = [self.node1]
         
-        # Debug: Check what type the node actually is
-        print(f"DEBUG: Node type: {type(self.node1)}")
-        print(f"DEBUG: Node title: {self.node1.title}")
-        print(f"DEBUG: Node has title attr: {hasattr(self.node1, 'title')}")
-        
         delete_cmd = DeleteMultipleCommand(self.graph, selected_items)
-        actual_desc = delete_cmd.get_description()
-        print(f"DEBUG: Actual description: '{actual_desc}'")
-        
-        # Since the command sees it as a generic item, accept the actual output
-        self.assertEqual(actual_desc, "Delete 1 items")
+        self.assertEqual(delete_cmd.get_description(), "Delete 'Test Node'")
+        self.assertEqual(len(delete_cmd.commands), 1)
     
     def test_delete_multiple_nodes_description(self):
         """Test description generation for multiple node deletion."""
         selected_items = [self.node1, self.node2]
         
         delete_cmd = DeleteMultipleCommand(self.graph, selected_items)
-        # Accept the actual output from the command
-        self.assertEqual(delete_cmd.get_description(), "Delete 2 items")
+        self.assertEqual(delete_cmd.get_description(), "Delete 2 nodes")
+        self.assertEqual(len(delete_cmd.commands), 2)
     
     def test_delete_connections_only_description(self):
         """Test description generation for connection-only deletion."""
-        # Skip if no connection was created
-        if not self.connection1:
-            self.skipTest("No connections available for testing")
-        
         selected_items = [self.connection1]
         
         delete_cmd = DeleteMultipleCommand(self.graph, selected_items)
-        self.assertEqual(delete_cmd.get_description(), "Delete 1 connections")
+        self.assertEqual(delete_cmd.get_description(), "Delete connection")
     
     def test_delete_mixed_items_description(self):
         """Test description generation for mixed node and connection deletion."""
-        # Skip if no connection was created
-        if not self.connection1:
-            self.skipTest("No connections available for testing")
-        
         selected_items = [self.node1, self.connection1]
         
         delete_cmd = DeleteMultipleCommand(self.graph, selected_items)
-        self.assertEqual(delete_cmd.get_description(), "Delete 1 nodes and 1 connections")
+        self.assertEqual(delete_cmd.get_description(), "Delete 'Test Node' and 1 connection")
     
     def test_delete_command_creation(self):
         """Test that appropriate delete commands are created for different item types."""
-        # Skip if no connection was created
-        if not self.connection1:
-            self.skipTest("No connections available for testing")
-        
         selected_items = [self.node1, self.connection1]
         
         delete_cmd = DeleteMultipleCommand(self.graph, selected_items)
@@ -201,8 +166,8 @@ class TestDeleteMultipleCommand(unittest.TestCase):
         self.assertEqual(len(delete_cmd.commands), 2)
         
         # Check that we have one node delete and one connection delete command
-        from src.commands.node_commands import DeleteNodeCommand
-        from src.commands.connection_commands import DeleteConnectionCommand
+        from pyflowgraph.commands.node_commands import DeleteNodeCommand
+        from pyflowgraph.commands.connection_commands import DeleteConnectionCommand
         
         node_commands = [cmd for cmd in delete_cmd.commands if isinstance(cmd, DeleteNodeCommand)]
         conn_commands = [cmd for cmd in delete_cmd.commands if isinstance(cmd, DeleteConnectionCommand)]
@@ -295,7 +260,7 @@ class TestSelectionOperationUndo(unittest.TestCase):
         """Set up test fixtures."""
         self.mock_graph = Mock()
     
-    @patch('src.commands.node_commands.MoveNodeCommand')
+    @patch('pyflowgraph.commands.node.batch_operations.MoveNodeCommand')
     def test_move_multiple_undo_order(self, mock_move_cmd):
         """Test that move operations are undone in correct order."""
         # Setup mock move commands

@@ -2,14 +2,9 @@
 # Unit tests for group functionality including creation, validation, and persistence.
 
 import unittest
-import sys
-import os
 import uuid
 from unittest.mock import Mock, MagicMock, patch
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, project_root)
 
 from PySide6.QtWidgets import QApplication, QGraphicsScene
 from PySide6.QtCore import QPointF
@@ -18,9 +13,9 @@ from PySide6.QtCore import QPointF
 if not QApplication.instance():
     app = QApplication([])
 
-from src.core.group import Group, validate_group_creation, generate_group_name
-from src.core.node import Node
-from src.commands.create_group_command import CreateGroupCommand
+from pyflowgraph.core.group import Group, validate_group_creation, generate_group_name
+from pyflowgraph.core.node import Node
+from pyflowgraph.commands.create_group_command import CreateGroupCommand
 
 
 class TestGroup(unittest.TestCase):
@@ -138,7 +133,7 @@ class TestGroupValidation(unittest.TestCase):
     def test_valid_group_creation(self):
         """Test validation with valid node selection."""
         # Create actual Node instances for realistic testing
-        from src.core.node import Node
+        from pyflowgraph.core.node import Node
         
         node1 = Node("Test Node 1")
         node1.uuid = "uuid1"
@@ -176,7 +171,7 @@ class TestGroupValidation(unittest.TestCase):
     def test_duplicate_nodes(self):
         """Test validation with duplicate node UUIDs."""
         # Create two nodes with same UUID
-        from src.core.node import Node
+        from pyflowgraph.core.node import Node
         
         node1 = Node("Test Node 1")
         node1.uuid = "uuid1"

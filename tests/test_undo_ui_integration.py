@@ -2,15 +2,9 @@
 # Unit tests for undo/redo UI components
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 
-# Add project root to path for cross-package imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 try:
     from PySide6.QtWidgets import QApplication
@@ -18,9 +12,9 @@ try:
     from PySide6.QtTest import QTest
     
     # Import the modules to test
-    from src.ui.dialogs.undo_history_dialog import UndoHistoryDialog
-    from src.commands.command_base import CommandBase
-    from src.commands.command_history import CommandHistory
+    from pyflowgraph.ui.dialogs.undo_history_dialog import UndoHistoryDialog
+    from pyflowgraph.commands.command_base import CommandBase
+    from pyflowgraph.commands.command_history import CommandHistory
     
     QT_AVAILABLE = True
     

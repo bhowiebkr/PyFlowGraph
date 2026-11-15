@@ -2,13 +2,8 @@
 # Integration tests for group UI interactions including context menu and keyboard shortcuts.
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, project_root)
 
 from PySide6.QtWidgets import QApplication, QMenu
 from PySide6.QtCore import Qt, QPointF
@@ -18,9 +13,9 @@ from PySide6.QtGui import QKeyEvent, QContextMenuEvent
 if not QApplication.instance():
     app = QApplication([])
 
-from src.ui.editor.node_editor_view import NodeEditorView
-from src.core.node_graph import NodeGraph
-from src.core.node import Node
+from pyflowgraph.ui.editor.node_editor_view import NodeEditorView
+from pyflowgraph.core.node_graph import NodeGraph
+from pyflowgraph.core.node import Node
 
 
 class TestContextMenuIntegration(unittest.TestCase):
@@ -35,14 +30,17 @@ class TestContextMenuIntegration(unittest.TestCase):
         self.node1 = Mock(spec=Node)
         self.node1.uuid = "uuid1"
         self.node1.title = "Node 1"
+        self.node1.pins = []
         
         self.node2 = Mock(spec=Node)
         self.node2.uuid = "uuid2"
         self.node2.title = "Node 2"
+        self.node2.pins = []
         
         self.node3 = Mock(spec=Node)
         self.node3.uuid = "uuid3"
         self.node3.title = "Node 3"
+        self.node3.pins = []
     
     def test_context_menu_no_selection(self):
         """Test context menu when no nodes are selected."""
@@ -51,7 +49,7 @@ class TestContextMenuIntegration(unittest.TestCase):
         
         with patch.object(self.view, 'mapToScene', return_value=QPointF(0, 0)):
             with patch.object(self.scene, 'itemAt', return_value=None):
-                with patch('PySide6.QtWidgets.QMenu') as mock_menu_class:
+                with patch('pyflowgraph.ui.editor.node_editor_view.QMenu') as mock_menu_class:
                     mock_menu = Mock()
                     mock_menu_class.return_value = mock_menu
                     mock_menu.addAction.return_value = Mock()
@@ -78,7 +76,7 @@ class TestContextMenuIntegration(unittest.TestCase):
         
         with patch.object(self.view, 'mapToScene', return_value=QPointF(0, 0)):
             with patch.object(self.scene, 'itemAt', return_value=self.node1):
-                with patch('PySide6.QtWidgets.QMenu') as mock_menu_class:
+                with patch('pyflowgraph.ui.editor.node_editor_view.QMenu') as mock_menu_class:
                     mock_menu = Mock()
                     mock_menu_class.return_value = mock_menu
                     mock_menu.addAction.return_value = Mock()
@@ -103,7 +101,7 @@ class TestContextMenuIntegration(unittest.TestCase):
         
         with patch.object(self.view, 'mapToScene', return_value=QPointF(0, 0)):
             with patch.object(self.scene, 'itemAt', return_value=self.node1):
-                with patch('PySide6.QtWidgets.QMenu') as mock_menu_class:
+                with patch('pyflowgraph.ui.editor.node_editor_view.QMenu') as mock_menu_class:
                     mock_menu = Mock()
                     mock_menu_class.return_value = mock_menu
                     
@@ -129,14 +127,12 @@ class TestContextMenuIntegration(unittest.TestCase):
                         group_action.setEnabled.assert_not_called()
     
     def test_context_menu_invalid_selection(self):
-        """Test context menu when selection cannot be grouped."""
-        # Set up selection with invalid items
-        invalid_item = Mock()  # Not a Node
-        self.scene.selectedItems = Mock(return_value=[self.node1, invalid_item])
+        """Test that Group Selected is disabled when the nodes cannot be grouped."""
+        self.scene.selectedItems = Mock(return_value=[self.node1, self.node2])
         
         with patch.object(self.view, 'mapToScene', return_value=QPointF(0, 0)):
             with patch.object(self.scene, 'itemAt', return_value=self.node1):
-                with patch('PySide6.QtWidgets.QMenu') as mock_menu_class:
+                with patch('pyflowgraph.ui.editor.node_editor_view.QMenu') as mock_menu_class:
                     mock_menu = Mock()
                     mock_menu_class.return_value = mock_menu
                     
@@ -268,8 +264,8 @@ class TestGroupCreationWorkflow(unittest.TestCase):
         
         self.scene.nodes = [self.node1, self.node2]
     
-    @patch('src.ui.dialogs.group_creation_dialog.show_group_creation_dialog')
-    @patch('src.commands.create_group_command.CreateGroupCommand')
+    @patch('pyflowgraph.ui.dialogs.group_creation_dialog.show_group_creation_dialog')
+    @patch('pyflowgraph.commands.create_group_command.CreateGroupCommand')
     def test_complete_workflow_success(self, mock_command_class, mock_dialog):
         """Test complete successful group creation workflow."""
         # Mock dialog to return valid properties
@@ -298,7 +294,7 @@ class TestGroupCreationWorkflow(unittest.TestCase):
             mock_command_class.assert_called_once_with(self.scene, mock_properties)
             mock_execute.assert_called_once_with(mock_command)
     
-    @patch('src.ui.dialogs.group_creation_dialog.show_group_creation_dialog')
+    @patch('pyflowgraph.ui.dialogs.group_creation_dialog.show_group_creation_dialog')
     def test_workflow_user_cancels(self, mock_dialog):
         """Test workflow when user cancels dialog."""
         # Mock dialog to return None (user canceled)

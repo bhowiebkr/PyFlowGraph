@@ -14,21 +14,18 @@ Tests the Pin class and pin management functionality including:
 
 import unittest
 import sys
-import os
 from unittest.mock import Mock, patch
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor
 
-from core.pin import Pin
-from core.node import Node
-from core.node_graph import NodeGraph
-from utils.color_utils import generate_color_from_string
+from pyflowgraph.core.pin import Pin
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.node_graph import NodeGraph
+from pyflowgraph.settings import app_settings
+from pyflowgraph.utils.color_utils import generate_color_from_string
 
 
 class TestPinSystem(unittest.TestCase):
@@ -140,9 +137,17 @@ class TestPinSystem(unittest.TestCase):
             pin_category="data"
         )
         
-        # Label should replace underscores and use title case
-        expected_label = "Input Value Test"
-        self.assertEqual(pin.label.toPlainText(), expected_label)
+        # Label should replace underscores, use title case and, by default, show the type
+        self.assertEqual(pin.label.toPlainText(), "Input Value Test (str)")
+
+        # With the pin types hidden, the label is the name alone
+        settings = app_settings()
+        settings.setValue("show_pin_types", False)
+        try:
+            pin.update_label_text()
+            self.assertEqual(pin.label.toPlainText(), "Input Value Test")
+        finally:
+            settings.remove("show_pin_types")
         
         # Test label positioning for input pin
         pin.update_label_pos()

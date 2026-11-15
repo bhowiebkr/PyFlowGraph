@@ -4,19 +4,14 @@ Tests Story 3.3 - Native Object Passing System Subtask 6.3
 """
 
 import unittest
-import sys
-import os
 import gc
 import weakref
-import psutil
+import tracemalloc
 import time
 from unittest.mock import Mock
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
-from execution.single_process_executor import SingleProcessExecutor
+from pyflowgraph.execution.single_process_executor import SingleProcessExecutor
 
 
 class TestMemoryLeakDetection(unittest.TestCase):
@@ -26,20 +21,20 @@ class TestMemoryLeakDetection(unittest.TestCase):
         """Set up test fixtures."""
         self.log = []
         self.executor = SingleProcessExecutor(self.log)
-        self.process = psutil.Process()
-        
-        # Force garbage collection before each test
+        # Measure the memory that Python allocates. This is exact, unlike the process size.
         gc.collect()
-        self.initial_memory = self.process.memory_info().rss
+        tracemalloc.start()
+        self.initial_memory = self.get_memory_usage()
     
     def tearDown(self):
         """Clean up after tests."""
+        tracemalloc.stop()
         self.executor.reset_namespace()
         gc.collect()
     
     def get_memory_usage(self):
-        """Get current memory usage in bytes."""
-        return self.process.memory_info().rss
+        """Get the memory that Python has allocated since setUp, in bytes."""
+        return tracemalloc.get_traced_memory()[0]
     
     def test_weakref_cleanup_prevents_leaks(self):
         """Test AC4: WeakValueDictionary prevents memory leaks."""
@@ -86,10 +81,11 @@ class TestMemoryLeakDetection(unittest.TestCase):
         self.assertGreater(memory_increase, 40 * 1024 * 1024,  # At least 40MB
                           "Memory should increase with large objects")
         
-        # Clear references and cleanup
+        # Clear references and cleanup. The store keeps its references until it is cleared.
         for obj in large_objects:
             del obj
         large_objects.clear()
+        self.executor.object_store.clear()
         self.executor.cleanup_memory()
         gc.collect()
         
@@ -238,7 +234,7 @@ def create_temp_objects(size):
         self.assertIsNotNone(ref4)
         
         # Clear store
-        self.executor.object_refs.clear()
+        self.executor.object_store.clear()
         del ref3, ref4
         gc.collect()
         
@@ -323,10 +319,9 @@ def process_cycle_data(objs):
                     if key in self.executor.object_store:
                         del self.executor.object_store[key]
             
-            # Periodic cleanup
-            if cycle % 5 == 0:
+            # From cycle 10 on, the store holds 10 cycles of objects, so memory must stay level
+            if cycle >= 10:
                 self.executor.cleanup_memory()
-                gc.collect()
                 memory_samples.append(self.get_memory_usage())
         
         # Analyze memory trend
@@ -342,7 +337,7 @@ def process_cycle_data(objs):
             if denominator > 0:
                 slope = numerator / denominator
                 # Slope should be minimal (stable memory usage)
-                max_slope = 1024 * 1024  # 1MB per measurement
+                max_slope = 64 * 1024  # 64 KB per cycle; one cycle of objects is about 500 KB
                 self.assertLess(abs(slope), max_slope,
                               f"Memory trend slope {slope} indicates instability")
 
@@ -391,7 +386,9 @@ class TestMemoryUsageOptimization(unittest.TestCase):
     
     def test_memory_pressure_handling(self):
         """Test handling of memory pressure scenarios."""
-        initial_memory = psutil.Process().memory_info().rss
+        tracemalloc.start()
+        self.addCleanup(tracemalloc.stop)
+        initial_memory = tracemalloc.get_traced_memory()[0]
         
         try:
             # Create memory pressure by allocating large objects
@@ -402,7 +399,7 @@ class TestMemoryUsageOptimization(unittest.TestCase):
                 self.executor.store_object(f"pressure_{i}", large_obj)
                 pressure_objects.append(large_obj)
             
-            current_memory = psutil.Process().memory_info().rss
+            current_memory = tracemalloc.get_traced_memory()[0]
             memory_used = current_memory - initial_memory
             
             # Should have allocated significant memory

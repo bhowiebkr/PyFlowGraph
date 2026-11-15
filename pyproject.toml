@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyflowgraph"
+dynamic = ["version"]
+description = "A node-based editor for Python code. Graphs are Markdown files."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.11"
+# Exact versions, so that every set up and every build gets the same packages.
+# Change a version here, run all the test files, then commit.
+dependencies = [
+    "PySide6==6.12.0",
+    "markdown-it-py==4.3.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.2.0",
+    "pytest-timeout==2.4.0",
+]
+build = [
+    "Nuitka==4.3.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/bhowiebkr/PyFlowGraph"
+Issues = "https://github.com/bhowiebkr/PyFlowGraph/issues"
+
+[tool.setuptools.dynamic]
+version = { attr = "pyflowgraph.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pyflowgraph*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "gui: needs a QApplication and real widgets",
+]

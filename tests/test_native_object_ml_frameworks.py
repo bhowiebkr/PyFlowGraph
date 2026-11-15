@@ -4,16 +4,11 @@ Tests Story 3.3 - Native Object Passing System Subtask 6.2
 """
 
 import unittest
-import sys
-import os
 import gc
 from unittest.mock import Mock
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
-from execution.single_process_executor import SingleProcessExecutor
+from pyflowgraph.execution.single_process_executor import SingleProcessExecutor
 
 
 class TestMLFrameworkObjectPassing(unittest.TestCase):

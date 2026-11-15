@@ -17,24 +17,20 @@ its GUI widgets, even though performance is fine.
 """
 
 import unittest
-import sys
 import os
 import json
 from unittest.mock import patch, MagicMock
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
 
-from core.node_graph import NodeGraph
-from core.node import Node
-from commands.node_commands import DeleteNodeCommand
-from execution.graph_executor import GraphExecutor
-from core.connection import Connection
-from core.pin import Pin
+from pyflowgraph.core.node_graph import NodeGraph
+from pyflowgraph.core.node import Node
+from pyflowgraph.commands.node_commands import DeleteNodeCommand
+from pyflowgraph.execution.graph_executor import GraphExecutor
+from pyflowgraph.core.connection import Connection
+from pyflowgraph.core.pin import Pin
 
 
 class TestGUIValueUpdateRegression(unittest.TestCase):

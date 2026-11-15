@@ -9,18 +9,16 @@ This test reproduces the reported issue:
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 
-from core.node_graph import NodeGraph
-from core.node import Node
-from core.pin import Pin
-from core.connection import Connection
-from commands.node_commands import DeleteNodeCommand
-from commands.connection_commands import DeleteConnectionCommand
+from pyflowgraph.core.node_graph import NodeGraph
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.pin import Pin
+from pyflowgraph.core.connection import Connection
+from pyflowgraph.commands.node_commands import DeleteNodeCommand
+from pyflowgraph.commands.connection_commands import DeleteConnectionCommand
 
 class TestNodeDeletionConnectionBug:
     """Test case for the node deletion -> undo -> connection deletion bug."""

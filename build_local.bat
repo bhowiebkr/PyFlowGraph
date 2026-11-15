@@ -14,8 +14,8 @@ if not exist "src\main.py" (
     exit /b 1
 )
 
-if not exist "requirements.txt" (
-    echo ERROR: requirements.txt not found
+if not exist "pyproject.toml" (
+    echo ERROR: pyproject.toml not found
     echo Please run this script from the PyFlowGraph root directory
     pause
     exit /b 1
@@ -42,7 +42,7 @@ if errorlevel 1 (
 )
 
 echo [2/6] Installing/updating dependencies...
-pip install -r requirements.txt
+pip install -e ".[build]"
 if errorlevel 1 (
     echo ERROR: Failed to install dependencies
     pause

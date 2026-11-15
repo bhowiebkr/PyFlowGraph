@@ -11,26 +11,22 @@ state during pause/resume operations.
 """
 
 import sys
-import os
 import unittest
 import time
 from pathlib import Path
 import pytest
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton, QLabel, QRadioButton
 from PySide6.QtCore import Qt, QTimer, QPointF, QPoint
 from PySide6.QtGui import QKeyEvent, QMouseEvent, QWheelEvent
 from PySide6.QtTest import QTest
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node import Node
-from core.reroute_node import RerouteNode
-from core.connection import Connection
-from execution.execution_controller import ExecutionController
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
+from pyflowgraph.core.connection import Connection
+from pyflowgraph.execution.execution_controller import ExecutionController
 
 
 @pytest.mark.gui
@@ -80,7 +76,7 @@ class ExecuteGraphTestCase(unittest.TestCase):
         QApplication.processEvents()
         
         # Wait a moment for window to be fully displayed
-        QTest.qWait(100)
+        QTest.qWait(10)
         
         print(f"Window displayed - Ready for execution test")
     
@@ -94,7 +90,7 @@ class ExecuteGraphTestCase(unittest.TestCase):
             
         # Process events to ensure cleanup
         QApplication.processEvents()
-        QTest.qWait(100)
+        QTest.qWait(10)
         
         print(f"Test cleanup complete\n")
     
@@ -152,7 +148,7 @@ def consume_number(x: int):
 ''')
         
         QApplication.processEvents()
-        QTest.qWait(50)
+        QTest.qWait(10)
         
         # Connect them
         producer_output = None
@@ -198,33 +194,15 @@ def consume_number(x: int):
         """Helper to switch to live mode reliably."""
         live_radio = self._get_live_mode_radio()
         if live_radio:
-            live_radio.setChecked(True)
+            live_radio.click()
             QApplication.processEvents()
-            
-            # Manually trigger the mode change callback
-            if hasattr(self.window, 'exec_widget') and hasattr(self.window.exec_widget, 'mode_button_group'):
-                mode_group = self.window.exec_widget.mode_button_group
-                live_id = mode_group.id(live_radio)
-                self.window.execution_ctrl.on_mode_changed(live_id)
-            
-            QApplication.processEvents()
-            QTest.qWait(100)
     
     def _switch_to_batch_mode(self):
         """Helper to switch to batch mode reliably."""
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
-            
-            # Manually trigger the mode change callback
-            if hasattr(self.window, 'exec_widget') and hasattr(self.window.exec_widget, 'mode_button_group'):
-                mode_group = self.window.exec_widget.mode_button_group
-                batch_id = mode_group.id(batch_radio)
-                self.window.execution_ctrl.on_mode_changed(batch_id)
-            
-            QApplication.processEvents()
-            QTest.qWait(100)
 
 
 class TestBatchModeExecution(ExecuteGraphTestCase):
@@ -235,7 +213,7 @@ class TestBatchModeExecution(ExecuteGraphTestCase):
         # Ensure we're in batch mode
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
         
         # Button should show "Execute Graph"
@@ -253,7 +231,7 @@ class TestBatchModeExecution(ExecuteGraphTestCase):
         # Set batch mode
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
         
         # Create test graph
@@ -267,7 +245,7 @@ class TestBatchModeExecution(ExecuteGraphTestCase):
             
             # Button should change to "Executing..." temporarily
             # Then back to "Execute Graph"
-            QTest.qWait(500)  # Allow execution to complete
+            QTest.qWait(50)  # Allow execution to complete
             QApplication.processEvents()
             
             # Should return to ready state
@@ -282,14 +260,14 @@ class TestBatchModeExecution(ExecuteGraphTestCase):
         # Set batch mode
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
         
         # Execute empty graph
         if self.main_exec_button:
             self.main_exec_button.click()
             QApplication.processEvents()
-            QTest.qWait(200)
+            QTest.qWait(20)
             
             # Should complete without error
             self.wait_for_button_text("Execute", timeout=2000)
@@ -312,7 +290,7 @@ class TestLiveModeExecution(ExecuteGraphTestCase):
         live_radio = self._get_live_mode_radio()
         if live_radio:
             print(f"DEBUG: Switching to live mode...")
-            live_radio.setChecked(True)
+            live_radio.click()
             QApplication.processEvents()
             
             # Manually trigger the mode change callback since signal may not fire in tests
@@ -323,7 +301,7 @@ class TestLiveModeExecution(ExecuteGraphTestCase):
                 self.window.execution_ctrl.on_mode_changed(live_id)
             
             QApplication.processEvents()
-            QTest.qWait(200)  # Allow time for UI update
+            QTest.qWait(20)  # Allow time for UI update
         
         # Button should show "Start Live Mode"
         if self.main_exec_button:
@@ -456,7 +434,7 @@ button.show()
 ''')
         
         QApplication.processEvents()
-        QTest.qWait(200)
+        QTest.qWait(20)
         
         # Start live mode
         if self.main_exec_button:
@@ -511,7 +489,7 @@ button.show()
         # Switch to live mode
         live_radio = self._get_live_mode_radio()
         if live_radio:
-            live_radio.setChecked(True)
+            live_radio.click()
             QApplication.processEvents()
         
         # Verify execution controller state consistency
@@ -524,7 +502,7 @@ button.show()
             if self.main_exec_button:
                 self.main_exec_button.click()
                 QApplication.processEvents()
-                QTest.qWait(200)
+                QTest.qWait(20)
                 
                 # Should be live and active
                 self.assertTrue(self.execution_controller.live_mode)
@@ -533,7 +511,7 @@ button.show()
                 # Pause
                 self.main_exec_button.click()
                 QApplication.processEvents()
-                QTest.qWait(200)
+                QTest.qWait(20)
                 
                 # Should still be live mode but not active
                 self.assertTrue(self.execution_controller.live_mode)
@@ -542,7 +520,7 @@ button.show()
                 # Resume
                 self.main_exec_button.click()
                 QApplication.processEvents()
-                QTest.qWait(200)
+                QTest.qWait(20)
                 
                 # Should be live and active again
                 self.assertTrue(self.execution_controller.live_mode)
@@ -559,7 +537,7 @@ class TestModeTransitions(ExecuteGraphTestCase):
         # Start in batch mode
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
         
         # Verify batch state
@@ -571,7 +549,7 @@ class TestModeTransitions(ExecuteGraphTestCase):
         # Switch to live mode
         live_radio = self._get_live_mode_radio()
         if live_radio:
-            live_radio.setChecked(True)
+            live_radio.click()
             QApplication.processEvents()
         
         # Verify live state
@@ -587,7 +565,7 @@ class TestModeTransitions(ExecuteGraphTestCase):
         # Start in live mode
         live_radio = self._get_live_mode_radio()
         if live_radio:
-            live_radio.setChecked(True)
+            live_radio.click()
             QApplication.processEvents()
         
         # Start live mode
@@ -599,7 +577,7 @@ class TestModeTransitions(ExecuteGraphTestCase):
         # Switch to batch mode while live is active
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
         
         # Should properly transition to batch
@@ -620,7 +598,7 @@ class TestModeTransitions(ExecuteGraphTestCase):
         # Start in live mode and get to paused state
         live_radio = self._get_live_mode_radio()
         if live_radio:
-            live_radio.setChecked(True)
+            live_radio.click()
             QApplication.processEvents()
         
         if self.main_exec_button:
@@ -636,7 +614,7 @@ class TestModeTransitions(ExecuteGraphTestCase):
         # Now switch to batch mode from paused state
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
         
         # Should properly handle transition from paused state
@@ -656,7 +634,7 @@ class TestExecutionErrorHandling(ExecuteGraphTestCase):
         # Switch to live mode
         live_radio = self._get_live_mode_radio()
         if live_radio:
-            live_radio.setChecked(True)
+            live_radio.click()
             QApplication.processEvents()
         
         # Create a node with a button for live interaction
@@ -676,7 +654,7 @@ button.show()
 ''')
         
         QApplication.processEvents()
-        QTest.qWait(200)
+        QTest.qWait(20)
         
         # Start live mode
         if self.main_exec_button:
@@ -701,7 +679,7 @@ button.show()
         # Try batch execution
         batch_radio = self._get_batch_mode_radio()
         if batch_radio:
-            batch_radio.setChecked(True)
+            batch_radio.click()
             QApplication.processEvents()
         
         if self.main_exec_button:

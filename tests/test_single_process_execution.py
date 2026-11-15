@@ -4,19 +4,14 @@ replacing subprocess isolation for maximum performance.
 """
 
 import unittest
-import sys
-import os
 import time
 import gc
 from unittest.mock import Mock, MagicMock
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
-from execution.single_process_executor import SingleProcessExecutor
-from core.node import Node
-from core.pin import Pin
+from pyflowgraph.execution.single_process_executor import SingleProcessExecutor
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.pin import Pin
 
 
 class TestSingleProcessExecutor(unittest.TestCase):

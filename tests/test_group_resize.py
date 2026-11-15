@@ -2,13 +2,8 @@
 # Unit tests for group resize functionality including handle detection and membership management.
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, project_root)
 
 from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsItem
 from PySide6.QtCore import QPointF, QRectF
@@ -18,9 +13,9 @@ from PySide6.QtGui import Qt
 if not QApplication.instance():
     app = QApplication([])
 
-from src.core.group import Group
-from src.core.node import Node
-from src.commands.resize_group_command import ResizeGroupCommand
+from pyflowgraph.core.group import Group
+from pyflowgraph.core.node import Node
+from pyflowgraph.commands.resize_group_command import ResizeGroupCommand
 
 
 class TestGroupResize(unittest.TestCase):

@@ -4,18 +4,15 @@ Test for RerouteNode deletion and undo/redo with connections.
 """
 
 import sys
-import os
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node import Node
-from core.reroute_node import RerouteNode
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
 
 def test_reroute_with_connections():
     """Test deletion and undo/redo of RerouteNode with connections."""

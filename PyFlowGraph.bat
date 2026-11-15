@@ -1,42 +1,23 @@
 @echo off
-rem A Windows batch script to set up the environment and run the main Python application.
+rem Starts PyFlowGraph with the Python in the venv folder.
+rem Arguments are passed to src\main.py.
 
-rem --- Configuration ---
-set VENV_DIR=venv
-set PYTHON_SCRIPT=src\main.py
-rem ---------------------
+setlocal
+cd /d "%~dp0"
 
-rem Check if the virtual environment directory exists.
-if not exist "%VENV_DIR%\" (
-    echo Error: Virtual environment directory '%VENV_DIR%' not found.
-    echo Please create it first, for example: python -m venv %VENV_DIR%
+set VENV_PYTHON=venv\Scripts\python.exe
+set MAIN_SCRIPT=src\main.py
+
+if not exist "%VENV_PYTHON%" (
+    echo Error: %VENV_PYTHON% not found.
+    echo Set up the venv first. CONTRIBUTING.md tells how.
     exit /b 1
 )
 
-rem Activate the virtual environment.
-echo Activating virtual environment...
-call "%VENV_DIR%\Scripts\activate.bat"
-
-rem Check if the main python script exists.
-if not exist "%PYTHON_SCRIPT%" (
-    echo Error: Python script '%PYTHON_SCRIPT%' not found.
-    rem Deactivate the virtual environment before exiting.
-    call deactivate
+if not exist "%MAIN_SCRIPT%" (
+    echo Error: %MAIN_SCRIPT% not found.
     exit /b 1
 )
 
-rem Change to src directory so Python can find modules
-cd src
-
-rem Execute the python script.
-rem Any arguments passed to run.bat will be passed to main.py
-rem For example: run.bat arg1 arg2
-echo Running main.py from src directory...
-python main.py %*
-
-rem Return to original directory
-cd ..
-
-rem Deactivate the virtual environment after the script finishes.
-call deactivate
-echo Script finished.
+"%VENV_PYTHON%" "%MAIN_SCRIPT%" %*
+exit /b %errorlevel%

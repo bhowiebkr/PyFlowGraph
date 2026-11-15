@@ -6,18 +6,12 @@ failure recovery, partial rollback, and meaningful operation descriptions.
 """
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, patch, MagicMock
 from PySide6.QtCore import QPointF
 
-# Add project root to path for imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
-from src.commands.command_base import CommandBase, CompositeCommand
-from src.commands.node_commands import (
+from pyflowgraph.commands.command_base import CommandBase, CompositeCommand
+from pyflowgraph.commands.node_commands import (
     CreateNodeCommand, DeleteNodeCommand, MoveNodeCommand, 
     PasteNodesCommand, MoveMultipleCommand, DeleteMultipleCommand
 )
@@ -199,7 +193,7 @@ class TestNodeCompositeCommands(unittest.TestCase):
         self.mock_graph.removeItem = Mock()
         self.mock_graph.execute_command = Mock(return_value=True)
     
-    @patch('src.core.node.Node')
+    @patch('pyflowgraph.core.node.Node')
     def test_paste_nodes_command_creation(self, mock_node_class):
         """Test PasteNodesCommand creation and description generation."""
         mock_node = Mock()
@@ -240,7 +234,7 @@ class TestNodeCompositeCommands(unittest.TestCase):
     def test_delete_multiple_command_description_logic(self):
         """Test DeleteMultipleCommand description generation logic."""
         # Test the description generation logic without complex mocking
-        from src.commands.node_commands import DeleteMultipleCommand
+        from pyflowgraph.commands.node_commands import DeleteMultipleCommand
         
         # We can't easily test the full DeleteMultipleCommand creation due to imports
         # but we can test that the class exists and has the right structure

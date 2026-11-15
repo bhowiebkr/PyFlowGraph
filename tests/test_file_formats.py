@@ -13,17 +13,11 @@ Tests file format parsing and conversion functionality including:
 
 import unittest
 import sys
-import os
 import json
 import tempfile
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
-# Import directly to avoid circular dependency through data.__init__
-sys.path.insert(0, os.path.join(src_path, 'data'))
-import flow_format
+from pyflowgraph.data import flow_format
 FlowFormatHandler = flow_format.FlowFormatHandler
 load_flow_file = flow_format.load_flow_file
 # Skip FileOperationsManager import to avoid circular dependency

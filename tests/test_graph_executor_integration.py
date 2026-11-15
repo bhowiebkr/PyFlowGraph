@@ -1,24 +1,20 @@
 """
 Integration tests for GraphExecutor with SingleProcessExecutor.
 Tests the complete execution flow with direct object references.
+
+The nodes are plain Python stand-ins, not Qt items, so the tests need no QApplication.
+The executor recognizes nodes by class, so the tests replace its Node and RerouteNode classes
+with the stand-ins.
 """
 
 import unittest
-import sys
-import os
 import time
-from unittest.mock import Mock, MagicMock
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+import pytest
+from unittest.mock import patch
 
-from src.execution.graph_executor import GraphExecutor
-from src.core.node import Node
-from src.core.pin import Pin
-from src.core.connection import Connection
-from src.core.reroute_node import RerouteNode
+
+from pyflowgraph.execution.graph_executor import GraphExecutor
 
 
 class MockGraph:
@@ -60,6 +56,13 @@ class MockNode:
         self.gui_values.update(values)
 
 
+class MockRerouteNode:
+    """Mock reroute node for testing: one input pin and one output pin."""
+    def __init__(self):
+        self.input_pin = MockPin("input", "data", self)
+        self.output_pin = MockPin("output", "data", self)
+
+
 class TestGraphExecutorIntegration(unittest.TestCase):
     """Test complete GraphExecutor integration with single process execution."""
     
@@ -69,6 +72,10 @@ class TestGraphExecutorIntegration(unittest.TestCase):
         self.graph = MockGraph()
         self.venv_callback = lambda: None
         self.executor = GraphExecutor(self.graph, self.log, self.venv_callback)
+        node_classes = patch.multiple("pyflowgraph.execution.graph_executor",
+                                      Node=MockNode, RerouteNode=MockRerouteNode)
+        node_classes.start()
+        self.addCleanup(node_classes.stop)
     
     def test_single_node_execution(self):
         """Test AC1: Single Python interpreter shared across all node executions."""
@@ -278,9 +285,7 @@ def source_func():
         source_node.output_pins = [source_output]
         
         # Create reroute node
-        reroute_node = RerouteNode()
-        reroute_node.input_pin = MockPin("input", "data", reroute_node)
-        reroute_node.output_pin = MockPin("output", "data", reroute_node)
+        reroute_node = MockRerouteNode()
         
         # Create destination node
         dest_node = MockNode("Destination", "dest_func")

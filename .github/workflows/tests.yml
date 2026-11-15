@@ -1,0 +1,45 @@
+# .github/workflows/tests.yml
+# Runs each test file in its own process, offscreen, with the 10 second limit of tools/run_tests.py.
+
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install the package and the test tools
+        run: python -m pip install -e .[test]
+
+      - name: Run the tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python tools/run_tests.py --log-dir test-logs
+
+      - name: Keep the test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: test-logs
+          retention-days: 7

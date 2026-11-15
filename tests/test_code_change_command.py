@@ -6,22 +6,15 @@ for code changes in nodes.
 """
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
 
-# Add project root to path for cross-package imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 try:
-    from src.commands.node_commands import CodeChangeCommand
-    from src.commands.command_base import CommandBase
+    from pyflowgraph.commands.node_commands import CodeChangeCommand
+    from pyflowgraph.commands.command_base import CommandBase
 except ImportError:
-    sys.path.insert(0, os.path.join(project_root, 'src'))
-    from commands.node_commands import CodeChangeCommand
-    from commands.command_base import CommandBase
+    from pyflowgraph.commands.node_commands import CodeChangeCommand
+    from pyflowgraph.commands.command_base import CommandBase
 
 
 class TestCodeChangeCommand(unittest.TestCase):

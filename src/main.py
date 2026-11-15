@@ -1,85 +1,83 @@
 # main.py
-# Entry point for the Node Editor application.
-# Now loads a QSS stylesheet and the Font Awesome font.
+# Starts the editor. Python puts the folder of this file (src/) on the import path, so the
+# pyflowgraph package next to it imports with no path changes. Nuitka builds the Windows app
+# from this file.
 
-import sys
+import logging
 import os
-from PySide6.QtWidgets import QApplication
+import sys
+
 from PySide6.QtCore import qInstallMessageHandler
 from PySide6.QtGui import QFontDatabase
+from PySide6.QtWidgets import QApplication
 
-# Add project root to Python path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
 
-from ui.editor.node_editor_window import NodeEditorWindow
+logger = logging.getLogger("pyflowgraph")
+
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+FONTS = (
+    "Font Awesome 7 Free-Regular-400.otf",
+    "Font Awesome 6 Free-Solid-900.otf",
+)
+# The Windows build has the stylesheet next to the program; a checkout has it in the
+# repository root.
+STYLESHEET_PATHS = (
+    os.path.join(APP_DIR, "dark_theme.qss"),
+    os.path.join(os.path.dirname(APP_DIR), "dark_theme.qss"),
+)
+QT_MESSAGES_TO_IGNORE = ("qt.qpa.wayland.textinput",)
 
 
-def custom_message_handler(mode, context, message):
-    """
-    A custom message handler to filter out specific, non-critical warnings.
-    """
-    warnings_to_ignore = [
-        "qt.qpa.wayland.textinput",
-    ]
-    if any(warning in message for warning in warnings_to_ignore):
+def setup_logging():
+    """Send log messages to stderr. PYFLOWGRAPH_LOG_LEVEL sets the level, WARNING by default."""
+    level_name = os.environ.get("PYFLOWGRAPH_LOG_LEVEL", "WARNING").upper()
+    level = getattr(logging, level_name, None)
+    if not isinstance(level, int):
+        level = logging.WARNING
+    logging.basicConfig(level=level, format="%(levelname)s %(name)s: %(message)s")
+
+
+def qt_message_handler(mode, context, message):
+    """Pass Qt messages to stderr, except the ones known to be harmless."""
+    if any(text in message for text in QT_MESSAGES_TO_IGNORE):
         return
     print(message, file=sys.stderr)
 
 
-if __name__ == "__main__":
-    qInstallMessageHandler(custom_message_handler)
+def load_fonts():
+    for name in FONTS:
+        path = os.path.join(APP_DIR, "resources", name)
+        if not os.path.exists(path):
+            logger.warning("Font file not found: %s", path)
+        elif QFontDatabase.addApplicationFont(path) == -1:
+            logger.warning("Could not load the font %s", path)
+
+
+def load_stylesheet(app):
+    for path in STYLESHEET_PATHS:
+        if not os.path.exists(path):
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                app.setStyleSheet(f.read())
+            return True
+        except OSError as e:
+            logger.warning("Could not read %s: %s", path, e)
+    logger.warning("dark_theme.qss not found. Using the default style.")
+    return False
+
+
+def main():
+    setup_logging()
+    qInstallMessageHandler(qt_message_handler)
     app = QApplication(sys.argv)
-
-    # --- Load Font Awesome Regular ---
-    font_path_regular = os.path.join(os.path.dirname(__file__), "resources", "Font Awesome 7 Free-Regular-400.otf")
-    if os.path.exists(font_path_regular):
-        font_id = QFontDatabase.addApplicationFont(font_path_regular)
-        if font_id == -1:
-            print("Warning: Failed to load Font Awesome Regular font.", file=sys.stderr)
-        else:
-            pass  # Font loaded successfully
-    else:
-        print("Warning: Font Awesome Regular font file not found at 'resources/Font Awesome 7 Free-Regular-400.otf'", file=sys.stderr)
-
-    # --- Load Font Awesome Solid ---
-    font_path_solid = os.path.join(os.path.dirname(__file__), "resources", "Font Awesome 6 Free-Solid-900.otf")
-    if os.path.exists(font_path_solid):
-        font_id = QFontDatabase.addApplicationFont(font_path_solid)
-        if font_id == -1:
-            print("Warning: Failed to load Font Awesome Solid font.", file=sys.stderr)
-        else:
-            pass  # Font loaded successfully
-    else:
-        print("Warning: Font Awesome Solid font file not found at 'resources/Font Awesome 6 Free-Solid-900.otf'", file=sys.stderr)
-
-    # Load the dark theme stylesheet with proper path resolution
-    def load_stylesheet(app):
-        """Load dark theme stylesheet with proper path resolution."""
-        qss_paths = [
-            "dark_theme.qss",  # For compiled version
-            "../dark_theme.qss",  # For development (run from src/)
-            os.path.join(os.path.dirname(__file__), "..", "dark_theme.qss"),  # Absolute fallback
-        ]
-
-        for qss_path in qss_paths:
-            if os.path.exists(qss_path):
-                try:
-                    with open(qss_path, "r") as f:
-                        app.setStyleSheet(f.read())
-                    return True
-                except Exception as e:
-                    print(f"Failed to load {qss_path}: {e}", file=sys.stderr)
-
-        print("Warning: 'dark_theme.qss' not found in any expected location. Using default style.", file=sys.stderr)
-        return False
-
+    load_fonts()
     load_stylesheet(app)
-
-    # Create and show the main window
     window = NodeEditorWindow()
     window.show()
+    return app.exec()
 
-    # Run the application's event loop
-    sys.exit(app.exec())
+
+if __name__ == "__main__":
+    sys.exit(main())

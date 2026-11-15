@@ -15,14 +15,11 @@ import unittest
 import sys
 import os
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication
 
-from core.node_graph import NodeGraph
-from core.node import Node
+from pyflowgraph.core.node_graph import NodeGraph
+from pyflowgraph.core.node import Node
 
 
 class TestIntegration(unittest.TestCase):
@@ -118,7 +115,7 @@ def output_result(text: str):
                 
                 try:
                     # Import dynamically to avoid circular import
-                    from data.flow_format import load_flow_file
+                    from pyflowgraph.data.flow_format import load_flow_file
                     data = load_flow_file(file_path)
                     self.assertIn("nodes", data)
                     

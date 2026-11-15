@@ -6,13 +6,9 @@ Focuses on testing the core command infrastructure and basic functionality.
 
 import unittest
 import time
-import sys
-import os
 
-# Add src directory to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from commands import CommandBase, CompositeCommand, CommandHistory
+from pyflowgraph.commands import CommandBase, CompositeCommand, CommandHistory
 
 
 class MockCommand(CommandBase):

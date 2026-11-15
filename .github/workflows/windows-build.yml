@@ -12,15 +12,14 @@ on:
     branches: [ main ]
     paths:
       - 'src/**'
-      - 'requirements.txt'
+      - 'pyproject.toml'
       - '.github/workflows/windows-build.yml'
 
 jobs:
   build-windows:
     runs-on: windows-latest
     permissions:
-      contents: read       # To checkout code
-      actions: write       # To upload artifacts
+      contents: read       # To checkout code. Uploading artifacts needs no token permission.
 
     steps:
       - name: Checkout code
@@ -61,7 +60,7 @@ jobs:
           Write-Host "Python runtime prepared."
 
       - name: Install dependencies for Nuitka build
-        run: pip install -r requirements.txt
+        run: pip install -e ".[build]"
 
       - name: Build app with Nuitka
         run: |

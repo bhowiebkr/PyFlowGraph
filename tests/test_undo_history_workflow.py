@@ -2,14 +2,8 @@
 # GUI workflow tests for undo history UI features
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
 
-# Add project root to path for cross-package imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 try:
     from PySide6.QtWidgets import QApplication, QMainWindow
@@ -118,7 +112,7 @@ class TestUndoHistoryWorkflow(unittest.TestCase):
     def test_history_dialog_workflow(self):
         """Test complete history dialog workflow."""
         # Mock history dialog creation and usage
-        with patch('src.ui.dialogs.undo_history_dialog.UndoHistoryDialog') as MockDialog:
+        with patch('pyflowgraph.ui.dialogs.undo_history_dialog.UndoHistoryDialog') as MockDialog:
             mock_dialog = MockDialog.return_value
             mock_dialog.exec.return_value = True
             

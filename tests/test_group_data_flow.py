@@ -2,18 +2,18 @@
 # Tests for data flow preservation through group interface pins.
 
 import unittest
-import sys
-import os
 from unittest.mock import Mock, MagicMock, patch
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+from PySide6.QtWidgets import QApplication
 
-from src.core.group_connection_router import GroupConnectionRouter
-from src.core.group_interface_pin import GroupInterfacePin
-from src.core.group import Group
+
+from pyflowgraph.core.group_connection_router import GroupConnectionRouter
+from pyflowgraph.core.group_interface_pin import GroupInterfacePin
+from pyflowgraph.core.group import Group
+
+
+# Pins and groups are Qt items, which need an application object.
+app = QApplication.instance() or QApplication([])
 
 
 class TestGroupDataFlow(unittest.TestCase):
@@ -23,10 +23,11 @@ class TestGroupDataFlow(unittest.TestCase):
         """Set up test fixtures."""
         self.mock_node_graph = Mock()
         self.mock_node_graph.nodes = []
+        self.mock_node_graph.connections = []
         self.router = GroupConnectionRouter(self.mock_node_graph)
         
-        # Create a mock group
-        self.mock_group = Mock()
+        # A real group: interface pins are Qt child items of their group.
+        self.mock_group = Group("Test Group")
         self.mock_group.uuid = "test_group"
         self.mock_group.member_node_uuids = ["node1", "node2"]
     
@@ -232,6 +233,9 @@ class TestGroupDataFlow(unittest.TestCase):
             pin_type_str="int",
             internal_pin_mappings=["internal_pin"]
         )
+        # The router finds interface pins through the groups of the graph.
+        self.mock_group.input_interface_pins = [interface_pin]
+        self.mock_node_graph.groups = [self.mock_group]
         
         # Setup routing
         interface_pins = {

@@ -4,19 +4,16 @@ Test for node deletion issues specifically with markdown-loaded nodes.
 """
 
 import sys
-import os
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node import Node
-from core.reroute_node import RerouteNode
-from data.flow_format import FlowFormatHandler
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
+from pyflowgraph.data.flow_format import FlowFormatHandler
 
 def test_markdown_loaded_node_deletion():
     """Test deletion of nodes loaded from markdown."""

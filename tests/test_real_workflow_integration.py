@@ -6,28 +6,24 @@ Uses the password generator example to test complex operations.
 """
 
 import unittest
-import sys
 import os
 import json
 from unittest.mock import Mock, patch, MagicMock
 from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QApplication
 
-# Add project root to path for imports
 project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 # Mock PySide6 for headless testing
 if not QApplication.instance():
     app = QApplication([])
 
-from src.commands.node_commands import (
+from pyflowgraph.commands.node_commands import (
     CodeChangeCommand, PasteNodesCommand, DeleteMultipleCommand,
     CreateNodeCommand, MoveMultipleCommand
 )
-from src.commands.command_base import CompositeCommand
-from src.data.flow_format import FlowFormatHandler
+from pyflowgraph.commands.command_base import CompositeCommand
+from pyflowgraph.data.flow_format import FlowFormatHandler
 
 
 class TestRealWorkflowIntegration(unittest.TestCase):
@@ -35,7 +31,7 @@ class TestRealWorkflowIntegration(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures with real example data."""
-        self.example_file = os.path.join(project_root, 'examples', 'password_generator_tool.md')
+        self.example_file = os.path.join(project_root, 'examples', 'password_generator_tool_group.md')
         
         # Create mock graph components
         self.mock_graph = Mock()
@@ -60,7 +56,7 @@ class TestRealWorkflowIntegration(unittest.TestCase):
         except Exception as e:
             self.skipTest(f"Could not load example file: {e}")
     
-    @patch('src.core.node.Node')
+    @patch('pyflowgraph.core.node.Node')
     def test_paste_real_password_generator_workflow(self, mock_node_class):
         """Test pasting the complete password generator workflow."""
         # Setup mock nodes for each node in the workflow
@@ -158,7 +154,7 @@ class TestRealWorkflowIntegration(unittest.TestCase):
     def test_complex_multi_node_operations(self):
         """Test complex operations with multiple nodes from real workflow."""
         # Import the actual classes to create instances that pass isinstance checks
-        from src.core.node import Node
+        from pyflowgraph.core.node import Node
         from unittest.mock import create_autospec
         
         # Create mock nodes that will pass isinstance checks
@@ -404,14 +400,16 @@ class TestCommandSystemBugs(unittest.TestCase):
             ]
         }
         
-        with patch('src.core.node.Node') as mock_node_class:
+        with patch('pyflowgraph.core.node.Node') as mock_node_class:
             mock_node1 = Mock()
             mock_node1.uuid = 'new-uuid-1'
             mock_node1.get_pin_by_name = Mock(return_value=None)  # Pin not found
+            mock_node1.calculate_absolute_minimum_size = Mock(return_value=(100, 50))
             
             mock_node2 = Mock()
             mock_node2.uuid = 'new-uuid-2'
             mock_node2.get_pin_by_name = Mock(return_value=None)  # Pin not found
+            mock_node2.calculate_absolute_minimum_size = Mock(return_value=(100, 50))
             
             mock_node_class.side_effect = [mock_node1, mock_node2]
             

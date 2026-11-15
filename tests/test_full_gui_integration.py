@@ -11,25 +11,21 @@ with visual feedback and proper cleanup.
 """
 
 import sys
-import os
 import unittest
 import time
 from pathlib import Path
 import pytest
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import Qt, QTimer, QPointF, QPoint
 from PySide6.QtGui import QKeyEvent, QMouseEvent, QWheelEvent
 from PySide6.QtTest import QTest
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node import Node
-from core.reroute_node import RerouteNode
-from core.connection import Connection
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
+from pyflowgraph.core.connection import Connection
 
 
 @pytest.mark.gui
@@ -105,9 +101,9 @@ class TestApplicationStartup(FullGUITestCase):
         """Test that the main application window opens correctly."""
         # Window should be visible
         self.assertTrue(self.window.isVisible())
-        
-        # Window should have correct title
-        self.assertIn("PyFlowGraph", self.window.windowTitle())
+
+        # With no graph to open, the title is the same as after File > New.
+        self.assertEqual(self.window.windowTitle(), "PyFlowGraph - Untitled")
         
         # Main components should be present
         self.assertIsNotNone(self.window.graph)
@@ -435,43 +431,15 @@ class TestFileOperationsWorkflow(FullGUITestCase):
         
         print("PASS Graph creation and serialization working correctly")
     
-    def test_load_example_file_if_exists(self):
-        """Test loading an example file if it exists."""
-        # Look for example files
-        examples_dir = Path(__file__).parent.parent.parent / "examples"
-        
-        if not examples_dir.exists():
-            self.skipTest("Examples directory not found")
-        
-        example_files = list(examples_dir.glob("*.md"))
-        
-        if not example_files:
-            self.skipTest("No example files found")
-        
-        # Try to load the first example file
-        example_file = example_files[0]
-        
-        try:
-            # Simulate file loading (this would normally go through the file menu)
-            from data.file_operations import load_file
-            
-            initial_node_count = len(self.graph.nodes)
-            load_file(self.window, str(example_file))
-            
-            QApplication.processEvents()
-            
-            # Verify content was loaded
-            # (This test is flexible since we don't know exact content)
-            final_node_count = len(self.graph.nodes)
-            
-            # Should have loaded some nodes
-            self.assertGreaterEqual(final_node_count, initial_node_count)
-            
-            print(f"PASS Successfully loaded example file: {example_file.name}")
-            print(f"  Loaded {final_node_count - initial_node_count} nodes")
-            
-        except Exception as e:
-            self.fail(f"Failed to load example file {example_file.name}: {e}")
+    def test_load_example_file(self):
+        """Open an example graph through the file operations of the window."""
+        example_file = Path(__file__).parent.parent / "examples" / "password_generator_tool_group.md"
+
+        self.assertTrue(self.window.file_ops.load(str(example_file)), "The example should open")
+        QApplication.processEvents()
+
+        self.assertEqual(len(self.window.graph.nodes), 4)
+        self.assertEqual(len(self.window.graph.connections), 13)
 
 
 class TestViewOperations(FullGUITestCase):

@@ -6,19 +6,13 @@ command integration, and undo/redo behavior for pasted content.
 """
 
 import unittest
-import sys
-import os
 import json
 from unittest.mock import Mock, patch, MagicMock
 from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QApplication
 
-# Add project root to path for imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
-from src.commands.node_commands import PasteNodesCommand
+from pyflowgraph.commands.node_commands import PasteNodesCommand
 
 
 class TestCopyPasteIntegration(unittest.TestCase):
@@ -37,7 +31,7 @@ class TestCopyPasteIntegration(unittest.TestCase):
         self.mock_graph.command_history = Mock()
         self.mock_graph.command_history.execute_command = Mock(return_value=True)
     
-    @patch('src.core.node.Node')
+    @patch('pyflowgraph.core.node.Node')
     def test_paste_single_node_workflow(self, mock_node_class):
         """Test pasting a single node creates proper commands."""
         # Setup mock node
@@ -69,7 +63,7 @@ class TestCopyPasteIntegration(unittest.TestCase):
         self.assertIn('original-uuid', paste_cmd.uuid_mapping)
         self.assertNotEqual(paste_cmd.uuid_mapping['original-uuid'], 'original-uuid')
     
-    @patch('src.core.node.Node')
+    @patch('pyflowgraph.core.node.Node')
     def test_paste_multiple_nodes_with_connections(self, mock_node_class):
         """Test pasting multiple nodes with connections preserves relationships."""
         # Setup mock nodes
@@ -115,14 +109,14 @@ class TestCopyPasteIntegration(unittest.TestCase):
         paste_cmd = PasteNodesCommand(self.mock_graph, clipboard_data, QPointF(100, 200))
         
         # Verify command description
-        self.assertEqual(paste_cmd.get_description(), "Paste 2 nodes with 1 connections")
+        self.assertEqual(paste_cmd.get_description(), "Paste 2 nodes with 1 connection")
         
         # Verify UUID mapping
         self.assertEqual(len(paste_cmd.uuid_mapping), 2)
         self.assertIn('input-uuid', paste_cmd.uuid_mapping)
         self.assertIn('output-uuid', paste_cmd.uuid_mapping)
     
-    @patch('src.core.node.Node')
+    @patch('pyflowgraph.core.node.Node')
     def test_paste_nodes_positioning(self, mock_node_class):
         """Test that pasted nodes are positioned correctly with offsets."""
         mock_node_class.return_value = Mock()
@@ -189,7 +183,7 @@ class TestCopyPasteCommandUndo(unittest.TestCase):
         self.mock_graph.addItem = Mock()
         self.mock_graph.removeItem = Mock()
     
-    @patch('src.commands.node_commands.CreateNodeCommand')
+    @patch('pyflowgraph.commands.node.batch_operations.CreateNodeCommand')
     def test_paste_command_undo_behavior(self, mock_create_cmd):
         """Test that paste command undo properly removes all created nodes."""
         # Setup mock create commands
@@ -228,7 +222,7 @@ class TestCopyPasteCommandUndo(unittest.TestCase):
         mock_cmd1.undo.assert_called_once()
         mock_cmd2.undo.assert_called_once()
     
-    @patch('src.commands.node_commands.CreateNodeCommand')
+    @patch('pyflowgraph.commands.node.batch_operations.CreateNodeCommand')
     def test_paste_command_partial_failure_rollback(self, mock_create_cmd):
         """Test paste command rollback when one node creation fails."""
         # Setup mock commands - first succeeds, second fails
@@ -273,7 +267,7 @@ class TestDataFormatConversion(unittest.TestCase):
     def test_deserialize_to_paste_format_conversion(self):
         """Test conversion from deserialize format to paste command format."""
         # Mock the actual conversion method from node_graph
-        from src.core.node_graph import NodeGraph
+        from pyflowgraph.core.node_graph import NodeGraph
         
         # Create a minimal mock instance to test the conversion method
         graph = Mock(spec=NodeGraph)

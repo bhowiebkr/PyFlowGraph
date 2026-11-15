@@ -4,18 +4,14 @@ Tests Story 3.3 - Native Object Passing System Subtask 6.4
 """
 
 import unittest
-import sys
-import os
 import gc
 import time
 import copy
+import tracemalloc
 from unittest.mock import Mock
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
-from execution.single_process_executor import SingleProcessExecutor
+from pyflowgraph.execution.single_process_executor import SingleProcessExecutor
 
 
 class TestPerformanceBenchmarks(unittest.TestCase):
@@ -347,17 +343,18 @@ class TestMemoryEfficiencyBenchmarks(unittest.TestCase):
     
     def test_memory_usage_vs_copying(self):
         """Test memory usage comparison between reference and copy approaches."""
-        import psutil
-        process = psutil.Process()
+        # Measure the memory that Python allocates. This is exact, unlike the process size.
+        tracemalloc.start()
+        self.addCleanup(tracemalloc.stop)
         
         # Get baseline memory
         gc.collect()
-        baseline_memory = process.memory_info().rss
+        baseline_memory = tracemalloc.get_traced_memory()[0]
         
         # Create large object
         large_obj = {
-            "arrays": [[i] * 1000 for i in range(1000)],
-            "metadata": {"size": "1M elements"}
+            "arrays": [[i] * 1000 for i in range(100)],
+            "metadata": {"size": "100K elements"}
         }
         
         # Test reference approach
@@ -369,24 +366,24 @@ class TestMemoryEfficiencyBenchmarks(unittest.TestCase):
             ref = self.executor.get_object("memory_test")
             refs.append(ref)
         
-        reference_memory = process.memory_info().rss
+        reference_memory = tracemalloc.get_traced_memory()[0]
         reference_usage = reference_memory - baseline_memory
         
         # Clear references
         for ref in refs:
             del ref
         refs.clear()
-        self.executor.object_refs.clear()
+        self.executor.object_store.clear()
         del large_obj
         gc.collect()
         
         # Test copy approach (simulate old approach)
         large_obj_copy_test = {
-            "arrays": [[i] * 1000 for i in range(1000)],
-            "metadata": {"size": "1M elements"}
+            "arrays": [[i] * 1000 for i in range(100)],
+            "metadata": {"size": "100K elements"}
         }
         
-        baseline_copy = process.memory_info().rss
+        baseline_copy = tracemalloc.get_traced_memory()[0]
         
         # Create multiple copies
         copies = []
@@ -394,7 +391,7 @@ class TestMemoryEfficiencyBenchmarks(unittest.TestCase):
             obj_copy = copy.deepcopy(large_obj_copy_test)
             copies.append(obj_copy)
         
-        copy_memory = process.memory_info().rss
+        copy_memory = tracemalloc.get_traced_memory()[0]
         copy_usage = copy_memory - baseline_copy
         
         print(f"Memory usage - Reference approach: {reference_usage/1024/1024:.1f}MB")
@@ -424,20 +421,24 @@ class TestMemoryEfficiencyBenchmarks(unittest.TestCase):
             # Create object of specified size
             test_obj = {"data": list(range(size)), "size": size}
             
-            # Measure reference passing time
-            start_time = time.perf_counter()
-            self.executor.store_object(f"scale_test_{size}", test_obj)
-            retrieved = self.executor.get_object(f"scale_test_{size}")
-            ref_time = time.perf_counter() - start_time
+            # Measure reference passing time, the best of several runs, so that a pause of the
+            # operating system does not count
+            ref_time = float("inf")
+            for _ in range(20):
+                start_time = time.perf_counter()
+                self.executor.store_object(f"scale_test_{size}", test_obj)
+                retrieved = self.executor.get_object(f"scale_test_{size}")
+                ref_time = min(ref_time, time.perf_counter() - start_time)
+                del self.executor.object_store[f"scale_test_{size}"]
             
             # Verify same object
             self.assertIs(retrieved, test_obj)
             
             results[size] = ref_time
             
-            # Cleanup
-            del self.executor.object_refs[f"scale_test_{size}"]
-            del test_obj
+            # Cleanup. Delete every reference here: an object freed later, in the timed code,
+            # would count in the time of the next size.
+            del test_obj, retrieved
         
         print("Scalability Results:")
         for size, ref_time in results.items():

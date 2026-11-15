@@ -33,6 +33,13 @@ jobs:
       actions: read        # To download artifacts
       pull-requests: read  # To read PRs for the changelog
 
+    # Scripts read the inputs from these variables. An expression inside a script would
+    # become part of the script text.
+    env:
+      TAG_NAME: ${{ inputs.tag_name }}
+      RELEASE_TYPE: ${{ inputs.release_type }}
+      MAKE_LATEST: ${{ inputs.make_latest }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,18 +49,18 @@ jobs:
 
       - name: Validate tag exists
         run: |
-          if ! git tag --list | grep -q "^${{ inputs.tag_name }}$"; then
-            echo "ERROR: Tag '${{ inputs.tag_name }}' does not exist!"
+          if ! git rev-parse -q --verify "refs/tags/$TAG_NAME" > /dev/null; then
+            echo "ERROR: Tag '$TAG_NAME' does not exist!"
             exit 1
           fi
-          echo "SUCCESS: Tag '${{ inputs.tag_name }}' found"
+          echo "SUCCESS: Tag '$TAG_NAME' found"
 
       - name: Find build artifact
         id: find_artifact
         uses: actions/github-script@v7
         with:
           script: |
-            const artifactName = `PyFlowGraph-Windows-${{ inputs.tag_name }}`;
+            const artifactName = `PyFlowGraph-Windows-${process.env.TAG_NAME}`;
             
             // Search for recent successful builds (last 50 runs)
             const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
@@ -103,45 +110,29 @@ jobs:
           name: PyFlowGraph-Windows-${{ inputs.tag_name }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ steps.find_artifact.outputs.run_id }}
+          # A folder of its own, so that the zip holds the built app and none of the checkout.
+          path: release_files
 
       - name: Verify and prepare artifact for release
         id: verify
         run: |
-          zip_file="PyFlowGraph-Windows-${{ inputs.tag_name }}.zip"
-          
-          # Check if PyFlowGraph.exe exists (artifact was extracted directly to working directory)
-          if [ ! -f "PyFlowGraph.exe" ]; then
-            echo "ERROR: PyFlowGraph.exe not found in current directory"
-            echo "Directory contents:"
-            ls -la
-            exit 1
-          fi
-          
-          # Verify key components exist
-          if [ ! -d "examples" ] || [ ! -d "python_runtime" ]; then
-            echo "ERROR: Missing required directories (examples or python_runtime)"
-            ls -la
-            exit 1
-          fi
-          
-          echo "SUCCESS: Found all required artifact components"
-          echo "- PyFlowGraph.exe: $(ls -lh PyFlowGraph.exe | awk '{print $5}')"
-          echo "- Examples directory: $(ls examples | wc -l) files"
-          echo "- Python runtime directory exists: ✅"
-          
-          # Create release zip file from current directory contents
-          echo "Creating release zip: $zip_file"
-          if command -v zip >/dev/null 2>&1; then
-            # Exclude development files but keep examples/*.md and LICENSE.txt
-            zip -r "$zip_file" . -x ".git/*" ".github/*" "src/*" "tests/*" "test_reports/*" "docs/*" "images/*" "pre-release/*" ".gitignore" "README.md" "CLAUDE.md" "requirements.txt" "run.sh" "run.bat" "run_test_gui.bat" "*.log"
-          else
-            # Fallback for systems without zip command  
-            tar -czf "${zip_file%.zip}.tar.gz" --exclude='.git' --exclude='.github' --exclude='src' --exclude='tests' --exclude='test_reports' --exclude='docs' --exclude='images' --exclude='pre-release' --exclude='.gitignore' --exclude='README.md' --exclude='CLAUDE.md' --exclude='requirements.txt' --exclude='run.sh' --exclude='run.bat' --exclude='run_test_gui.bat' --exclude='*.log' .
-            zip_file="${zip_file%.zip}.tar.gz"
-          fi
-          
-          file_size=$(stat -f%z "$zip_file" 2>/dev/null || stat -c%s "$zip_file" 2>/dev/null)
-          echo "SUCCESS: Created release package: $zip_file ($file_size bytes)"
+          zip_file="PyFlowGraph-Windows-$TAG_NAME.zip"
+
+          for required in release_files/PyFlowGraph.exe release_files/examples release_files/python_runtime; do
+            if [ ! -e "$required" ]; then
+              echo "ERROR: $required is not in the build artifact"
+              ls -la release_files
+              exit 1
+            fi
+          done
+          echo "- PyFlowGraph.exe: $(ls -lh release_files/PyFlowGraph.exe | awk '{print $5}')"
+          echo "- Examples: $(ls release_files/examples | wc -l) files"
+
+          cp LICENSE.txt release_files/
+          (cd release_files && zip -qr "../$zip_file" .)
+
+          file_size=$(stat -c%s "$zip_file")
+          echo "Created release package: $zip_file ($file_size bytes)"
           echo "zip_file=$zip_file" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
@@ -180,9 +171,9 @@ jobs:
         run: |
           echo "## Release Created Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tag:** ${{ inputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Type:** ${{ inputs.release_type }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Latest:** ${{ inputs.make_latest }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** $TAG_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "**Type:** $RELEASE_TYPE" >> $GITHUB_STEP_SUMMARY
+          echo "**Latest:** $MAKE_LATEST" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Release URL:** ${{ steps.create_release.outputs.url }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

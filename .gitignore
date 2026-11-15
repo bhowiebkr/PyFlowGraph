@@ -163,3 +163,9 @@ yarn.lock
 # PyFlowGraph specific
 examples/*.backup
 temp_graphs/
+
+# Machine-specific agent rules.
+/AGENTS.local.md
+
+# Reports and other files that agents and tools make.
+/artifacts/

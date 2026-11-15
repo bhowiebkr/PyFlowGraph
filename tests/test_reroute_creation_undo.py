@@ -5,18 +5,15 @@ This reproduces the user's reported issue with undo/redo of RerouteNode operatio
 """
 
 import sys
-import os
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QKeyEvent
 
-from ui.editor.node_editor_window import NodeEditorWindow
-from core.node import Node
-from core.reroute_node import RerouteNode
+from pyflowgraph.ui.editor.node_editor_window import NodeEditorWindow
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
 
 def test_reroute_creation_undo_sequence():
     """Test the user's reported issue: create reroute -> delete -> undo delete -> undo create."""

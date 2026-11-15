@@ -14,19 +14,15 @@ Tests the fundamental Node class functionality including:
 
 import unittest
 import sys
-import os
 from unittest.mock import Mock, patch
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor
 
-from core.node import Node
-from core.node_graph import NodeGraph
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.node_graph import NodeGraph
 
 
 class TestNodeSystem(unittest.TestCase):
@@ -178,8 +174,9 @@ def test_func(x: int) -> int:
         """Test node serialization to dictionary format."""
         node = Node("Serialize Test")
         node.setPos(100, 200)
-        node.width = 300
-        node.height = 180
+        # Larger than the content needs, so that set_code keeps the size
+        node.width = 600
+        node.height = 300
         
         # Set some code
         test_code = '''
@@ -196,7 +193,7 @@ def serialize_test(input_val: str) -> str:
         self.assertEqual(serialized["title"], "Serialize Test")
         self.assertEqual(serialized["uuid"], node.uuid)
         self.assertEqual(serialized["pos"], [100, 200])
-        self.assertEqual(serialized["size"], [300, 180])
+        self.assertEqual(serialized["size"], [600, 300])
         self.assertEqual(serialized["code"], test_code)
         self.assertIn("colors", serialized)
     

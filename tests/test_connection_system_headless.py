@@ -14,22 +14,18 @@ Tests the Connection class and connection management functionality including:
 
 import unittest
 import sys
-import os
 from unittest.mock import Mock, patch
 
-# Add src directory to path
-src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src')
-sys.path.insert(0, src_path)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor, QPainterPath
 
-from core.connection import Connection
-from core.pin import Pin
-from core.node import Node
-from core.reroute_node import RerouteNode
-from core.node_graph import NodeGraph
+from pyflowgraph.core.connection import Connection
+from pyflowgraph.core.pin import Pin
+from pyflowgraph.core.node import Node
+from pyflowgraph.core.reroute_node import RerouteNode
+from pyflowgraph.core.node_graph import NodeGraph
 
 
 class TestConnectionSystem(unittest.TestCase):

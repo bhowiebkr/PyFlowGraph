@@ -5,16 +5,10 @@ to the previous subprocess-based execution model.
 
 import unittest
 import time
-import sys
-import os
 from unittest.mock import Mock
 
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(__file__))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
-from src.execution.single_process_executor import SingleProcessExecutor
+from pyflowgraph.execution.single_process_executor import SingleProcessExecutor
 
 
 class TestPerformanceBenchmarks(unittest.TestCase):
