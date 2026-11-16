@@ -7,6 +7,10 @@ A universal, node-based visual scripting editor built with Python and PySide6 th
 
 ![Node Editor Showcase](images/gui.png)
 
+> PyFlowGraph has a successor: [Patina](https://github.com/bhowiebkr/Patina), a node graph editor and engine in which each node is Rust code. Patina is at an early stage.
+>
+> For a small editor that is easy to read and learn from, see [Python Node Editor](https://github.com/bhowiebkr/python-node-editor).
+
 PyFlowGraph implements a **hybrid execution model** that combines two powerful paradigms:
 
 * **Batch Mode**: Traditional data-flow execution where the entire graph processes data sequentially based on dependencies - perfect for ETL pipelines, data transformations, API integrations, and automated workflows
